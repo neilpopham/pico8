@@ -6,7 +6,32 @@ __lua__
 
 local spr_f={}
 
+
+
 function _fget(s,i)
+ if i==nil then
+  if spr_f[s+1]==nil then
+   return 0
+  else
+   return spr_f[s+1]
+  end
+ else
+  b=2^i
+  return spr_f[s+1] % (2*b) >= b 
+ end
+end
+
+function _fset(s,i,b)
+  if b==nil then
+   spr_f[s+1]=i
+  else
+   if spr_f[s+1]==nil then spr_f[s+1]=0 end
+   if b then p=2 else p=-2 end
+   spr_f[s+1]=spr_f[s+1]+(p^i)
+  end
+end
+
+function _fget_old(s,i)
  local v=0
  if i==nil then
   if spr_f[s+1]==nil then return 0 end
@@ -21,18 +46,10 @@ function _fget(s,i)
  return v
 end
 
-function _fset(s,i,b)
+function _fset_old(s,i,b)
  b=b or nil
  if spr_f[s+1]==nil then spr_f[s+1]={} end
  if b==nil then
-  --[[
-  local bit={1,2,4,8,16,32,64,128}
-  for k,v in pairs(bit) do
-   if i % (v + v) >= v then
-    spr_f[s+1][k]=true
-   end
-  end
-  ]]
   for v=0,7,1 do
     vp=2^v
     if i % (2*vp) >= vp then
@@ -44,14 +61,10 @@ function _fset(s,i,b)
  end
 end
 
-function op(a,b)
- return b
-end
-
-
 function _init()
  _fset(0,0,true)
  _fset(0,3,true)
+ --_fset(0,9)
  _fset(1,134)
  --_fset(1,1,true)
  --_fset(1,2,true)
@@ -64,6 +77,7 @@ end
 
 function _draw()
  cls()
+
  --[[
  for sprite,flags in pairs(spr_f) do
   for key,value in pairs(flags) do
@@ -73,11 +87,6 @@ function _draw()
   end
  end
 ]]
-
- -- 1,1 1,4
- -- 2,2 2,3 2,9
-
-
 
  print(_fget(0,0),0,0,1)
  print(_fget(0,3),0,10,1)
@@ -89,19 +98,6 @@ function _draw()
  print(_fget(1,2),30,10,4)
  print(_fget(1,3),30,20,4)
  print(_fget(1,7),30,30,4)
-
- --[[
- print((2^0),20,30,2)
- print((2^1),20,40,2)
- print((2^2),20,50,2)
-
-
- local bit={1,2,4,8,16,32,64,128} 
- for k,v in pairs(bit) do
-  print(k,50,k*10)
-  print(v,60,k*10)
- end 
-]]
 
 end
 
