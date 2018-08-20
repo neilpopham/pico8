@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project version="1">
+  <game>
+    <name>Objects</name>
+    <author>Neil Popham</author>
+    <cart>C:\Users\Neil\AppData\Roaming\pico-8\carts\tests\objects.p8</cart>
+  </game>
+  <entities>
+    <entity name="Notes" enabled="0">
+      <function name="ideas" enabled="0">  ideas
+
+  1. 
+  2. </function>
+      <function name="todo" enabled="0">todo
+
+  1. 
+  2. </function>
+    </entity>
+    <entity name="Game" enabled="1">
+      <function name="globals" enabled="1">f=0</function>
+      <function name="_init" enabled="1">function _init()
+end</function>
+      <function name="_update" enabled="1">function _update()
+end</function>
+      <function name="_draw" enabled="1">function _draw()
+end</function>
+    </entity>
+  </entities>
+</project>
