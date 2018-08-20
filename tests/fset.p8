@@ -4,43 +4,37 @@ __lua__
 -- tic-80 fset
 -- by neil popham
 
-local spr_f={}
-
-
+local sprf={}
 
 function _fget(s,i)
  if i==nil then
-  if spr_f[s+1]==nil then
-   return 0
-  else
-   return spr_f[s+1]
-  end
+  return math.floor(sprf[s+1] or 0)
  else
   b=2^i
-  return spr_f[s+1] % (2*b) >= b 
+  return sprf[s+1] % (2*b) >= b 
  end
 end
 
 function _fset(s,i,b)
   if b==nil then
-   spr_f[s+1]=i
+   sprf[s+1]=i
   else
-   if spr_f[s+1]==nil then spr_f[s+1]=0 end
+   if sprf[s+1]==nil then sprf[s+1]=0 end
    if b then p=2 else p=-2 end
-   spr_f[s+1]=spr_f[s+1]+(p^i)
+   sprf[s+1]=sprf[s+1]+(p^i)
   end
 end
 
 function _fget_old(s,i)
  local v=0
  if i==nil then
-  if spr_f[s+1]==nil then return 0 end
-  for k,b in pairs(spr_f[s+1]) do
+  if sprf[s+1]==nil then return 0 end
+  for k,b in pairs(sprf[s+1]) do
    if b==true then v=v+(2^(k-1)) end
   end
  else
-  if spr_f[s+1]==nil then return false end
-  v=spr_f[s+1][i+1]
+  if sprf[s+1]==nil then return false end
+  v=sprf[s+1][i+1]
   if v==nil then v=false end
  end
  return v
@@ -48,16 +42,16 @@ end
 
 function _fset_old(s,i,b)
  b=b or nil
- if spr_f[s+1]==nil then spr_f[s+1]={} end
+ if sprf[s+1]==nil then sprf[s+1]={} end
  if b==nil then
   for v=0,7,1 do
     vp=2^v
     if i % (2*vp) >= vp then
-     spr_f[s+1][v+1]=true
+     sprf[s+1][v+1]=true
     end
   end  
  else
-  spr_f[s+1][i+1]=b
+  sprf[s+1][i+1]=b
  end
 end
 
@@ -79,7 +73,7 @@ function _draw()
  cls()
 
  --[[
- for sprite,flags in pairs(spr_f) do
+ for sprite,flags in pairs(sprf) do
   for key,value in pairs(flags) do
    print(sprite,0+((sprite-1)*50),key*10,2+sprite)
    print(key,10+((sprite-1)*50),key*10,2+sprite)
