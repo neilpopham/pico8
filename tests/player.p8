@@ -53,9 +53,9 @@ local p={
 	anim={
   init=function(self)
    -- record frame count for each stage face
-   for sk,sv in pairs(self.stage) do
-    for fk,fv in pairs({"left","right"}) do
-     self.stage[sk][fv].fcount=#self.stage[sk][fv].frames
+   for s in pairs(self.stage) do
+    for _,f in pairs({"left","right"}) do
+     self.stage[s][f].fcount=#self.stage[s][f].frames
     end
    end
    -- init current values
