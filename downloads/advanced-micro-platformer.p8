@@ -81,8 +81,8 @@ function collide_side(self)
 --	end
 	end
 	--didn't hit a solid tile.
-	return false
-end
+	return fals
+eend
 
 --check if pushing into floor tile and resolve.
 --requires self.dx,self.x,self.y,self.grounded,self.airtime and 
