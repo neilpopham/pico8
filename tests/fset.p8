@@ -128,7 +128,7 @@ function _draw()
  print(_fget(1),40,100,2)
  print(_fget(2),80,100,3)
 
- spr(0,0,0)
+ spr(0,120,120)
 
 end
 
