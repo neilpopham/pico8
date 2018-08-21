@@ -35,14 +35,17 @@ function create_moveable_item(x,y,a)
   stage={},
   current={
    init=function(self,stage,face)
-    self.reset(self)
-    self.loop=false
-    self.stage=stage or self.stage
-    self.face=face or self.face
+    self.set(self,stage,face)
    end,
    reset=function(self)
     self.frame=1
     self.tick=0
+    self.loop=true
+   end,
+   set=function(self,stage,face)
+    self.reset(self)
+    self.stage=stage
+    self.face=face or self.face
    end
   },
   add_stage=function(self,name,ticks,loop,left,right)
@@ -55,7 +58,11 @@ end
 function create_controllable_item(x,y,a)
  local i=create_moveable_item(x,y,a)
  i.update=function(self)
-  --
+  -- check buttons
+  -- update animation
+
+  -- if btn(0) then self.anim.current.face=dir.left
+  -- if btn(1) then self.anim.current.face=dir.right
  end
  return i
 end
