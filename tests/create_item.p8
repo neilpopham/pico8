@@ -1,11 +1,15 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- 
+-- create_item
 -- by neil popham
 
 local dir={left=1,right=2}
 local drag={air=1,ground=0.8,gravity=0.15}
+
+function round(x)
+ return flr(x+0.5)
+end
 
 function create_item(x,y)
  local i={
@@ -19,8 +23,10 @@ function create_moveable_item(x,y,a)
  local i=create_item(x,y)
  i.dx=0
  i.dy=0
+ i.max={dx=1,dy=2}
  i.ax=a[1]
  i.ay=a[2]
+ i.is={grounded=true}
  i.anim={
   init=function(self,stage,face)
    -- record frame count for each stage face
@@ -30,13 +36,10 @@ function create_moveable_item(x,y,a)
     end
    end
    -- init current values
-   self.current:init(stage,face)
+   self.current:set(stage,face)
   end,
   stage={},
-  current={
-   init=function(self,stage,face)
-    self.set(self,stage,face)
-   end,
+  current={ 
    reset=function(self)
     self.frame=1
     self.tick=0
@@ -48,8 +51,8 @@ function create_moveable_item(x,y,a)
     self.face=face or self.face
    end
   },
-  add_stage=function(self,name,ticks,loop,left,right)
-   self.stage[name]=create_stage(ticks,loop,left,right)
+  add_stage=function(self,name,ticks,loop,left,right,next)
+   self.stage[name]=create_stage(ticks,loop,left,right,next)
   end
  }
  i.draw=function(self)
@@ -66,11 +69,11 @@ function create_moveable_item(x,y,a)
     current.tick=0
     current.frame=current.frame+1
     if current.frame>face.fcount then
-     if stage.loop then
-      current.frame=1
-     elseif stage.next then
+     if stage.next then
       current:set(stage.next)
       face=self.anim.stage[current.stage].face[current.face]
+     elseif stage.loop then
+      current.frame=1
      else
       current.frame=face.fcount
       current.loop=false
@@ -86,29 +89,34 @@ end
 function create_controllable_item(x,y,a)
  local i=create_moveable_item(x,y,a)
  i.update=function(self)
-  -- check buttons
-  -- update animation
+  local face=self.anim.current.face
 
+  -- horizontal movement
   if btn(0) then
-   local face=self.anim.current.face
    self.anim.current.face=dir.left
-   --if face~=dir.left then
-    --self.anim.current:reset()
-   --end
    if face==dir.right then
     self.anim.current:set("turn")
    end   
-  end
-  if btn(1) then
-   local face=self.anim.current.face
+   p.dx=p.dx-p.ax
+  elseif btn(1) then
    self.anim.current.face=dir.right
-   --if face~=dir.right then
-    --self.anim.current:reset()
-   --end
    if face==dir.left then
     self.anim.current:set("turn")
    end
+   p.dx=p.dx+p.ax
+  else
+   if p.is.grounded then
+    self.anim.current:set("still")
+    p.dx=p.dx*drag.ground
+   else
+    p.dx=p.dx*drag.air
+   end   
   end
+  p.dx=mid(-p.max.dx,p.dx,p.max.dx)
+  p.x=p.x+round(p.dx)
+
+  -- vertical movement
+
  end
  return i
 end
@@ -124,10 +132,10 @@ function create_stage(ticks,loop,left,right,next)
 end
 
 function _init()
- p=create_controllable_item(63,63,{1,1})
+ p=create_controllable_item(63,63,{0.05,-1.75})
  p.anim:add_stage("still",1,false,{16},{17})
- p.anim:add_stage("walk",20,true,{7,8},{10,11,12})
- p.anim:add_stage("turn",5,false,{21,19,22,16},{18,19,20,17},"still")
+ p.anim:add_stage("walk",10,false,{18},{21})
+ p.anim:add_stage("turn",5,false,{21,19,22,16},{18,19,20,17},"walk")
  p.anim:init("still",dir.right)
 end
 
@@ -143,6 +151,7 @@ function _draw()
  print("current.frame:"..p.anim.current.frame,0,10)
  print("face:"..p.anim.current.face,0,0)
  print("tick:"..p.anim.current.tick,0,20)
+ print("dx:"..p.dx,0,30)
 end
 
 __gfx__
