@@ -8,7 +8,7 @@ local sprf={}
 
 function _fget(s,i)
  if i==nil then
-  return math.floor(sprf[s+1] or 0)
+  return flr(sprf[s+1] or 0)
  else
   b=2^i
   return sprf[s+1] % (2*b) >= b 
@@ -63,6 +63,17 @@ function _init()
  --_fset(1,1,true)
  --_fset(1,2,true)
  --_fset(1,7,true)
+
+ -- dump fget data to an array format that can be used in tic-80 code
+ d=""
+ for s=0,255,1 do
+  d=d..fget(s)..","
+ end
+ printh(d,"@clip")
+
+ for sprite,flags in pairs(sprf) do
+
+ end
 end
 
 function _update()
