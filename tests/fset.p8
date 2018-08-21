@@ -20,8 +20,10 @@ function _fset(s,i,b)
    sprf[s+1]=i
   else
    if sprf[s+1]==nil then sprf[s+1]=0 end
-   if b then p=2 else p=-2 end
-   sprf[s+1]=sprf[s+1]+(p^i)
+   e=_fget(s,i)
+   if (e and not b) or (not e and b) then 
+    sprf[s+1]=sprf[s+1]+(b and 2^i or -2^i)
+   end
   end
 end
 
@@ -58,15 +60,38 @@ end
 function _init()
  _fset(0,0,true)
  _fset(0,3,true)
- --_fset(0,9)
+
+ _fset(0,4,true)
+ _fset(0,4,false)
+ --fset(0,3,false)
+
  _fset(1,134)
- --_fset(1,1,true)
- --_fset(1,2,true)
- --_fset(1,7,true)
+ --fset(1,1,true)
+ --fset(1,2,true)
+ --fset(1,7,true) 
+ _fset(1,7,false)
+ _fset(1,1,false)
+
+
+ _fset(0,0)
+ _fset(1,0)
+
+ _fset(0,0,true)
+ _fset(0,1,true)
+ _fset(0,2,true)
+ _fset(0,2,false)
+ _fset(0,3,true)
+
+ _fset(1,0,true)
+ _fset(1,1,true)
+ _fset(1,4,true)
+
+ _fset(0, 56)
+ _fset(1, 73)
 
  -- dump fget data to an array format that can be used in tic-80 code
  d=""
- for s=0,255,1 do
+ for s=0,127 do
   d=d..fget(s)..","
  end
  printh(d,"@clip")
@@ -93,17 +118,21 @@ function _draw()
  end
 ]]
 
- print(_fget(0,0),0,0,1)
- print(_fget(0,3),0,10,1)
- print(_fget(0,5),0,20,1)
- print(_fget(1),0,40,2)
- print(_fget(0),0,50,3)
+ for s=0,1 do
+  for i=0,7 do
+   print(_fget(s,i),s*40,i*9,s+1)
+  end
+ end
 
- print(_fget(1,1),30,0,4)
- print(_fget(1,2),30,10,4)
- print(_fget(1,3),30,20,4)
- print(_fget(1,7),30,30,4)
+ print(_fget(0),0,100,1) 
+ print(_fget(1),40,100,2)
+ print(_fget(2),80,100,3)
+
+ spr(0,0,0)
 
 end
 
 
+__gff__
+0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
