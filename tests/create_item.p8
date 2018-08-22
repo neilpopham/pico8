@@ -13,9 +13,7 @@ local pad={l=0,r=1,u=2,d=3,b1=4,b2=5}
 -- https://github.com/nesbox/tic-80/wiki/key-map
 --local pad={l=2,r=3,u=0,d=1,b1=4,b2=5,b3=6,b4=7}
 
-function round(x)
- return flr(x+0.5)
-end
+function round(x) return flr(x+0.5) end
 
 function create_item(x,y)
  local i={
