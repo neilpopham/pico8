@@ -7,6 +7,12 @@ __lua__
 local dir={left=1,right=2}
 local drag={air=1,ground=0.8,gravity=0.15}
 
+-- http://pico-8.wikia.com/wiki/btn
+local pad={l=0,r=1,u=2,d=3,b1=4,b2=5}
+
+-- https://github.com/nesbox/tic-80/wiki/key-map
+--local pad={l=2,r=3,u=0,d=1,b1=4,b2=5,b3=6,b4=7}
+
 function round(x)
  return flr(x+0.5)
 end
@@ -19,13 +25,14 @@ function create_item(x,y)
  return i
 end
 
-function create_moveable_item(x,y,a)
+function create_moveable_item(x,y,ax,ay)
  local i=create_item(x,y)
  i.dx=0
  i.dy=0
- i.max={dx=1,dy=2}
- i.ax=a[1]
- i.ay=a[2]
+ i.min={dx=0.05,dy=0.05,btn=5} 
+ i.max={dx=1,dy=2,btn=15}
+ i.ax=ax
+ i.ay=ay
  i.is={grounded=true}
  i.anim={
   init=function(self,stage,face)
@@ -86,29 +93,29 @@ function create_moveable_item(x,y,a)
  return i
 end
 
-function create_controllable_item(x,y,a)
- local i=create_moveable_item(x,y,a)
+function create_controllable_item(x,y,ax,ay)
+ local i=create_moveable_item(x,y,ax,ay)
  i.update=function(self)
   local face=self.anim.current.face
   local stage=self.anim.current.stage
-  -- horizontal movement
-  if btn(0) then
-   self.anim.current.face=dir.left
-   if face==dir.right then
-    if stage=="still" then stage="walk_turn" else stage=stage.."_turn" end
-    self.anim.current:set(stage)
-   elseif stage=="still" then
-    self.anim.current:set("walk")
-   end
-   p.dx=p.dx-p.ax
-  elseif btn(1) then
-   self.anim.current.face=dir.right
-   if face==dir.left then
+
+  local check=function(anim,stage,face)
+   if face~=anim.current.face then
     if stage=="still" then stage="walk" end
-    self.anim.current:set(stage.."_turn")
+    anim.current:set(stage.."_turn")
    elseif stage=="still" then
-    self.anim.current:set("walk")
+    anim.current:set("walk")
    end
+  end
+
+  -- horizontal movement
+  if btn(pad.l) then
+   self.anim.current.face=dir.left
+   check(self.anim,stage,face)
+   p.dx=p.dx-p.ax
+  elseif btn(pad.r) then
+   self.anim.current.face=dir.right
+   check(self.anim,stage,face)
    p.dx=p.dx+p.ax
   else
    if p.is.grounded then
@@ -119,8 +126,11 @@ function create_controllable_item(x,y,a)
    end   
   end
   p.dx=mid(-p.max.dx,p.dx,p.max.dx)
+  if abs(p.dx)<p.min.dx then p.dx=0 end
   p.x=p.x+round(p.dx)
+
   -- vertical movement
+
  end
  return i
 end
@@ -136,7 +146,7 @@ function create_stage(ticks,loop,left,right,next)
 end
 
 function _init()
- p=create_controllable_item(63,63,{0.05,-1.75})
+ p=create_controllable_item(63,63,0.05,-1.75)
  p.anim:add_stage("still",1,false,{5},{11})
  p.anim:add_stage("walk",5,true,{0,1,2,3,4,5},{6,7,8,9,10,11})
  p.anim:add_stage("jump",1,false,{0},{6})
@@ -152,6 +162,32 @@ function _init()
  -- record previous face/stage
  -- if face has changed 
  -- ??? somehow do turn anim then switch back to normal ...
+ -- transition table
+ -- table of sprites to transform from any sprite to any state
+ -- (walking right to jumping left)
+ -- negates use of turn
+ -- lots of table data to store
+
+--[[
+ transition={
+  still={{walk={{},{}},jump={{},{}},fall={{},{}}}},
+  walk={
+   {still={{3,4,5},{9,10,11}},jump={{},{}},fall={{},{}}},
+   {still={{3,4,5},{9,10,11}},jump={{},{}},fall={{},{}}},
+   {still={{3,4,5},{9,10,11}},jump={{},{}},fall={{},{}}},
+   {still={{4,5},{4,5}},jump={{4,5},{4,5}},fall={{4,5},{4,5}}},
+   {still={{5},{5}},jump={{5},{5}},fall={{5},{5}}},
+   {still={{},{}},jump={{},{}},fall={{},{}}},
+  },
+  jump={{still={{3,4,5},{9,10,11}},walk={{3,4,5},{9,10,11}},fall={{3,4,5},{9,10,11}}}},
+  fall={{still={{3,4,5},{9,10,11}},walk={{3,4,5},{9,10,11}},fall={{3,4,5},{9,10,11}}}},
+ } 
+ -- how to transition from still facing left to walking left
+ anim.transition.still.face[1].frane[3].walk.face[1] = {x,y,z}
+ -- how to transition from frame 3 of walking right to jumping left
+ anim.transition.walk.face[1].frane[3].jump.face[2] = {x,y,z}
+]]
+
  -- or, maybe we just use wlak_turn, fall_turn and jump_turn instead of turn and stick with current system
  --  p.anim:add_stage("walk_turn",5,false,{21,19,22,16},{18,19,20,17},"walk")
  --  p.anim:add_stage("jump_turn",5,false,{21,19,22,16},{18,19,20,17},"jump")
