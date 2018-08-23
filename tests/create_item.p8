@@ -10,8 +10,10 @@ local drag={air=1,ground=0.8,gravity=0.15}
 -- http://pico-8.wikia.com/wiki/btn
 local pad={l=0,r=1,u=2,d=3,b1=4,b2=5}
 
+-- pad_left=0 pad_right=1 pad_up=2 pad_down=3 pad_b1=4 pad_b2=5
+
 -- https://github.com/nesbox/tic-80/wiki/key-map
---local pad={l=2,r=3,u=0,d=1,b1=4,b2=5,b3=6,b4=7}
+-- local pad={l=2,r=3,u=0,d=1,b1=4,b2=5,b3=6,b4=7}
 
 function round(x) return flr(x+0.5) end
 
