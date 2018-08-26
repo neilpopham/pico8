@@ -281,63 +281,10 @@ function _init()
     end
    end
   end
-
---[[
- e=create_moveable_item(64,64,0.1,-1.75)
- e.anim:add_stage("walk",5,true,{64,65,66,67},{64,65,66,67})
- e.anim:add_stage("walk_turn",5,false,{68,69,70},{68,69,70},"walk")
- e.anim:init("walk",dir.right)
- e.update=function(self)
-  local dir=self.anim.current.face==1 and -1 or 1
-  self.dx=(self.dx+(0.2*dir))*drag.ground
-  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-  if abs(self.dx)<self.min.dx then self.dx=0 end
-  if self.canmovex(self) then
-   self.x=self.x+self.dx
-  elseif self.is.sliding then
-   self.dx=0
-   self.anim.current.face=self.anim.current.face==1 and 2 or 1
-   e.anim.current:set("walk_turn")
-   self.is.sliding=false 
-  end
-]]
  end
- -- need a jump turn and a fall turn
- -- so, maybe turn shouldn't be a stage but a transition that any stage can have
- -- dir change in any stage moves to turn anim and then return to previous stage (not in opposite direction)
- -- record previous face/stage
- -- if face has changed 
- -- ??? somehow do turn anim then switch back to normal ...
- -- transition table
- -- table of sprites to transform from any sprite to any state
- -- (walking right to jumping left)
- -- negates use of turn
- -- lots of table data to store
 
---[[
- transition={
-  still={{walk={{},{}},jump={{},{}},fall={{},{}}}},
-  walk={
-   {still={{3,4,5},{9,10,11}},jump={{},{}},fall={{},{}}},
-   {still={{3,4,5},{9,10,11}},jump={{},{}},fall={{},{}}},
-   {still={{3,4,5},{9,10,11}},jump={{},{}},fall={{},{}}},
-   {still={{4,5},{4,5}},jump={{4,5},{4,5}},fall={{4,5},{4,5}}},
-   {still={{5},{5}},jump={{5},{5}},fall={{5},{5}}},
-   {still={{},{}},jump={{},{}},fall={{},{}}},
-  },
-  jump={{still={{3,4,5},{9,10,11}},walk={{3,4,5},{9,10,11}},fall={{3,4,5},{9,10,11}}}},
-  fall={{still={{3,4,5},{9,10,11}},walk={{3,4,5},{9,10,11}},fall={{3,4,5},{9,10,11}}}},
- } 
- -- how to transition from still facing left to walking left
- anim.transition.still.face[1].frane[3].walk.face[1] = {x,y,z}
- -- how to transition from frame 3 of walking right to jumping left
- anim.transition.walk.face[1].frane[3].jump.face[2] = {x,y,z}
-]]
-
- -- or, maybe we just use wlak_turn, fall_turn and jump_turn instead of turn and stick with current system
- --  p.anim:add_stage("walk_turn",5,false,{21,19,22,16},{18,19,20,17},"walk")
- --  p.anim:add_stage("jump_turn",5,false,{21,19,22,16},{18,19,20,17},"jump")
- --  p.anim:add_stage("fall_turn",5,false,{21,19,22,16},{18,19,20,17},"fall")
+  -- dump fget data to an array format that can be used in tic-80 code
+ d="" for s=0,127 do d=d..fget(s).."," end printh(d,"@clip")
 end
 
 function _update60()
