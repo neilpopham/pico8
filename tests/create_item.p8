@@ -29,8 +29,8 @@ function create_moveable_item(x,y,ax,ay)
  local i=create_item(x,y)
  i.dx=0
  i.dy=0
- i.min={dx=0.05,dy=0.05,btn=5}
- i.max={dx=1,dy=2,btn=15}
+ i.min={dx=0.05,dy=0.05}
+ i.max={dx=1,dy=2}
  i.ax=ax
  i.ay=ay
  i.is={grounded=false,jumping=false,sliding=false,falling=false}
@@ -150,7 +150,8 @@ function create_moveable_item(x,y,ax,ay)
      self.is.grounded=true
      self.is.sliding=false
      self.is.falling=false
-     if self.anim.current.stage~="walk_turn" then
+     --if self.anim.current.stage~="walk_turn" then
+     if not self.anim.current.transitioning then
       self.anim.current:set(round(self.dx)==0 and "still" or "walk")
      end
     else
@@ -167,6 +168,8 @@ end
 
 function create_controllable_item(x,y,ax,ay)
  local i=create_moveable_item(x,y,ax,ay)
+ i.min.btn=5
+ i.max.btn=15
  i.update=function(self)
   local face=self.anim.current.face
   local stage=self.anim.current.stage
@@ -191,9 +194,7 @@ function create_controllable_item(x,y,ax,ay)
    check(self,stage,face)
    self.dx=self.dx+self.ax
   else
-   if self.is.grounded then
-    self.dx=self.dx*drag.ground
-   elseif self.jumping then
+   if self.jumping then
     self.dx=self.dx*drag.air
    else
     self.dx=self.dx*drag.ground
@@ -206,7 +207,7 @@ function create_controllable_item(x,y,ax,ay)
     self.x=self.x+round(self.dx)
     if self.is.sliding then
      self.is.sliding=false
-     if self.anim.current~="fall_turn" then
+     if not self.anim.current.transitioning then
       self.anim.current:set("fall")
      end
     end
@@ -271,7 +272,7 @@ function _init()
    self.dx=(self.dx+(self.ax*dir))*drag.ground
    self.dx=mid(-self.max.dx,self.dx,self.max.dx)
    if abs(self.dx)<self.min.dx then self.dx=self.min.dx end
-  	if self.anim.current.tick % 2==0 then
+  	if self.anim.current.tick%2==0 then
 	  	if self.canmovex(self,2) then
     	self.x=round(self.x+self.dx)
     else
@@ -289,19 +290,19 @@ end
 
 function _update60()
  p:update()
- for _,enemy in pairs(enemies) do enemy:update() end -- e:update()
+ for _,enemy in pairs(enemies) do enemy:update() end
 end
 
 function _draw()
  cls()
- 
  p:camera()
  map(0,0)
- for _,enemy in pairs(enemies) do enemy:draw() end -- e:draw()
+ for _,enemy in pairs(enemies) do enemy:draw() end
  p:draw()
  camera(0,0)
  spr(37,114,4)
  spr(38,118,4)
+
  print("stage:"..p.anim.current.stage,0,106)
  print("dir:"..p.anim.current.face,62,106)
  print("frame:"..p.anim.current.frame,0,113)
@@ -310,11 +311,6 @@ function _draw()
  print("grounded:"..(p.is.grounded and "t" or "f"),86,106)
  print("jumping:"..(p.is.jumping and "t" or "f"),86,113)
  print("sliding:"..(p.is.sliding and "t" or "f"),86,120)
---[[
- print(e.dx,0,0)
- print(e.anim.current.stage,0,10)
- print(e.anim.current.face,0,20)
-]]
 end
 
 __gfx__
