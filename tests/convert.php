@@ -14,17 +14,22 @@ function tic80_map_file_to_p8($strMapFile, $strPicoFile)
 
 function tic80_map_file_to_map($strMapFile)
 {
-    $strReturn = "__map__\n";
     $objFile = fopen($strMapFile, "r");
     $i = 1;
     $intLine = 0;
-    $arrReturn = [];
+    $arrData = [];
+    $arrPopulated = [];
+    $arrString = [];
     while (!feof($objFile)) {
         $strByte = fread($objFile, 1);
         $arrUnpack = unpack("H*", $strByte);
-        $arrReturn[$intLine][] = $arrUnpack[1];
+        $arrData[$intLine][] = $arrUnpack[1];
         $i++;
         if ($i > TIC_MAP_WIDTH) {
+            $arrData[$intLine] = array_slice($arrData[$intLine], 0, PICO_MAP_WIDTH);
+            $arrString[$intLine] = implode("", $arrData[$intLine]);
+            //print $arrString[$intLine] . "\n";
+            $arrPopulated[$intLine] = 1 == preg_match('/[1-9a-f]/', $arrString[$intLine]);
             $intLine++;
             if ($intLine == PICO_MAP_HEIGHT) {
                 break;
@@ -32,13 +37,18 @@ function tic80_map_file_to_map($strMapFile)
             $i=1;
         }
     }
-    foreach ($arrReturn as $intLine => $arrData) {
-        $arrReturn[$intLine] = array_slice($arrData, 0, PICO_MAP_WIDTH);
-        $strLine = implode("",  $arrReturn[$intLine]);
-        if (preg_match('/[1-9a-f]/', $strLine)) {
-            $strReturn .= $strLine . "\n";
+    $strReturn = "";
+    $blnActive = false;
+    $intMax = count($arrData) - 1;
+    for ($intLine = $intMax; $intLine >= 0; $intLine--) {
+        if ($blnActive || $arrPopulated[$intLine]) {
+            if ($arrPopulated[$intLine]) {
+               $blnActive = true;
+            }
+            $strReturn = $arrString[$intLine] . "\n" . $strReturn;
         }
     }
+    $strReturn = "__map__\n" . $strReturn;
     return $strReturn;
 }
 
@@ -62,7 +72,7 @@ function pico8_map_to_map_file($strCode, $strMapFile)
 function pico8_gff_to_text_file($strCode, $strTextFile)
 {
     $strTable = pico8_gff_to_table($strCode);
-    if ($strTable) {
+    if (!empty($strTable)) {
         file_put_contents($strTextFile, $strTable);
     }
 }
@@ -103,5 +113,5 @@ if (preg_match('/^(.+)\.map$/', $argv[1], $arrParts)) {
     exit(0);
 }
 
-exit("Invalid file name \"{$argv[1]}\".");
+exit("Invalid file name, \"{$argv[1]}\".");
 
