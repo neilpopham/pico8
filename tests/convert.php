@@ -18,7 +18,6 @@ function tic80_map_file_to_map($strMapFile)
     $i = 1;
     $intLine = 0;
     $arrData = [];
-    $arrPopulated = [];
     $arrString = [];
     while (!feof($objFile)) {
         $strByte = fread($objFile, 1);
@@ -28,8 +27,6 @@ function tic80_map_file_to_map($strMapFile)
         if ($i > TIC_MAP_WIDTH) {
             $arrData[$intLine] = array_slice($arrData[$intLine], 0, PICO_MAP_WIDTH);
             $arrString[$intLine] = implode("", $arrData[$intLine]);
-            //print $arrString[$intLine] . "\n";
-            $arrPopulated[$intLine] = 1 == preg_match('/[1-9a-f]/', $arrString[$intLine]);
             $intLine++;
             if ($intLine == PICO_MAP_HEIGHT) {
                 break;
@@ -41,8 +38,8 @@ function tic80_map_file_to_map($strMapFile)
     $blnActive = false;
     $intMax = count($arrData) - 1;
     for ($intLine = $intMax; $intLine >= 0; $intLine--) {
-        if ($blnActive || $arrPopulated[$intLine]) {
-            if ($arrPopulated[$intLine]) {
+        if ($blnActive || (1 == preg_match('/[1-9a-f]/', $arrString[$intLine]))) {
+            if (!$blnActive) {
                $blnActive = true;
             }
             $strReturn = $arrString[$intLine] . "\n" . $strReturn;
