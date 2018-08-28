@@ -51,6 +51,12 @@ const TIC_MAP_HEIGHT = 136;
 const PICO_MAP_WIDTH = 128;
 const PICO_MAP_HEIGHT = 32;
 
+function tic80_map_file_to_p8($strMapFile, $strPicoFile)
+{
+    $strReturn = tic80_map_file_to_map($strMapFile);
+    file_put_contents($strPicoFile, $strReturn);
+}
+
 function tic80_map_file_to_map($strMapFile)
 {
     $strReturn = "__map__\n";
@@ -98,14 +104,17 @@ function pico8_map_to_map_file($strCode, $strMapFile)
 function pico8_gff_to_text_file($strCode, $strTextFile)
 {
     $strTable = pico8_gff_to_table($strCode);
-    file_put_contents($strTextFile, $strTable);
+    if ($strTable) {
+        file_put_contents($strTextFile, $strTable);
+    }
 }
 
 function pico8_gff_to_table($strCode)
 {
-    $strReturn = "sprf={";
-    $arrData = [];
+    $strReturn = "";
     if (preg_match('/__gff__([\n\r]([\da-f]+[\n\r+])+)/', $strCode, $arrMatches)) {
+        $strReturn = "sprf={";
+        $arrData = [];
         if (preg_match_all('/([\da-f]+)[\n\r]/', $arrMatches[1], $arrLines)) {
             foreach ($arrLines[1] as $i => $strLine) {
                 for ($i=0; $i < strlen($strLine); $i+=2) {
@@ -119,9 +128,10 @@ function pico8_gff_to_table($strCode)
                 }
             }
         }
+        $strReturn .= implode(",", $arrData);
+        $strReturn .= "}";
     }
-    $strReturn .= implode(",", $arrData);
-    $strReturn .= "}";
+
     return $strReturn;
 }
 
@@ -137,8 +147,7 @@ if (preg_match('/^(.+)\.p8$/', $argv[1], $arrParts)) {
 }
 
 if (preg_match('/^(.+)\.map$/', $argv[1], $arrParts)) {
-    $strCode = tic80_map_file_to_map($argv[1]);
-    file_put_contents($argv[1] . ".p8", $strCode);
+    tic80_map_file_to_p8($argv[1], $argv[1] . ".p8");
     exit(0);
 }
 
