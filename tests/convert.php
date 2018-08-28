@@ -1,50 +1,5 @@
 <?php
 
-
-
-//$strPadding = str_repeat("0", 224);
-
-/*
-for sure, the cartridge consists of chunks, every has 4-byte header (1 byte - type, 3 bytes - size) and data
-
-chunk types:
-1 - tiles
-2 - sprites
-3- cover
-4 - map
-5 - code
-9 - sfx
-10 - waveforms
-11 - music
-
-
-$objFile = fopen("map.tic", "r");
-fseek($objFile, 0);
-$strType = fread($objFile, 1);
-$strLength = fread($objFile, 3);
-$x = unpack("H*", $strType);
-print_r($x);
-$x = unpack("H*", $strLength);
-print_r($x);
-$y = base_convert($x[1], 16, 10);
-print_r($y);
-
-fclose($objFile);
-exit();
-
-$x = file_get_contents("map.p8");
-pico8_map_to_map_file($x, "map.data");
-
-echo tic80_map_file_to_map("map.data");
-exit;
-
-$x = file_get_contents("map.p8");
-pico8_map_to_map_file($x, "map.data");
-
-$x = file_get_contents("flags.p8");
-echo pico8_gff_to_table($x);
-*/
-
 const TIC_MAP_WIDTH = 240;
 const TIC_MAP_HEIGHT = 136;
 
@@ -61,8 +16,8 @@ function tic80_map_file_to_map($strMapFile)
 {
     $strReturn = "__map__\n";
     $objFile = fopen($strMapFile, "r");
-    $i=1;
-    $intLine=0;
+    $i = 1;
+    $intLine = 0;
     $arrReturn = [];
     while (!feof($objFile)) {
         $strByte = fread($objFile, 1);
@@ -71,6 +26,9 @@ function tic80_map_file_to_map($strMapFile)
         $i++;
         if ($i > TIC_MAP_WIDTH) {
             $intLine++;
+            if ($intLine == PICO_MAP_HEIGHT) {
+                break;
+            }
             $i=1;
         }
     }
@@ -118,13 +76,7 @@ function pico8_gff_to_table($strCode)
         if (preg_match_all('/([\da-f]+)[\n\r]/', $arrMatches[1], $arrLines)) {
             foreach ($arrLines[1] as $i => $strLine) {
                 for ($i=0; $i < strlen($strLine); $i+=2) {
-                    $strValue = substr($strLine, $i, 2);
-                    /*
-                    if ($strValue != "00") {
-                        $arrData[] = ($i + 1) . "=" . base_convert($strValue, 16, 10);
-                    }
-                    */
-                    $arrData[] = base_convert($strValue, 16, 10);
+                    $arrData[] = base_convert(substr($strLine, $i, 2), 16, 10);
                 }
             }
         }
