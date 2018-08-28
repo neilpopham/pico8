@@ -312,6 +312,28 @@ function _init()
  p.anim:add_stage("jump_fall",5,false,{2,3},{8,9},"fall")
  p.anim:init("still",dir.right)
 
+ gems={}
+ local x local y
+ for x=0,63 do for y=0,31 do
+  local s=mget(x,y)
+  if s==62 then
+   mset(x,y,0)
+   local g=create_moveable_item(x*8,y*8,0,0)
+   g.anim:add_stage("still",1,false,{62},{})
+   g.anim:add_stage("walk",1,false,{61},{})
+   g.anim:init("still",dir.left)
+   g.update=function(self)
+    assert(self.x>0, self.x..self.y)
+    if p.x>=self.x and p.x<=(self.x+7) and p.y>=self.y and p.y<=(self.y+7) then
+     assert(true, self.x..self.y)
+     g.anim.current:set("walk")
+    end 
+   end
+   --table.insert(gems, g)
+   gems[#gems+1]=g
+  end
+ end end
+
  enemies={{64,64},{24,88},{32,16}}
  for i,enemy in pairs(enemies) do
   enemies[i]=create_moveable_item(enemy[1],enemy[2],0.2,-1.75)
@@ -348,6 +370,7 @@ end
 
 function _update60()
  p:update()
+ for _,gem in pairs(gems) do gem:update() end
  --for _,enemy in pairs(enemies) do enemy:update() end
 end
 
@@ -358,6 +381,7 @@ function _draw()
  --for _,enemy in pairs(enemies) do enemy:draw() end
  --for _,water in pairs(waters) do water:draw() end
  p:draw()
+ for _,gem in pairs(gems) do gem:draw() end
  camera(0,0)
 
  print("stage:"..p.anim.current.stage,0,0)
