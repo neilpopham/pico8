@@ -122,8 +122,7 @@ function create_moveable_item(x,y,ax,ay)
   if self.is.invisible then return end
   sprite=self.animate(self)
   spr(sprite,self.x,self.y)
-  if self.is.sliding then -- and (self.dy==self.max.dy) then
-   --self.smoke.anim.stage.smoking.ticks=2+round(4/self.dy)
+  if self.is.sliding then
    sprite=self.smoke:animate()
    spr(sprite,self.x,self.y-8)
   end
@@ -398,7 +397,8 @@ function _init()
    p.y=y*8
   end
  end end
-
+ 
+--[[
  enemies={{64,64},{24,88},{32,16}}
  for i,enemy in pairs(enemies) do
   enemies[i]=create_moveable_item(enemy[1],enemy[2],0.2,-1.75)
@@ -410,9 +410,9 @@ function _init()
    self.dx=(self.dx+(self.ax*dir))*drag.ground
    self.dx=mid(-self.max.dx,self.dx,self.max.dx)
    if abs(self.dx)<self.min.dx then self.dx=self.min.dx end
-    if self.anim.current.tick%2==0 then
-        if self.can_move_x(self,2) then
-        self.x=round(self.x+self.dx)
+   if self.anim.current.tick%2==0 then
+    if self.can_move_x(self,2) then
+     self.x=round(self.x+self.dx)
     else
      self.dx=0
      self.anim.current.face=self.anim.current.face==1 and 2 or 1
@@ -420,7 +420,7 @@ function _init()
     end
    end
   end
- end
+ end 
 
  waters={{64,32},{72,32},{80,32}}
  for i,water in pairs(waters) do
@@ -428,6 +428,7 @@ function _init()
   waters[i].anim:add_stage("still",5,true,{44,45,46,47},{})
   waters[i].anim:init("still",dir.left)
  end
+]]
 
  -- dump fget data to an array format that can be used in tic-80 code
  -- d="" for s=0,127 do d=d..fget(s).."," end printh(d,"@clip")
