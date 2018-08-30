@@ -4,6 +4,8 @@ __lua__
 -- ping
 -- by neil popham
 
+local screen={width=128,height=128}
+
 -- http://pico-8.wikia.com/wiki/btn
 local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 
@@ -21,7 +23,7 @@ function create_camera(item)
   x=item.x,
   y=item.y,
   buffer=16,
-  min={x=64,y=64},
+  min={x=screen.width/2,y=screen.height/2},
   max={x=128,y=128,shift=2}
  }
  c.update=function(self)
@@ -53,7 +55,7 @@ function create_camera(item)
   end
  end
  c.position=function(self)
-  return self.x-64,self.y-64
+  return self.x-self.min.x,self.y-self.min.y
  end
  return c
 end
