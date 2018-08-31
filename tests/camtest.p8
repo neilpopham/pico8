@@ -4,6 +4,8 @@ __lua__
 -- 
 -- by neil popham
 
+function round(x) return flr(x+0.5) end
+
 local screen={width=128,height=128}
 
 function create_camera(item,x,y)
@@ -12,10 +14,9 @@ function create_camera(item,x,y)
   x=item.x,
   y=item.y,
   buffer=16,
-  min={x=flr(screen.width/2)-4,y=flr(screen.height/2)-4},
-  tiles={width=flr(screen.width/8),height=flr(screen.height/8)}
- }
- c.max={x=x-c.min.x-8,y=y-c.min.y-8,shift=2}
+  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}
+ }  --min={x=round(screen.width/2)-4,y=round(screen.height/2)-4},
+ c.max={x=x-c.min.x,y=y-c.min.y,shift=2}
  c.update=function(self)
   self.min_x = self.x-self.buffer
   self.max_x = self.x+self.buffer
