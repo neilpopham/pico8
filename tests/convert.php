@@ -87,6 +87,14 @@ function pico8_gff_to_table($strCode)
                 }
             }
         }
+        $arrReverse = array_reverse($arrData);
+        foreach ($arrReverse as $i => $intValue) {
+            if ($intValue > 0) {
+                break;
+            }
+            unset($arrReverse[$i]);
+        }
+        $arrData = array_reverse($arrReverse);
         $strReturn .= implode(",", $arrData);
         $strReturn .= "}";
     }
