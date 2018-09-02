@@ -150,6 +150,7 @@ function create_moveable_item(x,y,ax,ay)
      end
     end
    end
+   printh(current.stage.."."..current.frame) -- ############################
   end
   return face.frames[current.frame]
  end
@@ -293,8 +294,10 @@ function create_controllable_item(x,y,ax,ay)
   end
   if self.btn.tick>=self.min.btn
    and self.btn.tick<=self.max.btn then
+   if self.is.jumping==false then
+    self.anim.current:set("jump")
+   end
    self:set_state("jumping")
-   self.anim.current:set("jump")
    self.dy=self.dy+self.ay
   end
   if self.is.sliding then
@@ -322,7 +325,10 @@ function create_controllable_item(x,y,ax,ay)
       if self.is.jumping then
        self.anim.current:set("jump_fall")
       else
-       self.anim.current:set("fall")
+       --if self.anim.current.transitioning==false then
+       if self.is.falling==false then 
+        self.anim.current:set("fall")
+       end
       end
       self:set_state("falling")
      end
