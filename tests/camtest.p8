@@ -15,7 +15,7 @@ function create_camera(item,x,y)
   y=item.y,
   buffer=16,
   min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}
- }  --min={x=round(screen.width/2)-4,y=round(screen.height/2)-4},
+ }
  c.max={x=x-c.min.x,y=y-c.min.y,shift=2}
  c.update=function(self)
   self.min_x = self.x-self.buffer
@@ -44,11 +44,18 @@ function create_camera(item,x,y)
   elseif self.y>self.max.y then
    self.y=self.max.y
   end
- end 
+ end
+ c.update=function(self)
+  self.x=mid(self.min.x,self.target.x,self.max.x)
+  self.y=mid(self.min.y,self.target.y,self.max.y)
+ end
  c.position=function(self)
   return self.x-self.min.x,self.y-self.min.y
  end
-
+ c.map=function(self)
+  camera(self.x-self.min.x,self.y-self.min.y)
+  map(0,0)
+ end
  return c
 end
 
@@ -76,8 +83,10 @@ end
 function _draw()
  cls()
  
- camera(p.camera:position())
- map(0,0)
+ --camera(p.camera:position())
+ --map(0,0)
+ p.camera:map()
+
  spr(1,p.x,p.y)
 
  camera(0,0)
@@ -90,11 +99,12 @@ function _draw()
  print("max x:"..p.camera.max.x,0,14)
  print("y:"..p.camera.max.y,60,14)
 
- print("min_x:"..p.camera.min_x,0,30)
- print("max_x:"..p.camera.max_x,60,30)
-
- print("min_y:"..p.camera.min_y,0,37)
- print("max_y:"..p.camera.max_y,60,37)
+ if type(p.camera.min_x)~="nil" then
+  print("min_x:"..p.camera.min_x,0,30)
+  print("max_x:"..p.camera.max_x,60,30)
+  print("min_y:"..p.camera.min_y,0,37)
+  print("max_y:"..p.camera.max_y,60,37)
+ end
 
  print ("player x:"..p.x,0,110)
  print ("y:"..p.y,60,110) 
