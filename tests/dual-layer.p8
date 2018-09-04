@@ -6,20 +6,25 @@ __lua__
 
 local tx=0 local ty=0
 
+function round(x) return flr(x+0.5) end
+
 function _init()
  p={x=24,y=24,dx=0,dy=0}
 end
 
 function _update60()
- p.dx=0 p.dy=0
+ -- p.dx=0 p.dy=0
 
- if btn(0) then p.dx=-3 end
- if btn(1) then p.dx=3 end
- if btn(2) then p.dy=-3 end
- if btn(3) then p.dy=3 end 
+ if btn(0) then p.dx=p.dx-0.2 end
+ if btn(1) then p.dx=p.dx+0.2 end
+ if btn(2) then p.dy=p.dy-0.2 end
+ if btn(3) then p.dy=p.dy+0.2 end
+ 
+ p.dx=mid(-3,p.dx*0.9,3)
+ p.dy=mid(-3,p.dy*0.9,3)
 
  if p.dx~=0 then
-  local x=p.x+p.dx
+  local x=p.x+round(p.dx)
   local dx=p.dx
   if p.dx>0 then x=x+7 end
   for _,cy in pairs({p.y,p.y+7}) do
@@ -40,10 +45,10 @@ function _update60()
   p.dx=dx
  end
 
- if p.dx~=0 then p.x=p.x+p.dx end
+ if p.dx~=0 then p.x=p.x+round(p.dx) end
 
  if p.dy~=0 then 
-  local y=p.y+p.dy
+  local y=p.y+round(p.dy)
   if p.dy>0 then y=y+7 end
   for _,cx in pairs({p.x,p.x+7}) do
    tx=flr(cx/8)
@@ -62,7 +67,7 @@ function _update60()
   end
  end
 
- if p.dy~=0 then p.y=p.y+p.dy end
+ if p.dy~=0 then p.y=p.y+round(p.dy) end
 
 end
 
@@ -80,6 +85,9 @@ function _draw()
  print(fget(tile,5) and 1 or 0,53,1,13)
  print(fget(tile,6) and 1 or 0,63,1,14)
  print(fget(tile,7) and 1 or 0,73,1,15)
+ 
+ print(p.dx,0,50)
+ print(p.dy,30,50)
 end
 
 __gfx__
