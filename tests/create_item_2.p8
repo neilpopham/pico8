@@ -17,9 +17,9 @@ function create_camera(item,width,height)
   x=item.x,
   y=item.y,
   buffer={x=16,y=16},
-  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)},
-  max={x=x-c.min.x,y=y-c.min.y,shift=2}
+  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}  
  } 
+ c.max={x=width-c.min.x,y=height-c.min.y,shift=2}
  c.update=function(self)
   self.x=mid(self.min.x,self.target.x,self.max.x)
   self.y=mid(self.min.y,self.target.y,self.max.y)
@@ -28,6 +28,7 @@ function create_camera(item,width,height)
   camera(self.x-self.min.x,self.y-self.min.y)
   map(0,0)
  end
+ return c
 end
 
 function create_counter(min,max)
@@ -37,8 +38,10 @@ function create_counter(min,max)
   max=max,
  }
  t.increment=function(self)
-  if self.tick==self.max then return end
   self.tick=self.tick+1
+  if self.tick>self.max then
+   self:reset()
+  end 
  end
  t.reset=function(self)
   self.tick=0
@@ -50,23 +53,33 @@ function create_counter(min,max)
 end
 
 function create_button(index)
- local b=create_counter(5,20)
+ local b=create_counter(2,20)
  b.index=index
+ b.released=true
  b.check=function(self)
   if btn(self.index) then
-   self:increment()
+   if self.tick==0 and not self.released then return end
+   self:increment()   
+   self.released=false
   else
-   self:reset()
+   self:reset()  
+   self.released=true
   end
  end
  b.pressed=function(self)
+  --[[
+  if not self:valid() then
+   return false
+  end
+  return true
+  ]]
   return self:valid()
  end
  return b
 end
 
 function create_item(x,y)
- local i={x=x,y=y,hitbox={x=0,y=0,w=8,h=8}}
+ local i={x=x,y=y,hitbox={x=0,y=0,w=8,h=8,x2=7,y2=7}}
  i.add_hitbox=function(self,w,h,x,y)
   x=x or 0
   y=y or 0
@@ -108,10 +121,11 @@ function create_movable_item(x,y,ax,ay)
      and object.y<y+hitbox.h
      and object.y+object.hitbox.h>y
  end
+ return i
 end
 
 function create_controllable_item(x,y,ax,ay)
- i=create_movable_item(x,y,ax,ay)
+ local i=create_movable_item(x,y,ax,ay)
  i.btn1=create_button(pad.btn1)
  i.update=function(self)
   -- horizontal
@@ -134,10 +148,11 @@ function create_controllable_item(x,y,ax,ay)
   end
 
   -- button
-  self.btn1:test()
+  self.btn1:check()
   if self.btn1:pressed() then
    -- do something
   end
+
  end
 end
 
