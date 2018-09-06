@@ -92,8 +92,10 @@ function create_button(index)
  local b=create_counter(2,20)
  b.index=index
  b.released=true
+ b.disabled=false
  b.check=function(self)
   if btn(self.index) then
+   if self.disabled then return end
    if self.tick==0 and not self.released then return end
    self:increment()
    self.released=false
@@ -118,7 +120,7 @@ function create_button(index)
   return self:valid()
  end
  b.on_max=function(self)
-  printh("on_max") -- ###################################
+  printh("button.on_max") -- ###################################
  end
  return b
 end
@@ -148,11 +150,11 @@ function create_movable_item(x,y,ax,ay)
   falling=false,
   invisible=false
  }
- i.slide=create_counter(1,15)
+ i.slide=create_counter(1,200)
  i.slide.on_max=function(self)
   printh("slide timeout") -- #####################################################
  end
- i.preslide=create_counter(1,50)
+ i.preslide=create_counter(1,15)
  i.preslide.on_max=function(self)
   printh("preslide timeout") -- #####################################################
  end
@@ -290,6 +292,13 @@ function create_controllable_item(x,y,ax,ay)
  i.btn1.on_long=function(self)
   printh("long press") -- ###########################
  end
+ i.btn2=create_button(pad.btn2)
+ i.btn2.on_short=function(self)
+  printh("btn2 short press") -- ###########################
+ end
+ i.btn2.on_long=function(self)
+  printh("btn2 long press") -- ###########################
+ end
  i.max.prejump=5 -- ticks allowed before hitting ground to jump
  i.can_jump=function(self)
   --if true then return true end
@@ -304,17 +313,19 @@ function create_controllable_item(x,y,ax,ay)
    self.btn1.tick=self.btn1.min
    return true
   end
-  if self.is.falling
-   and self.dx~=0
-   and self.slide:valid() then
-   printh("can jump: sliding") -- ###########################
-   return true
-  end
-  if self.is.falling
+  if self.is.grounded
    and self.cayote:valid() then
    printh("can jump: cayote") -- ###########################
    return true
+  end 
+  local face=self.anim.current.face 
+  if self.is.sliding
+   and self.slide:valid()
+   and ((self.dx>0 and face==1) or (self.dx<0 and face==2)) then
+   printh("can jump: sliding") -- ###########################
+   return true
   end
+
   return false
  end
  i.update=function(self)
@@ -344,19 +355,21 @@ function create_controllable_item(x,y,ax,ay)
    check(self,stage,face)
    self.dx=self.dx+self.ax
   else
-   if self.is.jumping then
+   if self.is.jumping or self.is.falling then
     self.dx=self.dx*drag.air
    else
     self.dx=self.dx*drag.ground
+    --[[
     if self.is.sliding then
      self.dx=0
      self:set_state("falling")
      self.anim.current:set("fall")
     end
+    ]]
    end
   end
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-   move=self:can_move_x()
+  move=self:can_move_x()
   if move.ok then -- we can move
    self.x=self.x+round(self.dx)
   else -- can't move horizontally
@@ -366,29 +379,9 @@ function create_controllable_item(x,y,ax,ay)
      printh("hit a slide wall") -- #################################
      if not self.is.sliding then
       self.preslide:increment()
-     end
-     if self.preslide:valid() then
-       self.dy=0
-       self.preslide:increment()
-     else
       self.slide:increment()
      end
-     --[[
-
-     once preslide has maxed we want slide to start
-     we don't want preslide to be able to start again until we hit another wall
-     need to stop increment once counter has run (only increment if vvalid?)
-
-     if self.is.sliding then
-      self.slide:increment()
-     else
-      if self.preslide:valid() then
-       self.dy=0
-      end
-      self.slide:reset()
-      self.preslide:reset()
-     end
-     ]]
+     if self.is.jumping then self.dy=0 end
      local face=self.dx<0 and 1 or 2
      self.anim.current.face=face
      self.anim.current:set("wall")
@@ -403,14 +396,19 @@ function create_controllable_item(x,y,ax,ay)
     self.anim.current:set("jump")
    end
    self:set_state("jumping")
+   self.preslide.tick=self.preslide.min
+   self.slide.tick=self.slide.min   
    self.dy=self.dy+self.ay
   else
+   if self.is.jumping or self.is.falling then
+    self.btn1.disabled=true
+   else
+    self.btn1.disabled=false
+   end
    if self.is.jumping then
     if self.dy>0 then -- if we're now falling -- may be able to remove this as transition may eat up the time
-     if not self.is.sliding then
-      self.anim.current:set("jump_fall")
-      self:set_state("falling")
-     end
+     self.anim.current:set("jump_fall")
+     self:set_state("falling")
     end
    end
   end
@@ -428,9 +426,18 @@ function create_controllable_item(x,y,ax,ay)
       self:set_state("falling")
      end
     else
-     if not self.is.sliding then
+     if self.is.sliding then
+      if self.preslide:valid() then
+        self.dy=0
+        self.preslide:increment()
+      else
+       self.slide:increment()
+      end
+     else
       self.anim.current:set("fall")
       self:set_state("falling")
+      --self.preslide:reset()
+      --self.slide:reset()
      end
     end
    else -- self.dy<0
@@ -446,12 +453,21 @@ function create_controllable_item(x,y,ax,ay)
     end
     self:set_state("grounded")
     self.cayote:reset()
+    self.preslide:reset()
+    self.slide:reset()
+    self.btn1.disabled=false
    else -- self.dy<0
-    --self.btn1:reset()
+    self.btn1:reset()
     self.dy=0
     self.anim.current:set("fall")
     self:set_state("falling")
    end
+  end
+
+  if self.btn2:pressed() then
+   d=create_movable_item(self.x,self.y,1,1)
+   d.anim:add_stage("still",1,false,{6},{12})
+   d.anim:init("still",dir.right)
   end
  end
  return i
@@ -475,7 +491,7 @@ function _init()
  p.anim:add_stage("walk",5,true,{1,2,3,4,5,6},{7,8,9,10,11,12})
  p.anim:add_stage("jump",1,false,{1},{7})
  p.anim:add_stage("fall",1,false,{32},{33})
- p.anim:add_stage("wall",1,false,{13},{28})
+ p.anim:add_stage("wall",1,false,{32},{33})
  p.anim:add_stage("walk_turn",5,false,{20,18,21,6},{17,18,19,12},"still")
  p.anim:add_stage("jump_turn",5,false,{25,26,27},{22,23,24},"jump")
  p.anim:add_stage("fall_turn",5,false,{25,26,27},{22,23,24},"fall")
@@ -484,7 +500,7 @@ function _init()
  p.anim:init("still",dir.right)
 
  -- camera
- p.camera=create_camera(p,320,320)
+ p.camera=create_camera(p,192,192)
 
  local x local y
  for x=0,63 do for y=0,31 do
@@ -597,6 +613,9 @@ function _draw()
  --print("camera:"..p.camera.x..","..p.camera.y,0,21)
  print("preslide:"..p.preslide.tick,0,28)
  print("slide:"..p.slide.tick,0,35)
+ print("cayote:"..p.cayote.tick,0,42)
+
+ print("disabled:"..(p.btn1.disabled and "t" or "f"),0,60)
 end
 
 __gfx__
