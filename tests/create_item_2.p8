@@ -20,23 +20,52 @@ function create_camera(item,width,height)
   min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}  
  } 
  c.max={x=width-c.min.x,y=height-c.min.y,shift=2}
+ --[[
+ c.update=function(self)
+  local min_x = self.x-self.buffer.x
+  local max_x = self.x+self.buffer.x
+  local min_y = self.y-self.buffer.y
+  local max_y = self.y+self.buffer.y
+  if min_x>self.target.x then
+   self.x=self.x+min(self.target.x-min_x,self.max.shift)
+  end
+  if max_x<self.target.x then
+   self.x=self.x+min(self.target.x-max_x,self.max.shift)
+  end
+  if min_y>self.target.y then
+   self.y=self.y+min(self.target.y-min_y,self.max.shift)
+  end
+  if max_y<self.target.y then
+   self.y=self.y+min(self.target.y-max_y,self.max.shift)
+  end
+  if self.x<self.min.x then
+   self.x=self.min.x
+  elseif self.x>self.max.x then
+   self.x=self.max.x
+  end
+  if self.y<self.min.y then
+   self.y=self.min.y
+  elseif self.y>self.max.y then
+   self.y=self.max.y
+  end
+ end 
+ ]]
  c.update=function(self)
   self.x=mid(self.min.x,self.target.x,self.max.x)
   self.y=mid(self.min.y,self.target.y,self.max.y)
  end
+ c.position=function(self)
+  return self.x-self.min.x,self.y-self.min.y
+ end
  c.map=function(self)
-  camera(self.x-self.min.x,self.y-self.min.y)
+  camera(self:position())
   map(0,0)
  end
  return c
 end
 
 function create_counter(min,max)
- local t={
-  tick=0,
-  min=min,
-  max=max,
- }
+ local t={tick=0,min=min,max=max}
  t.increment=function(self)
   self.tick=self.tick+1
   if self.tick>self.max then
@@ -60,26 +89,29 @@ function create_button(index)
  local b=create_counter(2,20)
  b.index=index
  b.released=true
- b.check=function(self)
+b.check=function(self)
   if btn(self.index) then
    if self.tick==0 and not self.released then return end
    self:increment()   
    self.released=false
   else
-   if self.tick<11 then
-    if type(self.on_short)=="function" then
-     self:on_long()
+   if not self.released then
+    if self.tick>12 or self.tick==0 then
+     if type(self.on_long)=="function" then
+      self:on_long()
+     end
+    else
+     if type(self.on_short)=="function" then
+      self:on_short()
+     end
     end
-   else 
-    if type(self.on_long)=="function" then
-     self:on_long()
-    end
-   end 
+   end
    self:reset()  
    self.released=true
   end
  end
  b.pressed=function(self)
+  self:check()
   return self:valid()
  end
  b.on_max=function(self)
@@ -107,7 +139,7 @@ function create_movable_item(x,y,ax,ay)
  i.ax=ax
  i.ay=ay 
  i.draw=function(self)
-
+  -- draw
  end
  i.collide_map=function(self)
   local x=self.x+self.dx
@@ -131,30 +163,29 @@ function create_movable_item(x,y,ax,ay)
      and object.y<y+hitbox.h
      and object.y+object.hitbox.h>y
  end
- i.can_move=function(self,p1,p2,flag)
-  for _,p in pairs({p1,p2}) do
+ i.can_move=function(self,points,flag)
+  for _,p in pairs(points) do
    local tx=flr(p[1]/8)
    local ty=flr(p[2]/8)
    tile=mget(tx,ty)
    if fget(tile,0) then
-    return 0
-   elseif flag and fget(tile,flag) then 
-    return flag
+    return {ok=false,flag=0,tile=tile,x=tx*8,y=ty*8}
+   elseif flag and fget(tile,flag) then
+    return {ok=false,flag=flag,tile=tile,x=tx*8,y=ty*8}
    end
-   return 8
   end
+  return {ok=true,tile=tile,x=tx*8,y=ty*8}
  end
  i.can_move_x=function(self)
   local x=self.x+round(self.dx)
   if self.dx>0 then x=x+7 end
-  return self:can_move({x,self.y},{x,self.y+7},1)
+  return self:can_move({{x,self.y},{x,self.y+7}},1)
  end
  i.can_move_y=function(self)
   local y=self.y+round(self.dy)
   if self.dy>0 then y=y+7 end
-  return self:can_move({self.x,y},{self.x+7,y})
+  return self:can_move({{self.x,y},{self.x+7,y}})
  end
- 
  return i
 end
 
@@ -182,7 +213,6 @@ function create_controllable_item(x,y,ax,ay)
   end
 
   -- button
-  self.btn1:check()
   if self.btn1:pressed() then
    -- do something
   end

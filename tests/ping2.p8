@@ -4,6 +4,11 @@ __lua__
 -- ping2
 -- by neil popham
 
+-- tidy the collision/movement cross-over
+-- add cayote time
+-- add pre-land
+
+
 local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5} -- pico-8
 --local pad={left=2,right=3,up=0,down=1,btn1=4,btn2=5,btn3=6,btn4=7} -- tic-80
 
@@ -22,8 +27,8 @@ function create_camera(item,width,height)
   x=item.x,
   y=item.y,
   buffer={x=16,y=16},
-  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}  
- } 
+  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}
+ }
  c.max={x=width-c.min.x,y=height-c.min.y,shift=2}
  c.update=function(self)
   local min_x = self.x-self.buffer.x
@@ -53,19 +58,18 @@ function create_camera(item,width,height)
    self.y=self.max.y
   end
  end
+ c.position=function(self)
+  return self.x-self.min.x,self.y-self.min.y
+ end
  c.map=function(self)
-  camera(self.x-self.min.x,self.y-self.min.y)
+  camera(self:position())
   map(0,0)
  end
  return c
 end
 
 function create_counter(min,max)
- local t={
-  tick=0,
-  min=min,
-  max=max,
- }
+ local t={tick=0,min=min,max=max}
  t.increment=function(self)
   self.tick=self.tick+1
   if self.tick>self.max then
@@ -73,7 +77,7 @@ function create_counter(min,max)
    if type(self.on_max)=="function" then
     self:on_max()
    end
-  end 
+  end
  end
  t.reset=function(self)
   self.tick=0
@@ -91,7 +95,7 @@ function create_button(index)
  b.check=function(self)
   if btn(self.index) then
    if self.tick==0 and not self.released then return end
-   self:increment()   
+   self:increment()
    self.released=false
   else
    if not self.released then
@@ -105,15 +109,16 @@ function create_button(index)
      end
     end
    end
-   self:reset()  
+   self:reset()
    self.released=true
   end
  end
  b.pressed=function(self)
+  self:check()
   return self:valid()
  end
  b.on_max=function(self)
-  printh("on_max")
+  printh("on_max") -- ###################################
  end
  return b
 end
@@ -135,7 +140,7 @@ function create_movable_item(x,y,ax,ay)
  i.min={dx=0.05,dy=0.05}
  i.max={dx=1,dy=2}
  i.ax=ax
- i.ay=ay 
+ i.ay=ay
  i.is={
   grounded=false,
   jumping=false,
@@ -144,8 +149,18 @@ function create_movable_item(x,y,ax,ay)
   invisible=false
  }
  i.slide=create_counter(1,15)
- i.preslide=create_counter(1,10)
- i.cayote=create_counter(1,10)
+ i.slide.on_max=function(self)
+  printh("slide timeout") -- #####################################################
+ end
+ i.preslide=create_counter(1,50)
+ i.preslide.on_max=function(self)
+  printh("preslide timeout") -- #####################################################
+ end
+ i.cayote=create_counter(1,3)
+ i.cayote.on_max=function(self)
+  printh("cayote timeout") -- #####################################################
+  printh("cayote.max:"..self.max) -- #####################################################
+ end
  i.anim={
   init=function(self,stage,face)
    -- record frame count for each stage face
@@ -233,35 +248,35 @@ function create_movable_item(x,y,ax,ay)
      and object.y<y+hitbox.h
      and object.y+object.hitbox.h>y
  end
- i.can_move=function(self,p1,p2,flag)
-  for _,p in pairs({p1,p2}) do
+ i.can_move=function(self,points,flag)
+  for _,p in pairs(points) do
    local tx=flr(p[1]/8)
    local ty=flr(p[2]/8)
-   printh("tx:"..tx)
-   printh("ty:"..ty)
+   --printh("tx:"..tx) -- ###########################
+   --printh("ty:"..ty) -- ###########################
    tile=mget(tx,ty)
-   printh("tile:"..tile)
-   if fget(tile,0) then
-    return 0
-   elseif flag and fget(tile,flag) then 
-    return flag
+   --printh("tile:"..tile) -- ###########################
+   if flag and fget(tile,flag) then
+    return {ok=false,flag=flag,tile=tile,tx=tx*8,ty=ty*8}
+   elseif fget(tile,0) then
+    return {ok=false,flag=0,tile=tile,tx=tx*8,ty=ty*8}
    end
-   return 8
   end
+  return {ok=true}
  end
  i.can_move_x=function(self)
   local x=self.x+round(self.dx)
   if self.dx>0 then x=x+7 end
-  printh("can_move_x")
-  printh(x..","..self.y.." and "..x..","..(self.y+7))  
-  return self:can_move({x,self.y},{x,self.y+7},1)
+  --printh("can_move_x") -- ###########################
+  --printh(x..","..self.y.." and "..x..","..(self.y+7)) -- ###########################
+  return self:can_move({{x,self.y},{x,self.y+7}},1)
  end
  i.can_move_y=function(self)
   local y=self.y+round(self.dy)
   if self.dy>0 then y=y+7 end
-  printh("can_move_y")
-  printh(self.x..","..y.." and "..(self.x+7)..","..y)
-  return self:can_move({self.x,y},{self.x+7,y})
+  --printh("can_move_y") -- ###########################
+  --printh(self.x..","..y.." and "..(self.x+7)..","..y) -- ###########################
+  return self:can_move({{self.x,y},{self.x+7,y}})
  end
  return i
 end
@@ -270,21 +285,42 @@ function create_controllable_item(x,y,ax,ay)
  local i=create_movable_item(x,y,ax,ay)
  i.btn1=create_button(pad.btn1)
  i.btn1.on_short=function(self)
-  printh("short press")
+  printh("short press") -- ###########################
  end
  i.btn1.on_long=function(self)
-  printh("long press")
+  printh("long press") -- ###########################
  end
  i.max.prejump=5 -- ticks allowed before hitting ground to jump
  i.can_jump=function(self)
-  if true then return true end
-  if self.is.jumping and self.btn1:valid() then return true end
-  if self.is.grounded then return true end
+  --if true then return true end
+  if self.is.jumping
+   and self.btn1:valid() then
+   printh("can jump: jumping") -- ###########################
+   return true
+  end
+  if self.is.grounded
+   and self.btn1.tick<self.max.prejump then
+   printh("can jump: grounded") -- ###########################
+   self.btn1.tick=self.btn1.min
+   return true
+  end
+  if self.is.falling
+   and self.dx~=0
+   and self.slide:valid() then
+   printh("can jump: sliding") -- ###########################
+   return true
+  end
+  if self.is.falling
+   and self.cayote:valid() then
+   printh("can jump: cayote") -- ###########################
+   return true
+  end
   return false
  end
  i.update=function(self)
   local face=self.anim.current.face
   local stage=self.anim.current.stage
+  local move
 
   -- checks for direction change
   local check=function(self,stage,face)
@@ -296,71 +332,127 @@ function create_controllable_item(x,y,ax,ay)
      self.anim.current.transitioning=true
     end
    end
-  end  
+  end
 
   -- horizontal
   if btn(pad.left) then
+   self.anim.current.face=dir.left
+   check(self,stage,face)
    self.dx=self.dx-self.ax
   elseif btn(pad.right) then
+   self.anim.current.face=dir.right
+   check(self,stage,face)
    self.dx=self.dx+self.ax
   else
-   self.dx=self.dx*drag.ground
+   if self.is.jumping then
+    self.dx=self.dx*drag.air
+   else
+    self.dx=self.dx*drag.ground
+    if self.is.sliding then
+     self.dx=0
+     self:set_state("falling")
+     self.anim.current:set("fall")
+    end
+   end
   end
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
- 
-  if self:can_move_x()==8 then
+   move=self:can_move_x()
+  if move.ok then -- we can move
    self.x=self.x+round(self.dx)
-  else
-   
+  else -- can't move horizontally
+   self.x=move.tx+(self.dx>0 and -8 or 8)
+   if move.flag==1 then
+    if not self.is.grounded then
+     printh("hit a slide wall") -- #################################
+     if not self.is.sliding then
+      self.preslide:increment()
+     end
+     if self.preslide:valid() then
+       self.dy=0
+       self.preslide:increment()
+     else
+      self.slide:increment()
+     end
+     --[[
+
+     once preslide has maxed we want slide to start
+     we don't want preslide to be able to start again until we hit another wall
+     need to stop increment once counter has run (only increment if vvalid?)
+
+     if self.is.sliding then
+      self.slide:increment()
+     else
+      if self.preslide:valid() then
+       self.dy=0
+      end
+      self.slide:reset()
+      self.preslide:reset()
+     end
+     ]]
+     local face=self.dx<0 and 1 or 2
+     self.anim.current.face=face
+     self.anim.current:set("wall")
+     self:set_state("sliding")
+    end
+   end
   end
 
   -- jump
-  self.btn1:check()
   if self.btn1:pressed() and self:can_jump() then
+   if not self.is.jumping then
+    self.anim.current:set("jump")
+   end
    self:set_state("jumping")
    self.dy=self.dy+self.ay
   else
    if self.is.jumping then
-    self:set_state("falling")
+    if self.dy>0 then -- if we're now falling -- may be able to remove this as transition may eat up the time
+     if not self.is.sliding then
+      self.anim.current:set("jump_fall")
+      self:set_state("falling")
+     end
+    end
    end
   end
   self.dy=self.dy+drag.gravity
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
-
-  if self:can_move_y()==8 then
-   self.y=self.y+round(self.dy)
-  else
-   
-  end
---[[
-  -- if we have a collision
-  if self:collide_map() then
-
-   -- if falling
+  move=self:can_move_y()
+  if move.ok then -- we can move
    if self.dy>0 then
-    -- force user to release and repress jump
-    -- unless they've recently (re)pressed it (pre-jump)
-    if self.is.falling
-     and self.btn1.tick>self.max.prejump then
-     self.btn1:reset()
+    if self.is.grounded then
+     self.cayote:increment()
+     if self.cayote:valid() then
+      self.dy=0
+     else
+      self.anim.current:set("fall")
+      self:set_state("falling")
+     end
+    else
+     if not self.is.sliding then
+      self.anim.current:set("fall")
+      self:set_state("falling")
+     end
     end
-
-    self:set_state("grounded")
-    self.x=self.x+round(self.dx)
-
-   -- if jumping
-   elseif self.dy<0 then
-    self:set_state("falling")
-    self.btn1:reset()
-   end 
-
-   printh("collided with map")
-
-  else
-   self.x=self.x+round(self.dx)
+   else -- self.dy<0
+    -- we're jumping i guess,
+    -- currently being set in self.btn1:pressed() and self:can_jump() check above
+   end
    self.y=self.y+round(self.dy)
+  else -- can't move vertically
+   self.y=move.ty+(self.dy>0 and -8 or 8)
+   if self.dy>0 then
+    if not self.anim.current.transitioning then
+     self.anim.current:set(round(self.dx)==0 and "still" or "walk")
+    end
+    self:set_state("grounded")
+    self.cayote:reset()
+   else -- self.dy<0
+    --self.btn1:reset()
+    self.dy=0
+    self.anim.current:set("fall")
+    self:set_state("falling")
+   end
   end
-]]
  end
  return i
 end
@@ -459,7 +551,7 @@ function _init()
     end
    end
   end
- end 
+ end
 
  waters={{64,32},{72,32},{80,32}}
  for i,water in pairs(waters) do
@@ -482,32 +574,29 @@ end
 function _draw()
  cls()
  p.camera:map()
-
- --for _,gem in pairs(gems) do gem:draw() end
  p:draw()
 
+ --for _,gem in pairs(gems) do gem:draw() end
+
+ -- hud
  camera(0,0)
  spr(62,98,1)
  --print(sub("0"..gem_count,-2).."'"..gem_total,107,2)
 
-
- print(p.btn1.tick,0,0,6)
-
---[[
  print("stage:"..p.anim.current.stage,0,0)
  print("dir:"..p.anim.current.face,62,0)
  print("frame:"..p.anim.current.frame,0,7)
  print("t:"..p.anim.current.tick,62,7)
- print("b:"..p.btn.tick,62,14)
+ print("b:"..p.btn1.tick,62,14)
  print("dx:"..p.dx,0,14) print("dy:"..p.dy,30,14)
  print("grounded:"..(p.is.grounded and "t" or "f"),86,0)
  print("jumping:"..(p.is.jumping and "t" or "f"),86,7)
  print("falling:"..(p.is.falling and "t" or "f"),86,14)
  print("sliding:"..(p.is.sliding and "t" or "f"),86,21)
 
- print("camera:"..p.camera.x..","..p.camera.y,0,21)
- print("slide:"..p.slide.tick,0,28)
---]]
+ --print("camera:"..p.camera.x..","..p.camera.y,0,21)
+ print("preslide:"..p.preslide.tick,0,28)
+ print("slide:"..p.slide.tick,0,35)
 end
 
 __gfx__
