@@ -41,13 +41,17 @@ function create_counter(min,max)
   self.tick=self.tick+1
   if self.tick>self.max then
    self:reset()
+   if type(self.on_max)=="function" then
+    self:on_max()
+   end
   end 
  end
  t.reset=function(self)
   self.tick=0
  end
  t.valid=function(self)
-  return self.tick>=self.min and self.tick<=self.max
+  return self.tick>=self.min
+   and self.tick<=self.max
  end
  return t
 end
@@ -62,18 +66,24 @@ function create_button(index)
    self:increment()   
    self.released=false
   else
+   if self.tick<11 then
+    if type(self.on_short)=="function" then
+     self:on_long()
+    end
+   else 
+    if type(self.on_long)=="function" then
+     self:on_long()
+    end
+   end 
    self:reset()  
    self.released=true
   end
  end
  b.pressed=function(self)
-  --[[
-  if not self:valid() then
-   return false
-  end
-  return true
-  ]]
   return self:valid()
+ end
+ b.on_max=function(self)
+  if type(self.on_long)=="function" then self:on_long() end
  end
  return b
 end
@@ -121,6 +131,30 @@ function create_movable_item(x,y,ax,ay)
      and object.y<y+hitbox.h
      and object.y+object.hitbox.h>y
  end
+ i.can_move=function(self,p1,p2,flag)
+  for _,p in pairs({p1,p2}) do
+   local tx=flr(p[1]/8)
+   local ty=flr(p[2]/8)
+   tile=mget(tx,ty)
+   if fget(tile,0) then
+    return 0
+   elseif flag and fget(tile,flag) then 
+    return flag
+   end
+   return 8
+  end
+ end
+ i.can_move_x=function(self)
+  local x=self.x+round(self.dx)
+  if self.dx>0 then x=x+7 end
+  return self:can_move({x,self.y},{x,self.y+7},1)
+ end
+ i.can_move_y=function(self)
+  local y=self.y+round(self.dy)
+  if self.dy>0 then y=y+7 end
+  return self:can_move({self.x,y},{self.x+7,y})
+ end
+ 
  return i
 end
 

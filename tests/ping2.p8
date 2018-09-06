@@ -70,6 +70,9 @@ function create_counter(min,max)
   self.tick=self.tick+1
   if self.tick>self.max then
    self:reset()
+   if type(self.on_max)=="function" then
+    self:on_max()
+   end
   end 
  end
  t.reset=function(self)
@@ -91,12 +94,26 @@ function create_button(index)
    self:increment()   
    self.released=false
   else
+   if not self.released then
+    if self.tick>12 or self.tick==0 then
+     if type(self.on_long)=="function" then
+      self:on_long()
+     end
+    else
+     if type(self.on_short)=="function" then
+      self:on_short()
+     end
+    end
+   end
    self:reset()  
    self.released=true
   end
  end
  b.pressed=function(self)
   return self:valid()
+ end
+ b.on_max=function(self)
+  printh("on_max")
  end
  return b
 end
@@ -194,7 +211,6 @@ function create_movable_item(x,y,ax,ay)
   end
   return face.frames[current.frame]
  end
-
  i.collide_map=function(self)
   local x=self.x+self.dx
   local y=self.y+self.dy
@@ -217,31 +233,35 @@ function create_movable_item(x,y,ax,ay)
      and object.y<y+hitbox.h
      and object.y+object.hitbox.h>y
  end
-
- i.can_move=function(self,x1,y1,x2,y2,flag)
-  for _,x in pairs({x1,x2}) do
-   for _,y in pairs({y1,y2}) do
-    local tx=flr(x/8)
-    local ty=flr(y/8)
-    tile=mget(tx,ty)
-    if fget(tile,0) then
-     return 0
-    elseif flag and fget(tile,flag) then 
-     return flag
-    end
-    return 8
+ i.can_move=function(self,p1,p2,flag)
+  for _,p in pairs({p1,p2}) do
+   local tx=flr(p[1]/8)
+   local ty=flr(p[2]/8)
+   printh("tx:"..tx)
+   printh("ty:"..ty)
+   tile=mget(tx,ty)
+   printh("tile:"..tile)
+   if fget(tile,0) then
+    return 0
+   elseif flag and fget(tile,flag) then 
+    return flag
    end
+   return 8
   end
  end
  i.can_move_x=function(self)
   local x=self.x+round(self.dx)
   if self.dx>0 then x=x+7 end
-  return self:can_move(x,self.y,x,self.y+7)
+  printh("can_move_x")
+  printh(x..","..self.y.." and "..x..","..(self.y+7))  
+  return self:can_move({x,self.y},{x,self.y+7},1)
  end
  i.can_move_y=function(self)
   local y=self.y+round(self.dy)
   if self.dy>0 then y=y+7 end
-  return self:can_move(self.x,y,self.x+7,y)
+  printh("can_move_y")
+  printh(self.x..","..y.." and "..(self.x+7)..","..y)
+  return self:can_move({self.x,y},{self.x+7,y})
  end
  return i
 end
@@ -249,8 +269,15 @@ end
 function create_controllable_item(x,y,ax,ay)
  local i=create_movable_item(x,y,ax,ay)
  i.btn1=create_button(pad.btn1)
+ i.btn1.on_short=function(self)
+  printh("short press")
+ end
+ i.btn1.on_long=function(self)
+  printh("long press")
+ end
  i.max.prejump=5 -- ticks allowed before hitting ground to jump
  i.can_jump=function(self)
+  if true then return true end
   if self.is.jumping and self.btn1:valid() then return true end
   if self.is.grounded then return true end
   return false
@@ -287,7 +314,6 @@ function create_controllable_item(x,y,ax,ay)
    
   end
 
-
   -- jump
   self.btn1:check()
   if self.btn1:pressed() and self:can_jump() then
@@ -301,6 +327,11 @@ function create_controllable_item(x,y,ax,ay)
   self.dy=self.dy+drag.gravity
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
 
+  if self:can_move_y()==8 then
+   self.y=self.y+round(self.dy)
+  else
+   
+  end
 --[[
   -- if we have a collision
   if self:collide_map() then
