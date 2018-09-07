@@ -79,8 +79,9 @@ function create_counter(min,max)
    end
   end
  end
- t.reset=function(self)
-  self.tick=0
+ t.reset=function(self,value)
+  value=value or 0
+  self.tick=value
  end
  t.valid=function(self)
   return self.tick>=self.min and self.tick<=self.max
@@ -101,7 +102,7 @@ function create_button(index)
    self.released=false
   else
    if not self.released then
-    if self.tick>12 or self.tick==0 then
+    if self.tick==0 or self.tick>12 then
      if type(self.on_long)=="function" then
       self:on_long()
      end
@@ -150,18 +151,21 @@ function create_movable_item(x,y,ax,ay)
   falling=false,
   invisible=false
  }
- i.slide=create_counter(1,200)
+ i.slide=create_counter(1,20)
+ i.slide.dir=0
  i.slide.on_max=function(self)
   printh("slide timeout") -- #####################################################
+  -- we can use i here, like i.is.grounded
  end
- i.preslide=create_counter(1,15)
+ i.preslide=create_counter(1,10)
  i.preslide.on_max=function(self)
   printh("preslide timeout") -- #####################################################
+  -- we can use i here, like i.is.grounded
  end
  i.cayote=create_counter(1,3)
  i.cayote.on_max=function(self)
   printh("cayote timeout") -- #####################################################
-  printh("cayote.max:"..self.max) -- #####################################################
+  -- we can use i here, like i.is.grounded
  end
  i.anim={
   init=function(self,stage,face)
@@ -208,6 +212,7 @@ function create_movable_item(x,y,ax,ay)
   local current=self.anim.current
   local stage=self.anim.stage[current.stage]
   local face=stage.face[current.face]
+  current.transitioning=stage.next~=nil
   if current.loop then
    current.tick=current.tick+1
    if current.tick==stage.ticks then
@@ -228,19 +233,6 @@ function create_movable_item(x,y,ax,ay)
   end
   return face.frames[current.frame]
  end
- i.collide_map=function(self)
-  local x=self.x+self.dx
-  local y=self.y+self.dy
-  local hitbox=self.hitbox
-  local x1=(x+hitbox.x)/8
-  local y1=(y+hitbox.y)/8
-  local x2=(x+hitbox.x2)/8
-  local y2=(y+hitbox.y2)/8
-  return fget(mget(x1,y1),0)
-   or fget(mget(x1,y2),0)
-   or fget(mget(x2,y2),0)
-   or fget(mget(x2,y1),0)
- end
  i.collide_object=function(self,object)
   local x=self.x+self.dx
   local y=self.y+self.dy
@@ -254,10 +246,7 @@ function create_movable_item(x,y,ax,ay)
   for _,p in pairs(points) do
    local tx=flr(p[1]/8)
    local ty=flr(p[2]/8)
-   --printh("tx:"..tx) -- ###########################
-   --printh("ty:"..ty) -- ###########################
    tile=mget(tx,ty)
-   --printh("tile:"..tile) -- ###########################
    if flag and fget(tile,flag) then
     return {ok=false,flag=flag,tile=tile,tx=tx*8,ty=ty*8}
    elseif fget(tile,0) then
@@ -269,15 +258,11 @@ function create_movable_item(x,y,ax,ay)
  i.can_move_x=function(self)
   local x=self.x+round(self.dx)
   if self.dx>0 then x=x+7 end
-  --printh("can_move_x") -- ###########################
-  --printh(x..","..self.y.." and "..x..","..(self.y+7)) -- ###########################
   return self:can_move({{x,self.y},{x,self.y+7}},1)
  end
  i.can_move_y=function(self)
   local y=self.y+round(self.dy)
   if self.dy>0 then y=y+7 end
-  --printh("can_move_y") -- ###########################
-  --printh(self.x..","..y.." and "..(self.x+7)..","..y) -- ###########################
   return self:can_move({{self.x,y},{self.x+7,y}})
  end
  return i
@@ -299,9 +284,8 @@ function create_controllable_item(x,y,ax,ay)
  i.btn2.on_long=function(self)
   printh("btn2 long press") -- ###########################
  end
- i.max.prejump=5 -- ticks allowed before hitting ground to jump
+ i.max.prejump=8 -- ticks allowed before hitting ground to jump
  i.can_jump=function(self)
-  --if true then return true end
   if self.is.jumping
    and self.btn1:valid() then
    printh("can jump: jumping") -- ###########################
@@ -309,7 +293,7 @@ function create_controllable_item(x,y,ax,ay)
   end
   if self.is.grounded
    and self.btn1.tick<self.max.prejump then
-   printh("can jump: grounded") -- ###########################
+   printh("can jump: grounded: tick:"..(self.btn1.tick)) -- ###########################
    self.btn1.tick=self.btn1.min
    return true
   end
@@ -317,11 +301,11 @@ function create_controllable_item(x,y,ax,ay)
    and self.cayote:valid() then
    printh("can jump: cayote") -- ###########################
    return true
-  end 
-  local face=self.anim.current.face 
+  end
+  local face=self.anim.current.face
   if self.is.sliding
    and self.slide:valid()
-   and ((self.dx>0 and face==1) or (self.dx<0 and face==2)) then
+   and face~=self.slide.dir then
    printh("can jump: sliding") -- ###########################
    return true
   end
@@ -340,7 +324,6 @@ function create_controllable_item(x,y,ax,ay)
     if stage=="jump_fall" then stage="fall" end
     if not self.anim.current.transitioning then
      self.anim.current:set(stage.."_turn")
-     self.anim.current.transitioning=true
     end
    end
   end
@@ -359,29 +342,27 @@ function create_controllable_item(x,y,ax,ay)
     self.dx=self.dx*drag.air
    else
     self.dx=self.dx*drag.ground
-    --[[
-    if self.is.sliding then
-     self.dx=0
-     self:set_state("falling")
-     self.anim.current:set("fall")
-    end
-    ]]
    end
   end
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+
   move=self:can_move_x()
-  if move.ok then -- we can move
+
+  -- can move horizontally
+  if move.ok then
    self.x=self.x+round(self.dx)
-  else -- can't move horizontally
+
+  -- cannot move horizontally
+  else
    self.x=move.tx+(self.dx>0 and -8 or 8)
    if move.flag==1 then
     if not self.is.grounded then
      printh("hit a slide wall") -- #################################
      if not self.is.sliding then
-      self.preslide:increment()
-      self.slide:increment()
+      self.preslide:reset(self.preslide.min)
+      self.slide:reset(self.slide.min)
+      self.slide.dir=self.dx<0 and 1 or 2
      end
-     if self.is.jumping then self.dy=0 end
      local face=self.dx<0 and 1 or 2
      self.anim.current.face=face
      self.anim.current:set("wall")
@@ -392,30 +373,23 @@ function create_controllable_item(x,y,ax,ay)
 
   -- jump
   if self.btn1:pressed() and self:can_jump() then
-   if not self.is.jumping then
-    self.anim.current:set("jump")
-   end
-   self:set_state("jumping")
-   self.preslide.tick=self.preslide.min
-   self.slide.tick=self.slide.min   
    self.dy=self.dy+self.ay
   else
-   if self.is.jumping or self.is.falling then
+   if self.is.jumping then
     self.btn1.disabled=true
    else
     self.btn1.disabled=false
    end
-   if self.is.jumping then
-    if self.dy>0 then -- if we're now falling -- may be able to remove this as transition may eat up the time
-     self.anim.current:set("jump_fall")
-     self:set_state("falling")
-    end
-   end
   end
   self.dy=self.dy+drag.gravity
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+
   move=self:can_move_y()
-  if move.ok then -- we can move
+
+  -- can move vertically
+  if move.ok then
+
+   -- moving down the screen
    if self.dy>0 then
     if self.is.grounded then
      self.cayote:increment()
@@ -425,49 +399,61 @@ function create_controllable_item(x,y,ax,ay)
       self.anim.current:set("fall")
       self:set_state("falling")
      end
-    else
-     if self.is.sliding then
-      if self.preslide:valid() then
-        self.dy=0
-        self.preslide:increment()
-      else
+    elseif self.is.sliding then
+     if self.preslide:valid() then
+       self.dy=0
+       self.preslide:increment()
+     else
+      if self.slide:valid() then
        self.slide:increment()
       end
-     else
-      self.anim.current:set("fall")
-      self:set_state("falling")
-      --self.preslide:reset()
-      --self.slide:reset()
      end
+    else
+     if not self.anim.current.transitioning then
+      self.anim.current:set(self.is.jumping and "jump_fall" or "fall")
+     end
+     self:set_state("falling")
     end
-   else -- self.dy<0
-    -- we're jumping i guess,
-    -- currently being set in self.btn1:pressed() and self:can_jump() check above
+
+   -- moving up the screen
+   else
+    if not self.is.jumping then
+     self.anim.current:set("jump")
+    end
+    self:set_state("jumping")
    end
    self.y=self.y+round(self.dy)
-  else -- can't move vertically
+
+  -- cannot move vertically
+  else
    self.y=move.ty+(self.dy>0 and -8 or 8)
    if self.dy>0 then
-    if not self.anim.current.transitioning then
-     self.anim.current:set(round(self.dx)==0 and "still" or "walk")
-    end
+    self.anim.current:set(round(self.dx)==0 and "still" or "walk")
     self:set_state("grounded")
     self.cayote:reset()
     self.preslide:reset()
     self.slide:reset()
-    self.btn1.disabled=false
    else -- self.dy<0
     self.btn1:reset()
     self.dy=0
-    self.anim.current:set("fall")
+    self.anim.current:set("jump_fall")
     self:set_state("falling")
    end
   end
 
+  -- btn 2
   if self.btn2:pressed() then
+   --[[
    d=create_movable_item(self.x,self.y,1,1)
    d.anim:add_stage("still",1,false,{6},{12})
    d.anim:init("still",dir.right)
+   ]]
+  else
+   if self.btn2.tick==0 or self.btn2.tick>12 then
+
+   else
+
+   end
   end
  end
  return i
@@ -490,12 +476,12 @@ function _init()
  p.anim:add_stage("still",1,false,{6},{12})
  p.anim:add_stage("walk",5,true,{1,2,3,4,5,6},{7,8,9,10,11,12})
  p.anim:add_stage("jump",1,false,{1},{7})
- p.anim:add_stage("fall",1,false,{32},{33})
- p.anim:add_stage("wall",1,false,{32},{33})
+ p.anim:add_stage("fall",1,false,{13},{28})
+ p.anim:add_stage("wall",1,false,{13},{28})
  p.anim:add_stage("walk_turn",5,false,{20,18,21,6},{17,18,19,12},"still")
  p.anim:add_stage("jump_turn",5,false,{25,26,27},{22,23,24},"jump")
  p.anim:add_stage("fall_turn",5,false,{25,26,27},{22,23,24},"fall")
- p.anim:add_stage("wall_turn",5,false,{29,30,31},{14,15,16},"fall")
+ p.anim:add_stage("wall_turn",5,false,{25,26,27},{22,23,24},"fall")
  p.anim:add_stage("jump_fall",5,false,{2,3},{8,9},"fall")
  p.anim:init("still",dir.right)
 
@@ -604,7 +590,7 @@ function _draw()
  print("frame:"..p.anim.current.frame,0,7)
  print("t:"..p.anim.current.tick,62,7)
  print("b:"..p.btn1.tick,62,14)
- print("dx:"..p.dx,0,14) print("dy:"..p.dy,30,14)
+ print("dx:"..round(p.dx*100),0,14) print("dy:"..round(p.dy*100),30,14)
  print("grounded:"..(p.is.grounded and "t" or "f"),86,0)
  print("jumping:"..(p.is.jumping and "t" or "f"),86,7)
  print("falling:"..(p.is.falling and "t" or "f"),86,14)
@@ -619,30 +605,30 @@ function _draw()
 end
 
 __gfx__
-0000000022288e8822288e8822288e8800000000000000000000000022288e8822288e8822288e8800000000000000000000000018888e8822288e8822288f88
-0000000033bb8e8833bb8e8833bb8e8822288e8800000000000000002288babb2288babb2288babb22288e88000000000000000013bb8e8833bbb98833b97779
-0000000022888e8822888e8822888e8833bb8e8822288e8822288e8822888e8822888e8822888e882288babb22288e8822288e88c1888e8822888e8822888f88
-0000000022288e8822288e8822288e8822888e8833bb8e8833bb8e8822288e8822288e8822288e8822888e882288babb2288babb11888e8822288e8822288e88
-0000000002222220022222200222222022288e8822888e8822888e8802222220022222200222222022288e8822888e8822888e88c18222200222222002222220
-000000000000288000288000000000000222222022288e8822288e880288000000028800000000000222222022288e8822288e88918000002880000028800000
-00000000000000000000000002882880002880000222222002222220000000000000000002882880000288000222222002222220918000002880000028800000
-00000000000002880000028800000000288000000228800000288280288000002880000000000000000002880002288002828800c10000000000000000000000
-2222222222288e8822288f880000000022288e880000000022288e8822288f8822288e8822288e8822288e8822288e8822288ee122288e8822288f8822288e88
-33bb979b33bbb98833b9777922288e8822bb979b22288e8833bbb98833b9777922bb979b22bb979b33b9777933bbb9882288a7a122bb979b33b9777933bbb988
-22888e8822888e8822888f8822bb979b22888e8833bbbe8822888e8822888f8822888e8822888e8822888e8822888e8822888e1c22888e8822888f8822888e88
-22288e8822288e8822288e8822888e8822288e8822888e8822288e8822288e8822288e8822288e8822288e8822288e8822288e1122288e8822288e8822288e88
-02222220022222200222222022288e880222222022288e880222222002222220022222200222222002222220022222200222221c022222200222222002222220
-02880000028800000028280002222220000028800222222000002880000028000028800002880000002800000002880000000219000002880000028800002880
-28800000000000000000000000288000000000000002880000000000000000000000000000000000000000000000000000000219000002880000028800000288
-0000000000028800000000000000288000288000028800000028800000280000028800000002880000002800000028800000001c000000000000000000000000
-22288e8822288e880000000010000000000000000000000100000000000000000000000000000000000000000000000011001100070007000000000000000000
+0000000022288e8822288e8822288e8800000000000000000000000022288e8822288e8822288e8800000000000000000000000022288e880000000000000000
+0000000033bb8e8833bb8e8833bb8e8822288e8800000000000000002288babb2288babb2288babb22288e88000000000000000033bb8e880000000000000000
+0000000022888e8822888e8822888e8833bb8e8822288e8822288e8822888e8822888e8822888e882288babb22288e8822288e8822888e880000000000000000
+0000000022288e8822288e8822288e8822888e8833bb8e8833bb8e8822288e8822288e8822288e8822888e882288babb2288babb22288e880000000000000000
+0000000002222220022222200222222022288e8822888e8822888e8802222220022222200222222022288e8822888e8822888e88022222200000000000000000
+000000000000288000288000000000000222222022288e8822288e880288000000028800000000000222222022288e8822288e88002880000000000000000000
+00000000000000000000000002882880002880000222222002222220000000000000000002882880000288000222222002222220000000000000000000000000
+00000000000002880000028800000000288000000228800000288280288000002880000000000000000002880002288002828800288000000000000000000000
+0000000022288e8822288f880000000022288e880000000022288e8822288f8822288e8822288e8822288e8822288e8822288e88000000000000000000000000
+0000000033bbb98833b9777922288e8822bb979b22288e8833bbb98833b9777922bb979b22bb979b33b9777933bbb9882288babb000000000000000000000000
+0000000022888e8822888f8822bb979b22888e8833bbbe8822888e8822888f8822888e8822888e8822888e8822888e8822888e88000000000000000000000000
+0000000022288e8822288e8822888e8822288e8822888e8822288e8822288e8822288e8822288e8822288e8822288e8822288e88000000000000000000000000
+00000000022222200222222022288e880222222022288e8802222220022222200222222002222220022222200222222002222220000000000000000000000000
+00000000028800000028280002222220000028800222222000002880000028000028800002880000002800000002880000028800000000000000000000000000
+00000000000000000000000000288000000000000002880000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000288000000000000002880002880000288000000288000002800000288000000028800000028000000288000000288000000000000000000000000
+22288e8822288e880000000000000000000000000000000000000000000000000000000000000000000000000000000011001100070007000000000000000000
 33bb8e882288babb00000000000000000000000000000000000000000000000000000000000000000000000000000000c700c700011001100000000000000000
-22888e8822888e8810000000000000000000000100000000000000000000000000000000000000000000000000000000cccccccc0cc00cc000000000c00c7007
-22288e8822288e8800000000100000000000000000000001000000000000000000000000000000000000000000000000cccccccccccccccc00cc00cccccccccc
-02222220022222201000000000000000000000010000000c00000000000000000000000000000000000000000000000011cc11ccccccccccc7ccc7cccccccccc
-0028800000028800c000000010000000000000000000000100000000000000000000000000000000000000000000000011111111c11cc11ccccccccc1cc11cc1
-0000000000000000100000001000000000000001000000010000000000000000000000000000000000000000000000005151515111111111cc11cc1111111111
-28800000000002881000000010000000000000010000000100000000000000000000000000000000000000000000000015151515515151511111111151515151
+22888e8822888e8800000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc0cc00cc000000000c00c7007
+22288e8822288e8800000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccccccccccc00cc00cccccccccc
+02222220022222200000000000000000000000000000000000000000000000000000000000000000000000000000000011cc11ccccccccccc7ccc7cccccccccc
+00288000000288000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111c11cc11ccccccccc1cc11cc1
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005151515111111111cc11cc1111111111
+28800000000002880000000000000000000000000000000000000000000000000000000000000000000000000000000015151515515151511111111151515151
 b3bb3bbb00000003b00000003333333300000000000000000000004a44444444000ddd00000000000000000000000000d100001d0000000000010000228e8000
 bbbbbbbb0000003bbb0000000303b3b000000000000020000000049a44444444055dd6d00000000000000000000000001000000100000000001c100028bab000
 3b3bb3b30000003bb0000000000300b00000000000088800000049aa4444444455dddd60000000000000000000000000000000000000000001c6c100228e8000

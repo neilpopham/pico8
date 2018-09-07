@@ -19,7 +19,7 @@ function _update60()
  if btn(1) then p.dx=p.dx+0.2 end
  if btn(2) then p.dy=p.dy-0.2 end
  if btn(3) then p.dy=p.dy+0.2 end
- 
+
  p.dx=mid(-3,p.dx*0.9,3)
  p.dy=mid(-3,p.dy*0.9,3)
 
@@ -33,22 +33,27 @@ function _update60()
    tile=mget(tx,ty)
    if fget(tile,0) then
     if (p.y+p.dy+4)>(8*ty) then
-     dx=(tx*8)-p.x+(p.dx<0 and 8 or -8) 
+     dx=0--(tx*8)-p.x+(p.dx<0 and 8 or -8)
     end
-   end 
+   end
    if fget(tile,1) then
     if (p.y+p.dy-4)<(8*ty) then
-     dx=(tx*8)-p.x+(p.dx<0 and 8 or -8)
+     dx=0--(tx*8)-p.x+(p.dx<0 and 8 or -8)
     end
-   end 
+   end
   end
   p.dx=dx
  end
 
- if p.dx~=0 then p.x=p.x+round(p.dx) end
+ if abs(p.dx)<0.1 then p.dx=0 end
+ if p.dx~=0 then
+  printh("dx:"..p.dx)
+  p.x=p.x+round(p.dx)
+ end
 
- if p.dy~=0 then 
+ if p.dy~=0 then
   local y=p.y+round(p.dy)
+  local dy=p.dy
   if p.dy>0 then y=y+7 end
   for _,cx in pairs({p.x,p.x+7}) do
    tx=flr(cx/8)
@@ -56,18 +61,23 @@ function _update60()
    tile=mget(tx,ty)
    if fget(tile,0) then
     if (p.y+p.dy+4)>(8*ty) then
-     p.dy=(8*ty)-4-p.y
+     dy=0--(8*ty)-4-p.y
     end
    end
    if fget(tile,1) then
     if (p.y+p.dy-4)<(8*ty) then
-     p.dy=(8*ty)+4-p.y
+     dy=0--(8*ty)+4-p.y
     end
-   end   
+   end
   end
+  p.dy=dy
  end
 
- if p.dy~=0 then p.y=p.y+round(p.dy) end
+ if abs(p.dy)<0.1 then p.dy=0 end
+ if p.dy~=0 then
+  printh("dy:"..p.dy)
+  p.y=p.y+round(p.dy)
+  end
 
 end
 
@@ -85,7 +95,7 @@ function _draw()
  print(fget(tile,5) and 1 or 0,53,1,13)
  print(fget(tile,6) and 1 or 0,63,1,14)
  print(fget(tile,7) and 1 or 0,73,1,15)
- 
+
  print(p.dx,0,50)
  print(p.dy,30,50)
 end

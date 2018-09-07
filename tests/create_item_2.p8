@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- 
+--
 -- by neil popham
 
 local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5} -- pico-8
@@ -17,8 +17,8 @@ function create_camera(item,width,height)
   x=item.x,
   y=item.y,
   buffer={x=16,y=16},
-  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}  
- } 
+  min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}
+ }
  c.max={x=width-c.min.x,y=height-c.min.y,shift=2}
  --[[
  c.update=function(self)
@@ -48,7 +48,7 @@ function create_camera(item,width,height)
   elseif self.y>self.max.y then
    self.y=self.max.y
   end
- end 
+ end
  ]]
  c.update=function(self)
   self.x=mid(self.min.x,self.target.x,self.max.x)
@@ -73,14 +73,14 @@ function create_counter(min,max)
    if type(self.on_max)=="function" then
     self:on_max()
    end
-  end 
+  end
  end
- t.reset=function(self)
-  self.tick=0
+ t.reset=function(self,value)
+  value=value or 0
+  self.tick=value
  end
  t.valid=function(self)
-  return self.tick>=self.min
-   and self.tick<=self.max
+  return self.tick>=self.min and self.tick<=self.max
  end
  return t
 end
@@ -89,14 +89,16 @@ function create_button(index)
  local b=create_counter(2,20)
  b.index=index
  b.released=true
-b.check=function(self)
+ b.disabled=false
+ b.check=function(self)
   if btn(self.index) then
+   if self.disabled then return end
    if self.tick==0 and not self.released then return end
-   self:increment()   
+   self:increment()
    self.released=false
   else
    if not self.released then
-    if self.tick>12 or self.tick==0 then
+    if self.tick==0 or self.tick>12 then
      if type(self.on_long)=="function" then
       self:on_long()
      end
@@ -106,7 +108,7 @@ b.check=function(self)
      end
     end
    end
-   self:reset()  
+   self:reset()
    self.released=true
   end
  end
@@ -115,7 +117,7 @@ b.check=function(self)
   return self:valid()
  end
  b.on_max=function(self)
-  if type(self.on_long)=="function" then self:on_long() end
+  -- do something
  end
  return b
 end
@@ -137,7 +139,7 @@ function create_movable_item(x,y,ax,ay)
  i.min={dx=0.05,dy=0.05}
  i.max={dx=1,dy=2}
  i.ax=ax
- i.ay=ay 
+ i.ay=ay
  i.draw=function(self)
   -- draw
  end
@@ -168,13 +170,13 @@ function create_movable_item(x,y,ax,ay)
    local tx=flr(p[1]/8)
    local ty=flr(p[2]/8)
    tile=mget(tx,ty)
-   if fget(tile,0) then
-    return {ok=false,flag=0,tile=tile,x=tx*8,y=ty*8}
-   elseif flag and fget(tile,flag) then
-    return {ok=false,flag=flag,tile=tile,x=tx*8,y=ty*8}
+   if flag and fget(tile,flag) then
+    return {ok=false,flag=flag,tile=tile,tx=tx*8,ty=ty*8}
+   elseif fget(tile,0) then
+    return {ok=false,flag=0,tile=tile,tx=tx*8,ty=ty*8}
    end
   end
-  return {ok=true,tile=tile,x=tx*8,y=ty*8}
+  return {ok=true}
  end
  i.can_move_x=function(self)
   local x=self.x+round(self.dx)
@@ -221,7 +223,7 @@ function create_controllable_item(x,y,ax,ay)
 end
 
 function _init()
-    
+
 end
 
 function _update()
