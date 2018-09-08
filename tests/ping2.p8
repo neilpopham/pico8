@@ -188,6 +188,7 @@ function create_movable_item(x,y,ax,ay)
    end,
    set=function(self,stage,face)
     if self.stage==stage then return end
+    printh("set:"..stage)
     self.reset(self)
     self.stage=stage
     self.face=face or self.face
@@ -324,6 +325,7 @@ function create_controllable_item(x,y,ax,ay)
     if stage=="jump_fall" then stage="fall" end
     if not self.anim.current.transitioning then
      self.anim.current:set(stage.."_turn")
+     self.anim.current.transitioning=true
     end
    end
   end
@@ -428,7 +430,9 @@ function create_controllable_item(x,y,ax,ay)
   else
    self.y=move.ty+(self.dy>0 and -8 or 8)
    if self.dy>0 then
-    self.anim.current:set(round(self.dx)==0 and "still" or "walk")
+    if not self.anim.current.transitioning then
+     self.anim.current:set(round(self.dx)==0 and "still" or "walk")
+    end
     self:set_state("grounded")
     self.cayote:reset()
     self.preslide:reset()
@@ -584,7 +588,7 @@ function _draw()
  camera(0,0)
  spr(62,98,1)
  --print(sub("0"..gem_count,-2).."'"..gem_total,107,2)
-
+--[[
  print("stage:"..p.anim.current.stage,0,0)
  print("dir:"..p.anim.current.face,62,0)
  print("frame:"..p.anim.current.frame,0,7)
@@ -602,6 +606,7 @@ function _draw()
  print("cayote:"..p.cayote.tick,0,42)
 
  print("disabled:"..(p.btn1.disabled and "t" or "f"),0,60)
+ ]]
 end
 
 __gfx__
