@@ -582,6 +582,8 @@ function _draw()
  p.camera:map()
  p:draw()
 
+ --rect(p.x+p.hitbox.x,p.y+p.hitbox.y,p.x+p.hitbox.x2,p.y+p.hitbox.y2,7)
+
  --for _,gem in pairs(gems) do gem:draw() end
 
  -- hud
