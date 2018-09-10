@@ -4,27 +4,6 @@ __lua__
 --
 -- by neil popham
 
---[[
-
-system
-
-creator
-
-emitter
-creates the particles
-
-affector
-affects the path of the particle
-
-particle
-a type of particle
-
-
-we create multiple emitters and affectors
-
-]]
-
-
 particle_types={}
 particle_types.core=function(self,x,y,ax,ay)
  local t={x=x,y=y,ax=ax,ay=ay}
@@ -39,26 +18,8 @@ particle_types.smoke=function(self,x,y,ax,ay)
  t.size=flr(rnd(3))+2
  t.step=(t.max-t.size)/t.lifespan
  t.angle=360/(flr(rnd(359))+1)
- printh(t.angle)
- printh(sin(t.angle))
- printh(cos(t.angle))
- printh("--")
- --t.speed=0
- --t.max=24
- --t.inner={delay=0,angle=0,speed=0}
-
- t.update=function(self)
-
- end
  t.draw=function(self)
-  --draw main white circle
-  --draw outer silver circle
-  --draw outer grey circle
-  --draw inner grey circle
-  --draw inner silver circle
-
   if self.lifespan==0 then return end
-
   circfill(self.x,self.y,self.size,1)
   if self.size>1 then
    circfill(self.x,self.y,self.size-1,5)
@@ -73,33 +34,68 @@ particle_types.smoke=function(self,x,y,ax,ay)
    self.size=self.size+self.step
   end
   self.lifespan=self.lifespan-1
-
  end
  return t
 end
 particle_types.spark=function(self,x,y,ax,ay)
  local t=particle_types:core(x,y,ax,ay)
- t.update=function(self)
-
- end
+ t.x=t.x+flr(rnd(12))-6
+ t.y=t.y+flr(rnd(12))-6
+ t.lifespan=flr(rnd(20))+5
+ t.angle=360/(flr(rnd(359))+1)
+ t.col=rnd(14)+1
  t.draw=function(self)
+  if self.lifespan==0 then return end
+   pset(self.x,self.y,self.col)
+   self.lifespan=self.lifespan-1
+ end
+ return t
+end
 
+particle_types.rect=function(self,x,y,ax,ay)
+ local t=particle_types:core(x,y,ax,ay)
+ t.x=t.x+flr(rnd(12))-6
+ t.y=t.y+flr(rnd(12))-6
+ t.lifespan=flr(rnd(20))+5
+ t.angle=360/(flr(rnd(359))+1)
+ t.col=rnd(14)+1
+ t.size=rnd(9)+3
+ t.draw=function(self)
+  if self.lifespan==0 then return end
+   rectfill(self.x,self.y,self.x+self.size,self.y+self.size,self.col)
+   self.lifespan=self.lifespan-1
  end
  return t
 end
 
 particle_emitters={}
-particle_emitters.explode=function(self,ps,params)
- for _,p in pairs(ps.particles) do
-  p.x=p.x+sin(p.angle)*0.75
-  p.y=p.y+cos(p.angle)*0.75
+particle_emitters.explode=function(self,params)
+ local e=params
+ e.update=function(self,ps)
+  -- some emitters may change the position
  end
-
+ return e
 end
 
 particle_affectors={}
-particle_affectors.force=function(self)
-
+particle_affectors.force=function(self,params)
+ local a=params
+ a.update=function(self,ps)
+  for _,p in pairs(ps.particles) do
+   p.x=p.x+sin(p.angle)*a.force
+   p.y=p.y+cos(p.angle)*a.force
+  end
+ end
+ return a
+end
+particle_affectors.randomise=function(self,params)
+ local a=params
+ a.update=function(self,ps)
+  for _,p in pairs(ps.particles) do
+   p.angle=360/(flr(rnd(359))+1)
+  end
+ end
+ return a
 end
 
 function create_particle_system()
@@ -109,15 +105,12 @@ function create_particle_system()
   affectors={}
  }
  s.update=function(self)
- --[[
   for _,e in pairs(self.emitters) do
    e:update(self)
   end
   for _,a in pairs(self.affectors) do
    a:update(self)
   end
-  ]]
-  particle_emitters:explode(self)
  end
  s.draw=function(self)
   for _,p in pairs(self.particles) do
@@ -130,14 +123,18 @@ end
 function create_smoke(x,y,count)
  local s=create_particle_system()
  s.params={x=x,y=y,count=count}
- s.emitters[1]=particle_emitters.explode
- s.affectors[1]=particle_affectors.force
+ s.emitters[1]=particle_emitters:explode({})
+ s.affectors[1]=particle_affectors:randomise({})
+ s.affectors[2]=particle_affectors:force({force=4.75})
  for i=1,count do
   s.particles[i]=particle_types:smoke(x,y,0,0)
+  --s.particles[i]=particle_types:spark(x,y,1,1)
+  --s.particles[i]=particle_types:rect(x,y,1,1)
  end
  return s
 end
 
+--[[
 function particle_creator(emitter,index)
  local x={
   emitter=emitter,
@@ -168,6 +165,7 @@ function particle_emitter(total)
  return x
 end
 
+]]
 
 
 
@@ -177,6 +175,9 @@ function _init()
 end
 
 function _update()
+ if btnp(4) or btnp(5) then
+  p=create_smoke(40+rnd(48),40+rnd(48),rnd(300))
+ end
  p:update()
 end
 
