@@ -4,6 +4,8 @@ __lua__
 --
 -- by neil popham
 
+local screen={width=128,height=128}
+
 function round(x) return flr(x+0.5) end
 
 particle_types={}
@@ -11,7 +13,7 @@ particle_types.core=function(self,params)
  local t=params
  t.rand=function(min,max,floor)
   if floor==nil then floor=true end
-  local v=(rnd()*(max-min+1))+min
+  local v=(rnd()*(max-min))+min
   return floor and flr(v) or v
  end
  params.dx=params.dx or {min=6,max=12}
@@ -83,6 +85,20 @@ particle_types.rect=function(self,params)
  return t
 end
 
+particle_types.line=function(self,params)
+ params=params or {}
+ local t=particle_types:core(params)
+ params.size = params.size or {min=3,max=12}
+ t.size=t.rand(params.size.min,params.size.max)
+ t.draw=function(self)
+  if self.lifespan==0 then return true end
+  line(self.x,self.y,self.x+(cos(self.angle)*self.size),self.y-(sin(self.angle)*self.size),self.col)
+  self.lifespan=self.lifespan-1
+  return (self.lifespan==0)
+ end
+ return t
+end
+
 --emitters
 particle_emitters={}
 particle_emitters.stationary=function(self,params)
@@ -93,11 +109,12 @@ particle_emitters.stationary=function(self,params)
   for _,p in pairs(ps.particles) do
    p.angle=p.rand(self.angle.min,self.angle.max)/360
    p.force=p.rand(self.force.min,self.force.max,false)
-   printh("force:"..p.force)
+   p.dx=cos(p.angle)*p.force
+   p.dy=-sin(p.angle)*p.force
   end
  end
  e.update=function(self,ps)
-
+  -- do nothing
  end
  return e
 end
@@ -132,15 +149,27 @@ particle_affectors.bounce=function(self,params)
  a.force=a.force or 0.8
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
+   local h=false
    local x=p.x+p.dx y=p.y
-   tile=mget(flr(x/8),flr(y/8))
-   if fget(tile,0) then
+   if x<0 or x>screen.width then
+    h=true
+   else
+    tile=mget(flr(x/8),flr(y/8))
+    if fget(tile,0) then h=true end
+   end 
+   if h then
     p.force=p.force*self.force
     p.angle=(0.5-p.angle) % 1
    end
+   local v=false
    local x=p.x y=p.y+p.dy
-   tile=mget(flr(x/8),flr(y/8))
-   if fget(tile,0) then
+   if y<0 or y>screen.height then
+    v=true
+   else
+    tile=mget(flr(x/8),flr(y/8))
+    if fget(tile,0) then v=true end
+   end
+   if v then
     p.force=p.force*self.force
     p.angle=(1-p.angle) % 1
    end
@@ -167,12 +196,26 @@ end
 
 particle_affectors.gravity=function(self,params)
  local a=params or {}
- a.force=a.force or 0.025
+ a.force=a.force or 0.015
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
-   p.force=p.force*0.95
-   --p.angle=0.25 -- need angle to tend toward 0.25
-   p.dy=p.dy+self.force
+  --[[
+   local ang=(p.angle+0.75) % 1
+   if ang>0 and ang<0.5 then
+    p.angle=p.angle-(a.force*(ang))
+   elseif ang>0.5 or ang<1 then
+    p.angle=(p.angle+(a.force*ang)) % 1
+   end
+   --]]
+   ---[[
+   if p.angle>0.75 then
+    p.angle=(p.angle+a.force) % 1
+   elseif p.angle>0.25 then
+    p.angle=p.angle-a.force
+   elseif p.angle<0.25 then
+    p.angle=p.angle+a.force
+   end
+   --]]
   end
  end
  return a
@@ -208,8 +251,10 @@ function create_particle_system()
   if self.complete then return end
   local done=true
   for i,p in pairs(self.particles) do
-   p.x=p.x+round(p.dx)
-   p.y=p.y+round(p.dy)
+   --p.x=p.x+round(p.dx)
+   --p.y=p.y+round(p.dy)
+   p.x=p.x+p.dx
+   p.y=p.y+p.dy
    local dead=self.particles[i]:draw()
    done=done and dead
   end
@@ -233,11 +278,11 @@ end
 function create_smoke(x,y,count)
  local s=create_particle_system()
  s.params={x=x,y=y,count=count}
- s.emitters[1]=particle_emitters:stationary({x=x,y=y,force={min=1,max=1}})
- s.affectors[1]=particle_affectors:randomise({angle={min=1,max=3}})
- s.affectors[2]=particle_affectors:force({force=0.1})
+ s.emitters[1]=particle_emitters:stationary({x=x,y=y,force={min=0.2,max=0.6}})
+ --s.affectors[1]=particle_affectors:randomise({angle={min=1,max=10}})
+ --s.affectors[2]=particle_affectors:force({force=0.5})
  for i=1,count do
-  s.particles[i]=particle_types:smoke({x=x,y=y,lifespan={min=10,max=50},angle={min=1,max=360}})
+  s.particles[i]=particle_types:smoke({x=x,y=y,lifespan={min=10,max=50},dx={min=-16,max=16},dy={min=-16,max=16}})
   --s.particles[i]=particle_types:spark({x=x,y=y,lifespan={min=10,max=30},col={min=10,max=14}})
   --s.particles[i]=particle_types:rect({x=x,y=y,lifespan={min=10,max=30}})
  end
@@ -262,12 +307,15 @@ function create_spark(x,y,count)
  local s=create_particle_system()
  s.params={x=x,y=y,count=count}
 
- add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=1,max=3}}))
- --add(s.affectors,particle_affectors:force({force=1}))
- add(s.affectors,particle_affectors:bounce())
- --add(s.affectors,particle_affectors:gravity())
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=6},angle={min=200,max=340}}))
  --add(s.affectors,particle_affectors:randomise())
- --add(s.affectors,particle_affectors:drag({force=0.9}))
+ add(s.affectors,particle_affectors:gravity({force=0.02}))
+
+ --add(s.affectors,particle_affectors:force({force=1}))
+ add(s.affectors,particle_affectors:bounce({force=0.6}))
+ 
+ --add(s.affectors,particle_affectors:randomise())
+ --add(s.affectors,particle_affectors:drag({force=0.99}))
 
  --s.emitters[1]=particle_emitters:stationary({x=x,y=y,force={min=1,max=2},angle={min=180,max=360}})
  --s.affectors[1]=particle_affectors:randomise({angle={min=-5,max=5}})
@@ -281,7 +329,28 @@ function create_spark(x,y,count)
     x=x,
     y=y,
     col={min=1,max=15},
-    lifespan={min=130,max=260}
+    lifespan={min=100,max=240}
+   }
+  )
+ end
+ s:emit()
+ return s
+end
+
+function create_line(x,y,count)
+ local s=create_particle_system()
+ s.params={x=x,y=y,count=count}
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=3},angle={min=1,max=360}}))
+ --add(s.affectors,particle_affectors:gravity())
+ --add(s.affectors,particle_affectors:force({force=1}))
+ add(s.affectors,particle_affectors:bounce({force=0.9}))
+ for i=1,count do
+  s.particles[i]=particle_types:line(
+   {
+    x=x,
+    y=y,
+    col={min=1,max=15},
+    lifespan={min=20,max=100}
    }
   )
  end
@@ -295,13 +364,16 @@ end
 
 function _update60()
  if btnp(4) then
-  p=create_smoke(40+rnd(48),40+rnd(48),flr(rnd(20)+20))
+  p=create_smoke(40+rnd(48),40+rnd(48),flr(rnd(20)+10))
  end
  if btnp(5) then
   p=create_rect(40+rnd(48),40+rnd(48),flr(rnd(200)+200))
  end
  if btnp(0) then
-  p=create_spark(40+rnd(48),40+rnd(48),50)
+  p=create_spark(40+rnd(48),40+rnd(48),flr(rnd(50)+50))
+ end
+ if btnp(1) then
+  p=create_line(40+rnd(48),40+rnd(48),flr(rnd(50)+50))
  end
  p:update()
 end
@@ -323,18 +395,3 @@ __gfx__
 __gff__
 0001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-__map__
-0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000001000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000001000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000001000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000001000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0100000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
