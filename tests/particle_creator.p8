@@ -179,18 +179,20 @@ end
 -- affectors
 particle_affectors={}
 
---[[
 particle_affectors.force=function(self,params)
  local a=params or {}
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
-   p.dx=cos(p.angle)*p.force
-   p.dy=-sin(p.angle)*p.force
+   if self.force then
+    p.force=p.rand(self.force.min,self.force.max,false)
+   elseif self.dforce then  
+    p.force=p.force+p.rand(self.dforce.min,self.dforce.max,false)
+   end
   end
  end
  return a
 end
---]]
+
 
 particle_affectors.randomise=function(self,params)
  local a=params or {}
@@ -381,7 +383,7 @@ function create_smoke(x,y,count)
  local s=create_particle_system()
  s.params={x=x,y=y,count=count}
  s.emitters[1]=particle_emitters:stationary({x=x,y=y,force={min=0.2,max=0.6}})
- --s.affectors[1]=particle_affectors:randomise({angle={min=1,max=10}})
+ s.affectors[1]=particle_affectors:randomise({angle={min=-5,max=5}})
  --s.affectors[2]=particle_affectors:force({force=0.5})
  for i=1,count do
   s.particles[i]=particle_types:smoke({x=x,y=y,lifespan={min=10,max=50},dx={min=-16,max=16},dy={min=-16,max=16}})
@@ -396,7 +398,8 @@ function create_rect(x,y,count)
  local s=create_particle_system()
  s.params={x=x,y=y,count=count}
  s.emitters[1]=particle_emitters:stationary({x=x,y=y})
- s.affectors[1]=particle_affectors:randomise({})
+ s.affectors[1]=particle_affectors:randomise({angle={min=2,max=10}})
+ s.affectors[2]=particle_affectors:force({force={min=1,max=3}})
  for i=1,count do
   s.particles[i]=particle_types:rect({x=x,y=y,lifespan={min=2,max=20}})
  end
@@ -418,9 +421,9 @@ end
 
 function create_spark_2(x,y,count)
  local s=create_particle_system({x=x,y=y,count=count})
- add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=6},angle={min=240,max=300}}))
- add(s.affectors,particle_affectors:gravity({force=0.25}))
- add(s.affectors,particle_affectors:bounce({force=0.5}))
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=4,max=10},angle={min=240,max=300}}))
+ add(s.affectors,particle_affectors:gravity({force=0.2}))
+ add(s.affectors,particle_affectors:bounce({force=0.3}))
  for i=1,count do
   s:add_particle(particle_types:spark({x=x,y=y,col={min=1,max=15},lifespan={min=160,max=480}}))
  end
@@ -431,7 +434,8 @@ end
 function create_line(x,y,count)
  local s=create_particle_system({x=x,y=y,count=count})
  add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=3},angle={min=1,max=360}}))
- add(s.affectors,particle_affectors:bounce({force=0.9}))
+ --add(s.affectors,particle_affectors:bounce({force=0.9}))
+	add(s.affectors,particle_affectors:drag({force=0.97}))
  for i=1,count do
   s:add_particle(particle_types:line({x=x,y=y,col={min=1,max=15},lifespan={min=20,max=100}}))
  end
