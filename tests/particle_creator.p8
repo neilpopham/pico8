@@ -4,9 +4,65 @@ __lua__
 --
 -- by neil popham
 
+--[[ standard ]]
+
 local screen={width=128,height=128}
 
 function round(x) return flr(x+0.5) end
+
+--[[ local ]]
+
+function get_sprite_origin(s)
+ local x=s*8 % 16
+ local y=flr((s*8)/16)
+ return {x,y}
+end
+
+function get_sprite_cols(s)
+ local pos=get_sprite_origin(s)
+ cols={}
+ for dx=0,7 do
+   cols[dx+1]={}
+  for dy=0,7 do
+   cols[dx+1][dy+1]=sget(pos[1]+dx,pos[2]+dy)
+  end
+ end
+ return cols
+end
+
+function get_sprite_col_spread(s,ignore)
+ ignore=ignore or 16
+ local data=get_sprite_cols(s)
+ local cols={}
+ local total=0
+ for dx=1,8 do
+  for dy=1,8 do
+   col=data[dx][dy]
+   if col~=ignore then
+    col=col+1
+    if cols[col]==nil then cols[col]={count=0,percent=0} end
+    cols[col].count=cols[col].count+1
+    total=total+1
+   end
+  end
+ end
+ for i,_ in pairs(cols) do
+  cols[i].percent=cols[i].count/total
+ end
+ return cols
+end
+
+function get_colour_array(s,count)
+ local cols=get_sprite_col_spread(s)
+ local array={}
+ for i,col in pairs(cols) do
+  local p=count*col.percent
+  for c=1,p do
+   add(array,i-1)
+  end
+ end
+ return array
+end
 
 particle_types={}
 particle_types.core=function(self,params)
@@ -25,9 +81,12 @@ particle_types.core=function(self,params)
  params.lifespan=params.lifespan or {min=10,max=30}
  t.lifespan=t.rand(params.lifespan.min,params.lifespan.max)
  params.col=params.col or {min=1,max=15}
- t.col=t.rand(params.col.min,params.col.max)
- --params.angle=params.angle or {min=1,max=360}
- --t.angle=t.rand(params.angle.min,params.angle.max)/360
+ if type(params.col)=="number" then
+  t.col=params.col
+ else
+  t.col=t.rand(params.col.min,params.col.max)
+ end
+
  return t
 end
 particle_types.smoke=function(self,params)
@@ -109,8 +168,6 @@ particle_emitters.stationary=function(self,params)
   for _,p in pairs(ps.particles) do
    p.angle=p.rand(self.angle.min,self.angle.max)/360
    p.force=p.rand(self.force.min,self.force.max,false)
-   p.dx=cos(p.angle)*p.force
-   p.dy=-sin(p.angle)*p.force
   end
  end
  e.update=function(self,ps)
@@ -122,6 +179,7 @@ end
 -- affectors
 particle_affectors={}
 
+--[[
 particle_affectors.force=function(self,params)
  local a=params or {}
  a.update=function(self,ps)
@@ -132,6 +190,7 @@ particle_affectors.force=function(self,params)
  end
  return a
 end
+--]]
 
 particle_affectors.randomise=function(self,params)
  local a=params or {}
@@ -156,7 +215,7 @@ particle_affectors.bounce=function(self,params)
    else
     tile=mget(flr(x/8),flr(y/8))
     if fget(tile,0) then h=true end
-   end 
+   end
    if h then
     p.force=p.force*self.force
     p.angle=(0.5-p.angle) % 1
@@ -196,18 +255,25 @@ end
 
 particle_affectors.gravity=function(self,params)
  local a=params or {}
+ a.force=a.force or 0.25
+ a.update=function(self,ps)
+  for _,p in pairs(ps.particles) do
+   local dx=cos(p.angle)*p.force
+   local dy=-sin(p.angle)*p.force
+   dy=dy+self.force
+   p.angle=atan2(dx,-dy)
+   --p.force=sqrt((dx*dx)+(dy*dy))
+   p.force=sqrt((dx^2)+(dy^2))
+  end
+ end
+ return a
+end
+
+particle_affectors.gravity_old=function(self,params)
+ local a=params or {}
  a.force=a.force or 0.015
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
-  --[[
-   local ang=(p.angle+0.75) % 1
-   if ang>0 and ang<0.5 then
-    p.angle=p.angle-(a.force*(ang))
-   elseif ang>0.5 or ang<1 then
-    p.angle=(p.angle+(a.force*ang)) % 1
-   end
-   --]]
-   ---[[
    if p.angle>0.75 then
     p.angle=(p.angle+a.force) % 1
    elseif p.angle>0.25 then
@@ -221,19 +287,24 @@ particle_affectors.gravity=function(self,params)
  return a
 end
 
-function create_particle_system()
+function create_particle_system(params)
  local s={
   particles={},
   emitters={},
   affectors={},
   complete=false
  }
+ s.params=params or {}
  s.reset=function(self)
   self.complete=false
   self.particles={}
   self.params.count=0
  end
+ s.add_particle=function(self,p)
+  add(self.particles,p)
+ end
  s.emit=function(self)
+  self.params.count=#self.particles
   for _,e in pairs(self.emitters) do
    e:emit(self)
   end
@@ -251,8 +322,8 @@ function create_particle_system()
   if self.complete then return end
   local done=true
   for i,p in pairs(self.particles) do
-   --p.x=p.x+round(p.dx)
-   --p.y=p.y+round(p.dy)
+   p.dx=cos(p.angle)*p.force
+   p.dy=-sin(p.angle)*p.force
    p.x=p.x+p.dx
    p.y=p.y+p.dy
    local dead=self.particles[i]:draw()
@@ -295,7 +366,6 @@ function create_rect(x,y,count)
  s.params={x=x,y=y,count=count}
  s.emitters[1]=particle_emitters:stationary({x=x,y=y})
  s.affectors[1]=particle_affectors:randomise({})
- s.affectors[2]=particle_affectors:force({force=3})
  for i=1,count do
   s.particles[i]=particle_types:rect({x=x,y=y,lifespan={min=2,max=20}})
  end
@@ -304,62 +374,55 @@ function create_rect(x,y,count)
 end
 
 function create_spark(x,y,count)
- local s=create_particle_system()
- s.params={x=x,y=y,count=count}
-
+ local s=create_particle_system({x=x,y=y,count=count})
  add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=6},angle={min=200,max=340}}))
- --add(s.affectors,particle_affectors:randomise())
- add(s.affectors,particle_affectors:gravity({force=0.02}))
-
- --add(s.affectors,particle_affectors:force({force=1}))
+ add(s.affectors,particle_affectors:gravity_old({force=0.02}))
  add(s.affectors,particle_affectors:bounce({force=0.6}))
- 
- --add(s.affectors,particle_affectors:randomise())
- --add(s.affectors,particle_affectors:drag({force=0.99}))
-
- --s.emitters[1]=particle_emitters:stationary({x=x,y=y,force={min=1,max=2},angle={min=180,max=360}})
- --s.affectors[1]=particle_affectors:randomise({angle={min=-5,max=5}})
- --s.affectors[2]=particle_affectors:force({force=1})
- --s.affectors[3]=particle_affectors:bounce({force=0.8})
- --s.affectors[3]=particle_affectors:gravity()
- --s.affectors[3]=particle_affectors:drag()
  for i=1,count do
-  s.particles[i]=particle_types:spark(
-   {
-    x=x,
-    y=y,
-    col={min=1,max=15},
-    lifespan={min=100,max=240}
-   }
-  )
+  s:add_particle(particle_types:spark({x=x,y=y,col={min=1,max=15},lifespan={min=100,max=240}}))
+ end
+ s:emit()
+ return s
+end
+
+function create_spark_2(x,y,count)
+ local s=create_particle_system({x=x,y=y,count=count})
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=6},angle={min=240,max=300}}))
+ add(s.affectors,particle_affectors:gravity({force=0.25}))
+ add(s.affectors,particle_affectors:bounce({force=0.5}))
+ for i=1,count do
+  s:add_particle(particle_types:spark({x=x,y=y,col={min=1,max=15},lifespan={min=160,max=480}}))
  end
  s:emit()
  return s
 end
 
 function create_line(x,y,count)
- local s=create_particle_system()
- s.params={x=x,y=y,count=count}
+ local s=create_particle_system({x=x,y=y,count=count})
  add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=3},angle={min=1,max=360}}))
- --add(s.affectors,particle_affectors:gravity())
- --add(s.affectors,particle_affectors:force({force=1}))
  add(s.affectors,particle_affectors:bounce({force=0.9}))
  for i=1,count do
-  s.particles[i]=particle_types:line(
-   {
-    x=x,
-    y=y,
-    col={min=1,max=15},
-    lifespan={min=20,max=100}
-   }
-  )
+  s:add_particle(particle_types:line({x=x,y=y,col={min=1,max=15},lifespan={min=20,max=100}}))
+ end
+ s:emit()
+ return s
+end
+
+function create_sprite_eploder(sprite,x,y,count)
+ local s=create_particle_system({x=x,y=y,count=count,sprite=sprite})
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=6},angle={min=240,max=300}}))
+ add(s.affectors,particle_affectors:gravity({force=0.25}))
+ add(s.affectors,particle_affectors:bounce({force=0.5}))
+ local cols=get_colour_array(sprite,count)
+ for i=1,count do
+  s:add_particle(particle_types:spark({x=x,y=y,col=cols[i],lifespan={min=160,max=480}}))
  end
  s:emit()
  return s
 end
 
 function _init()
- p=create_spark(40+rnd(48),40+rnd(48),flr(rnd(20)+20))
+ p=create_spark_2(40+rnd(48),40+rnd(48),flr(rnd(20)+20))
 end
 
 function _update60()
@@ -374,6 +437,12 @@ function _update60()
  end
  if btnp(1) then
   p=create_line(40+rnd(48),40+rnd(48),flr(rnd(50)+50))
+ end
+ if btnp(2) then
+  p=create_spark_2(40+rnd(48),40+rnd(48),flr(rnd(150)+150))
+ end
+ if btnp(3) then
+  p=create_sprite_eploder(1,40+rnd(48),40+rnd(48),flr(rnd(150)+150))
  end
  p:update()
 end
