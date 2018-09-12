@@ -206,6 +206,7 @@ end
 particle_affectors.bounce=function(self,params)
  local a=params or {}
  a.force=a.force or 0.8
+ a.halflife=a.halflife or 0.6
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
    local h=false
@@ -232,10 +233,10 @@ particle_affectors.bounce=function(self,params)
     p.force=p.force*self.force
     p.angle=(1-p.angle) % 1
    end
-   p.dx=cos(p.angle)*p.force
-   p.dy=-sin(p.angle)*p.force
-   if round(p.dx)==0 and round(p.dy)==0 then
-    p.lifespan=0
+   local dx=cos(p.angle)*p.force
+   local dy=-sin(p.angle)*p.force
+   if round(dx)==0 and round(dy)==0 then
+    p.lifespan=flr(p.lifespan*self.halflife)
    end
   end
  end
@@ -264,6 +265,36 @@ particle_affectors.gravity=function(self,params)
    p.angle=atan2(dx,-dy)
    --p.force=sqrt((dx*dx)+(dy*dy))
    p.force=sqrt((dx^2)+(dy^2))
+  end
+ end
+ return a
+end
+
+particle_affectors.heat=function(self,params)
+ local a=params or {}
+ a.cycle=a.cycle or {0.9,0.6,0.4,0.25}
+ a.particles={}
+ a.col={
+  {0,0,1,1,2,1,5,6,2,4,9,3,13,5,4,9},
+  {0,0,0,0,1,1,1,1,5,13,1,2,4,1,5,1,2,2}
+ }
+ a.update=function(self,ps)
+  for i,p in pairs(ps.particles) do
+   if self.particles[i]==nil then
+    self.particles[i]={col=p.col,lifespan=p.lifespan}
+   end
+   local life=p.lifespan/self.particles[i].lifespan
+   if life>self.cycle[1] then
+    if i % 3==0 then p.col=10 else p.col=7 end
+   elseif life>self.cycle[2] then
+    p.col=self.particles[i].col
+   elseif life>self.cycle[3] then
+    p.col=self.col[1][self.particles[i].col+1]
+   elseif life>self.cycle[4] then
+    p.col=self.col[2][self.particles[i].col+1]
+   else
+    p.col=1
+   end
   end
  end
  return a
@@ -408,11 +439,12 @@ function create_line(x,y,count)
  return s
 end
 
-function create_sprite_eploder(sprite,x,y,count)
+function create_sprite_exploder(sprite,x,y,count)
  local s=create_particle_system({x=x,y=y,count=count,sprite=sprite})
  add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=2,max=6},angle={min=240,max=300}}))
  add(s.affectors,particle_affectors:gravity({force=0.25}))
  add(s.affectors,particle_affectors:bounce({force=0.5}))
+ add(s.affectors,particle_affectors:heat())
  local cols=get_colour_array(sprite,count)
  for i=1,count do
   s:add_particle(particle_types:spark({x=x,y=y,col=cols[i],lifespan={min=160,max=480}}))
@@ -442,7 +474,7 @@ function _update60()
   p=create_spark_2(40+rnd(48),40+rnd(48),flr(rnd(150)+150))
  end
  if btnp(3) then
-  p=create_sprite_eploder(1,40+rnd(48),40+rnd(48),flr(rnd(150)+150))
+  p=create_sprite_exploder(1,40+rnd(48),40+rnd(48),flr(rnd(150)+150))
  end
  p:update()
 end
@@ -454,12 +486,12 @@ function _draw()
 end
 __gfx__
 00000000888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000822222280000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700822222280000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00077000888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00077000888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007007008aaaaaa80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000008aaaaaa80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000888888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __gff__
 0001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

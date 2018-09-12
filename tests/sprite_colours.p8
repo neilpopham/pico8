@@ -8,7 +8,7 @@ __lua__
 
 function get_sprite_origin(s)
  local x=(s*8) % 128
- local y=flr((s*8)/128)*8
+ local y=flr(s/16)*8
  return {x,y}
 end
 
@@ -46,16 +46,47 @@ function get_sprite_col_spread(s,ignore)
  return cols
 end
 
-function get_colour_array(s,count)
- local cols=get_sprite_col_spread(s)
+-- may return more than asked for
+-- but as long as we loop through this array to add the particles
+-- we don't care if we have a few too many
+function get_colour_array(s,count,ignore)
+ local cols=get_sprite_col_spread(s,ignore)
  local array={}
  for i,col in pairs(cols) do
-  local p=count*col.percent
+  local p=round(count*col.percent)
   for c=1,p do
    add(array,i-1)
   end
  end
  return array
+end
+
+-- don't want to use get_sprite_origin(), get_sprite_cols() or get_sprite_col_spread() elsewhere?
+-- this function does the same as get_colour_array() but is self-contained
+-- same disclaimer applies
+function get_colour_array_simple(s,count,ignore)
+ local x=(s*8) % 128
+ local y=flr((s*8)/128)*8
+ local col={}
+ local list={}
+ local total=0
+ for dx=0,7 do
+  for dy=0,7 do
+   local c=sget(x+dx,y+dy)
+   if c~=ignore then
+    if col[c+1]==nil then col[c+1]=0 end
+    col[c+1]=col[c+1]+1
+    total=total+1
+   end
+  end
+ end
+ local r=count/total
+ for c,t in pairs(col) do
+  for i=1,round(r*t) do
+   add(list,c-1)
+  end
+ end
+ return list
 end
 
 function _init()
