@@ -303,7 +303,7 @@ particle_affectors.heat=function(self,params)
 end
 particle_affectors.heat2=function(self,params)
  local a=params or {}
- a.cycle=a.cycle or {0.9,0.6,0.4,0.25}
+ a.cycle=a.cycle or {0.8,0.6,0.3,0.1}
  a.particles={}
  a.col=particle_affectors.colour_fade
  a.update=function(self,ps)
@@ -312,23 +312,9 @@ particle_affectors.heat2=function(self,params)
     self.particles[i]={col=p.col,lifespan=p.lifespan}
    end
    local life=p.lifespan/self.particles[i].lifespan
-   --[[
    local c=4
-   while life>self.cycle[c] and c>0 do c=c-1 end
+   while c>0 and life>self.cycle[c] do c=c-1 end
    p.col=self.col[c+1][self.particles[i].col+1]
-   ]]
-   local index=self.particles[i].col+1
-   if life>self.cycle[1] then
-    p.col=self.col[1][index]
-   elseif life>self.cycle[2] then
-    p.col=self.col[2][index]
-   elseif life>self.cycle[3] then
-    p.col=self.col[3][index]
-   elseif life>self.cycle[4] then
-    p.col=self.col[4][index]
-   else
-    p.col=self.col[5][index]
-   end
   end
  end
  return a
