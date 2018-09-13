@@ -7,6 +7,8 @@ __lua__
 --[[ core ]]
 
 local screen={width=128,height=128}
+local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
+
 function round(x) return flr(x+0.5) end
 
 --[[ sprite data functions ]]
@@ -61,6 +63,29 @@ function get_sprite_col_spread(s,ignore)
  return cols
 end
 
+-- as above, but we don't really need the count
+-- so let's just return a simple array with the ratio value
+function get_sprite_col_ratio(s,ignore)
+ ignore=ignore or 16
+ local data=get_sprite_cols(s)
+ local cols={}
+ local total=0
+ for dx=1,8 do
+  for dy=1,8 do
+   col=data[dx][dy]
+   if col~=ignore then
+    col=col+1
+    cols[col]=(cols[col] or 0)+1
+    total=total+1
+   end
+  end
+ end
+ for i,_ in pairs(cols) do
+  cols[i]=cols[i]/total
+ end
+ return cols
+end
+
 -- returns an array of colours in the correct proportion
 -- s is the sprite index
 -- count is the number of values to return*
@@ -68,7 +93,7 @@ end
 -- * may return more than asked for
 --   but as long as we loop through this array to add the particles
 --   we don't care if we have a few too many
-function get_colour_array(s,count,ignore)
+function get_sprite_col_array(s,count,ignore)
  local cols=get_sprite_col_spread(s,ignore)
  local array={}
  for i,col in pairs(cols) do
@@ -81,10 +106,10 @@ function get_colour_array(s,count,ignore)
 end
 
 -- don't want to use get_sprite_origin(), get_sprite_cols() or get_sprite_col_spread() elsewhere?
--- this function does the same as get_colour_array() but is self-contained
--- so you can delete the previous four
+-- this function does the same as get_sprite_colour_array() but is self-contained
+-- so you can just delete all the others
 -- same disclaimer applies
-function get_colour_array_simple(s,count,ignore)
+function get_sprite_colour_array(s,count,ignore)
  local x=(s*8) % 128
  local y=flr(s/16)*8
  local col={}
@@ -94,8 +119,7 @@ function get_colour_array_simple(s,count,ignore)
   for dy=0,7 do
    local c=sget(x+dx,y+dy)
    if c~=ignore then
-    if col[c+1]==nil then col[c+1]=0 end
-    col[c+1]=col[c+1]+1
+    col[c+1]=(col[c+1] or 0)+1
     total=total+1
    end
   end
@@ -121,7 +145,7 @@ particle_types.core=function(self,params)
   local v=(rnd()*(max-min))+min
   return floor and flr(v) or v
  end
- params.dx=params.dx or {min=6,max=12}
+ params.dx=params.dx or {min=0,max=7}
  params.dy=params.dy or t.dx
  t.x=t.x+t.rand(params.dx.min,params.dx.max)
  t.y=t.y+t.rand(params.dy.min,params.dy.max)
@@ -144,7 +168,7 @@ particle_types.spark=function(self,params)
   if self.lifespan==0 then return true end
   pset(self.x,self.y,self.col)
   self.lifespan=self.lifespan-1
-  return (self.lifespan==0)
+  return self.lifespan==0
  end
  return t
 end
@@ -171,10 +195,23 @@ end
 --[[ affectors ]]
 
 particle_affectors={}
+particle_affectors.decay=function(self,params)
+ local a=params or {}
+ a.decay=a.decay or 0.6
+ a.update=function(self,ps)
+  for _,p in pairs(ps.particles) do
+   local dx=cos(p.angle)*p.force
+   local dy=-sin(p.angle)*p.force
+   if round(dx)==0 and round(dy)==0 then
+    p.lifespan=flr(p.lifespan*self.decay)
+   end
+  end
+ end
+ return a
+end
 particle_affectors.bounce=function(self,params)
  local a=params or {}
  a.force=a.force or 0.8
- a.halflife=a.halflife or 0.6
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
    local h=false
@@ -200,11 +237,6 @@ particle_affectors.bounce=function(self,params)
    if v then
     p.force=p.force*self.force
     p.angle=(1-p.angle) % 1
-   end
-   local dx=cos(p.angle)*p.force
-   local dy=-sin(p.angle)*p.force
-   if round(dx)==0 and round(dy)==0 then
-    p.lifespan=flr(p.lifespan*self.halflife)
    end
   end
  end
@@ -271,9 +303,9 @@ function create_particle_system(params)
  end
  s.add_particle=function(self,p)
   add(self.particles,p)
+  self.params.count=self.params.count+1
  end
  s.emit=function(self)
-  self.params.count=#self.particles
   for _,e in pairs(self.emitters) do
    e:emit(self)
   end
@@ -306,13 +338,14 @@ end
 
 function create_sprite_exploder(sprite,x,y,count)
  local s=create_particle_system({x=x,y=y,count=count,sprite=sprite})
- add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=3,max=6},angle={min=240,max=320}}))
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=3,max=6},angle={min=230,max=310}}))
  add(s.affectors,particle_affectors:gravity({force=force.g}))
  add(s.affectors,particle_affectors:bounce({force=force.b}))
+ add(s.affectors,particle_affectors:decay())
  if use_heat then
   add(s.affectors,particle_affectors:heat())
  end
- local cols=get_colour_array_simple(sprite,count,0)
+ local cols=get_sprite_colour_array(sprite,count,0)
  for _,c in pairs(cols) do
   s:add_particle(particle_types:spark({x=x,y=y,col=c,lifespan={min=160,max=480}}))
  end
@@ -322,12 +355,12 @@ end
 
 function reset()
  sprite={
-  x=60, --flr((rnd()*(48))+40),
+  x=screen.width/2-4, --flr((rnd()*(48))+40),
   y=80, --flr((rnd()*(48))+40),
   index=flr((rnd()*(95))+1),
   bits=false
  }
- cols=get_colour_array_simple(sprite.index,128,0)
+ cols=get_sprite_colour_array(sprite.index,screen.width,0)
 end
 
 function _init()
@@ -337,12 +370,12 @@ function _init()
 end
 
 function _update60()
- if btnp(0) then force.g=round((force.g-0.05)*100)/100 end
- if btnp(1) then force.g=round((force.g+0.05)*100)/100 end
- if btnp(2) then force.b=round((force.b+0.05)*100)/100 end
- if btnp(3) then force.b=round((force.b-0.05)*100)/100 end
- if btnp(5) then use_heat=not use_heat end
- if btnp(4) and not sprite.bits then
+ if btnp(pad.left) then force.g=round((force.g-0.05)*100)/100 end
+ if btnp(pad.right) then force.g=round((force.g+0.05)*100)/100 end
+ if btnp(pad.up) then force.b=round((force.b+0.05)*100)/100 end
+ if btnp(pad.down) then force.b=round((force.b-0.05)*100)/100 end
+ if btnp(pad.btn2) then use_heat=not use_heat end
+ if btnp(pad.btn1) and not sprite.bits then
   sprite.bits=true
   parts=create_sprite_exploder(sprite.index,sprite.x,sprite.y,flr(rnd(63)+64))
  end

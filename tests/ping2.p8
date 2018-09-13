@@ -590,7 +590,7 @@ function _draw()
  camera(0,0)
  spr(62,98,1)
  --print(sub("0"..gem_count,-2).."'"..gem_total,107,2)
---[[
+
  print("stage:"..p.anim.current.stage,0,0)
  print("dir:"..p.anim.current.face,62,0)
  print("frame:"..p.anim.current.frame,0,7)
@@ -602,6 +602,7 @@ function _draw()
  print("falling:"..(p.is.falling and "t" or "f"),86,14)
  print("sliding:"..(p.is.sliding and "t" or "f"),86,21)
 
+--[[
  --print("camera:"..p.camera.x..","..p.camera.y,0,21)
  print("preslide:"..p.preslide.tick,0,28)
  print("slide:"..p.slide.tick,0,35)
