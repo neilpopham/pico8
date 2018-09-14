@@ -20,7 +20,7 @@ function get_colour_fade(s1,s2)
  s2=s2 or 127
  c1=get_sprite_cols(s1)
  c2=get_sprite_cols(s2)
- for x=1,5 do
+ for x=1,8 do
   for y=1,8 do
    c1[x][y+8]=c2[x][y]
   end
@@ -303,7 +303,8 @@ particle_affectors.heat=function(self,params)
 end
 particle_affectors.heat2=function(self,params)
  local a=params or {}
- a.cycle=a.cycle or {0.8,0.6,0.3,0.1}
+ a.cycle=a.cycle or {0.1,0.25,0.5}
+ a.white=a.white or 0.96
  a.particles={}
  a.col=particle_affectors.colour_fade
  a.update=function(self,ps)
@@ -312,13 +313,18 @@ particle_affectors.heat2=function(self,params)
     self.particles[i]={col=p.col,lifespan=p.lifespan}
    end
    local life=p.lifespan/self.particles[i].lifespan
-   local c=4
-   while c>0 and life>self.cycle[c] do c=c-1 end
-   p.col=self.col[c+1][self.particles[i].col+1]
+   local c=min(#self.cycle,7)
+   if self.white and life>self.white then
+    if i % 3==0 then p.col=10 else p.col=7 end
+   else
+    while c>0 and life>self.cycle[c] do c=c-1 end
+    p.col=self.col[c+1][self.particles[i].col+1]
+   end
   end
  end
  return a
 end
+
 
 --[[ system ]]
 
