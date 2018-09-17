@@ -89,13 +89,15 @@ function get_colour_array_new(s,count,ignore)
  local array={}
  local j=1
  local t=0
+ local r=1
  for i,col in pairs(cols) do t=t+1 end
  for i,col in pairs(cols) do
-  local remv=count-#array -- number left to add
-  local remp=remv/count   -- percentage left to add
-  local p=j==t and remv or round((col.percent/remp)*remp)
+  local p=j==t
+   and v
+   or round(((((count-#array)/count)/r)*col.percent)*count)
   for c=1,p do add(array,i-1) end
   j=j+1
+  r=r-col.percent
  end
  return array
 end
@@ -152,7 +154,7 @@ function _init()
  x=get_sprite_cols(s)
  y=get_sprite_col_spread(s)
  yy=get_sprite_col_ratio(s)
- z=get_colour_array(s,100)
+ z=get_colour_array_new(s,100)
  zz=get_colour_array_simple(s,100)
 
  a=get_colour_array(s,50)
