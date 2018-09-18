@@ -1,0 +1,72 @@
+--https://rosettacode.org/wiki/Sorting_algorithms/Selection_sort#Lua
+
+function SelectionSort( f )
+    for k = 1, #f-1 do    
+        local idx = k    
+        for i = k+1, #f do
+            if f[i] < f[idx] then 
+                idx = i
+            end    
+        end
+        f[k], f[idx] = f[idx], f[k]
+    end
+end
+ 
+ 
+f = { 15, -3, 0, -1, 5, 4, 5, 20, -8 }
+ 
+SelectionSort( f )
+ 
+for i in next, f do
+    print( f[i] )
+end
+
+--https://rosettacode.org/wiki/Sorting_algorithms/Bubble_sort#Lua
+
+function bubbleSort(A)
+  local itemCount=#A
+  local hasChanged
+  repeat
+    hasChanged = false
+    itemCount=itemCount - 1
+    for i = 1, itemCount do
+      if A[i] > A[i + 1] then
+        A[i], A[i + 1] = A[i + 1], A[i]
+        hasChanged = true
+      end
+    end
+  until hasChanged == false
+end
+
+
+--https://rosettacode.org/wiki/Sorting_algorithms/Insertion_sort#Lua
+
+function bins(tb, val, st, en)
+  local st, en = st or 1, en or #tb
+  local mid = math.floor((st + en)/2)
+  if en == st then return tb[st] > val and st or st+1
+  else return tb[mid] > val and bins(tb, val, st, mid) or bins(tb, val, mid+1, en)
+  end
+end
+function isort(t)
+  local ret = {t[1], t[2]}
+  for i = 3, #t do
+    table.insert(ret, bins(ret, t[i]), t[i])
+  end
+  return ret
+end
+ 
+print(unpack(isort{4,5,2,7,8,3}))
+
+
+
+
+function sort(f)
+ for k=1,#f-1 do
+  local idx=k
+  for i=k+1,#f do if f[i]<f[idx] then idx=i end end
+  f[k],f[idx]=f[idx],f[k]
+ end
+end
+
+

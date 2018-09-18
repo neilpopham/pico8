@@ -13,7 +13,7 @@ function round(x) return flr(x+0.5) end
 --[[ local ]]
 
 -- gets a colour fade array from the sprite sheet
--- using the fade from dank tomb by jakub wasilewski 
+-- using the fade from dank tomb by jakub wasilewski
 function get_colour_fade(s1,s2)
  s1=s1 or 111
  s2=s2 or 127
@@ -149,7 +149,7 @@ end
 particle_types.rect=function(self,params)
  params=params or {}
  local t=particle_types:core(params)
- params.size = params.size or {min=3,max=12}
+ params.size=params.size or {min=3,max=12}
  t.size=t.rand(params.size.min,params.size.max)
  t.draw=function(self)
   if self.lifespan==0 then return true end
@@ -163,7 +163,7 @@ end
 particle_types.line=function(self,params)
  params=params or {}
  local t=particle_types:core(params)
- params.size = params.size or {min=3,max=12}
+ params.size=params.size or {min=3,max=12}
  t.size=t.rand(params.size.min,params.size.max)
  t.draw=function(self)
   if self.lifespan==0 then return true end
@@ -173,6 +173,21 @@ particle_types.line=function(self,params)
  end
  return t
 end
+
+particle_types.circle=function(self,params)
+ params=params or {}
+ local t=particle_types:core(params)
+ params.size=params.size or {min=8,max=14}
+ t.size=t.rand(params.size.min,params.size.max)
+ t.draw=function(self)
+  if self.lifespan==0 then return true end
+  circfill(self.x,self.y,self.size,self.col)
+  self.lifespan=self.lifespan-1
+  return (self.lifespan==0)
+ end
+ return t
+end
+
 
 --emitters
 particle_emitters={}
@@ -229,7 +244,7 @@ particle_affectors.randomise=function(self,params)
  a.angle=a.angle or {min=1,max=360}
  a.update=function(self,ps)
   for _,p in pairs(ps.particles) do
-   p.angle=(p.angle+(p.rand(a.angle.min,a.angle.max)/360)) % 1
+   p.angle=(p.angle+(p.rand(self.angle.min,self.angle.max)/360)) % 1
   end
  end
  return a
@@ -362,7 +377,23 @@ particle_affectors.gravity_old=function(self,params)
    elseif p.angle<0.25 then
     p.angle=p.angle+a.force
    end
-   --]]
+  end
+ end
+ return a
+end
+
+particle_affectors.circle=function(self,params)
+ local a=params or {}
+ a.shrink=a.shrink or 0.96
+ a.cycle=a.cycle or {9,5,2}
+ a.col=a.col or {6,5,1}
+ a.update=function(self,ps)
+  local m=min(#a.cycle,#a.col)
+  for _,p in pairs(ps.particles) do
+   p.size=p.size*self.shrink
+   for i=1,m do
+    if p.size<a.cycle[i] then p.col=a.col[i] end
+   end
   end
  end
  return a
@@ -512,6 +543,19 @@ function create_sprite_exploder(sprite,x,y,count)
  return s
 end
 
+
+function create_circle(x,y,count)
+ local s=create_particle_system({x=x,y=y,count=count})
+ add(s.emitters,particle_emitters:stationary({x=x,y=y,force={min=0.5,max=2},angle={min=1,max=360}}))
+ add(s.affectors,particle_affectors:circle())
+ add(s.affectors,particle_affectors:randomise({angle={min=1,max=3}}))
+ for i=1,count do
+  s:add_particle(particle_types:circle({x=x,y=y,col=7,lifespan={min=20,max=60},size={min=5,max=15}}))
+ end
+ s:emit()
+ return s
+end
+
 function _init()
  p=create_spark_2(40+rnd(48),40+rnd(48),flr(rnd(20)+20))
 end
@@ -519,6 +563,7 @@ end
 function _update60()
  if btnp(4) then
   p=create_smoke(40+rnd(48),40+rnd(48),flr(rnd(20)+10))
+  p=create_circle(40+rnd(48),40+rnd(48),flr(rnd(20)+10))
  end
  if btnp(5) then
   p=create_rect(40+rnd(48),40+rnd(48),flr(rnd(200)+200))
