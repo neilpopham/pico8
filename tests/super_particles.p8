@@ -4,6 +4,9 @@ __lua__
 --
 -- by neil popham
 
+local screen={width=128,height=128}
+local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
+
 -- [[ particles ]]
 
 function prand(value,floor)
@@ -15,13 +18,15 @@ end
 particle={
  create=function(self,params)
   params=params or {}
-  params.dx=params.dx or {6,12}
+  params.dx=params.dx or {0,0}
   params.dy=params.dy or params.dx
   params.life=params.life or {10,30}
   params.col=params.col or {1,15}
   local o=params
-  o.x=o.x+prand(params.dx)
-  o.y=o.y+prand(params.dy)
+  o.dx=prand(params.dx)
+  o.dy=prand(params.dy)
+  o.x=o.x+o.dx
+  o.y=o.y+o.dy
   o.life=prand(params.life)
   o.ttl=o.life
   if type(params.col)=="number" then
@@ -93,20 +98,14 @@ stationary={
 follower={
  create=function(self,params)
   local o=emmiter.create(self,params)
-  o.dx=o.dx or {0,0}
-  o.dy=o.dy or o.dx
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    self:update_particle(ps,p)
-   end
-  end
-  o.update_particle=function(self,ps,p)
-   p.x=self.target.x+self.dx+p.dx
-   p.y=self.target.y+self.dy+p.dy
-  end
+  params.dx=params.dx or {0,0}
+  params.dy=params.dy or params.dx  
+  o.dx=prand(params.dx)
+  o.dy=prand(params.dy)
   o.init_particle=function(self,ps,p)
-   emitter.init_particle(self,ps,p)
-   self:update_particle(ps,p)
+   emmiter.init_particle(self,ps,p)
+   p.x=self.target.x+self.dx+p.dx
+   p.y=self.target.y+self.dy+p.dy   
   end
   return o
  end
@@ -168,7 +167,7 @@ size={
     for i=1,m do
      if p.size<self.cycle[i] then p.col=self.col[i] end
     end
-    if p.size<0.5 then p.life=0 end
+    if p.size<0.2 then p.life=0 end
    end
   end
   return o
@@ -335,6 +334,32 @@ circle_particle={
  end
 } setmetatable(circle_particle,{__index=particle_system})
 
+user_particle={
+ create=function(self,params)
+  params.x=params.target.x
+  params.y=params.target.y
+  local ps=particle_system.create(self,params)
+  add(ps.emitters,follower:create({force={0.4,1},target=params.target}))
+  add(ps.affectors,size:create({cycle={0},shrink=0.97}))
+  add(ps.affectors,randomise:create({angle={-2,2}}))
+  add(ps.affectors,heat:create({cycle={1,0.6,0.4,0.25}}))
+  ps.add_particle=function(self)
+   particle_system.add_particle(
+    self,
+    circle:create({x=self.params.x,y=self.params.y,life={60,120},col=10,size={8,8},dx={-5,5},dy={-5,5}})
+   )
+  end
+  ps.reset=function(self)
+   particle_system.reset(self)
+   for i=1,self.params.count do
+    self:add_particle()
+   end
+  end
+  --ps:reset()
+  return ps
+ end
+} setmetatable(user_particle,{__index=particle_system})
+
 
 --[[
 function do_sparks(x,y,count)
@@ -353,7 +378,11 @@ end
 function _init()
  -- do_sparks(64,64,100)
  --s=spark_particle:create({x=64,y=64,count=100})
- s=circle_particle:create({x=64,y=64,count=100})
+ --s=circle_particle:create({x=64,y=64,count=100})
+
+ u={x=64,y=64}
+
+ s=user_particle:create({target=u,count=100})
 end
 
 function _update60()
@@ -363,7 +392,11 @@ function _update60()
   s:update()
  end
 
- if btnp(0) or btnp(1) or btnp(2) or btnp(3) then s:reset() end
+ if btn(pad.up) then u.y=u.y-1 end
+ if btn(pad.down) then u.y=u.y+1 end
+ if btn(pad.left) then u.x=u.x-1 end
+ if btn(pad.right) then u.x=u.x+1 end
+
  if btnp(4) then s=circle_particle:create({x=64,y=64,count=100}) end
  if btnp(5) then s=spark_particle:create({x=64,y=64,count=100}) end
 
@@ -372,4 +405,5 @@ end
 function _draw()
  cls()
  if not s.complete then s:draw() end
+ pset(u.x,u.y,4)
 end
