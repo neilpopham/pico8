@@ -75,9 +75,9 @@ function convert_to_particles(x,y,w,h)
  h=h or 128
  ax={x,x+w-1}
  ay={y,y+h-1}
- a1=get_address(x,y)
  a2=get_address(ax[2],ay[2])
- while a2>a1 do
+ repeat
+  a1=get_address(x,y)
   local p=get_colour_pair(a1)
   for i=1,2 do
    if p[i]>0 then
@@ -90,8 +90,7 @@ function convert_to_particles(x,y,w,h)
    x=ax[1]
    y=y+1
   end
-  a1=get_address(x,y)
- end
+ until a1==a2
 end
 
 function create_particle(x,y,colour,delay)
