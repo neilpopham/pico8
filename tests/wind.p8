@@ -22,12 +22,12 @@ __lua__
 local particles={}
 
 -- converts x/y co-ordinates into a screen memory address
-function convert_point_to_address(x,y)
+function get_address(x,y)
  return 0x6000+flr(x/2)+(y*64)
 end
 
 -- converts x/y co-ordinates into a general use memory address
-function convert_point_to_general_use_address(x,y)
+function get_general_use_address(x,y)
  return 0x4300+flr(x/2)+(y*64)
 end
 
@@ -35,10 +35,9 @@ end
 -- stored at the given screen memory address
 function get_colour_pair(a)
  local b=peek(a)
- return {
-  band(b,0b00001111),
-  shr(band(b,0b11110000),4)
- }
+ local l=b%16
+ local r=(b-l)/16
+ return {l,r}
 end
 
 function read_screen_area(x,y,w,h)
@@ -48,8 +47,8 @@ function read_screen_area(x,y,w,h)
  local p
  ax={x,x+w-1}
  ay={y,y+h-1}
- a1=convert_point_to_address(x,y)
- a2=convert_point_to_address(ax[2],ay[2])
+ a1=get_address(x,y)
+ a2=get_address(ax[2],ay[2])
  while a2>a1 do
   if px[x]==nil then
    px[x]={}
@@ -63,7 +62,7 @@ function read_screen_area(x,y,w,h)
    x=ax[1]
    y=y+1
   end
-  a1=convert_point_to_address(x,y)
+  a1=get_address(x,y)
  end
  return px
 end
@@ -76,13 +75,13 @@ function convert_to_particles(x,y,w,h)
  h=h or 128
  ax={x,x+w-1}
  ay={y,y+h-1}
- a1=convert_point_to_address(x,y)
- a2=convert_point_to_address(ax[2],ay[2])
+ a1=get_address(x,y)
+ a2=get_address(ax[2],ay[2])
  while a2>a1 do
   local p=get_colour_pair(a1)
   for i=1,2 do
    if p[i]>0 then
-    z=120+(x+i-1-ax[1])+((y-ay[1])*(rnd()+2))
+    z=120+(x+i-1-ax[1])+((y-ay[1])*(rnd()+1))
     add(particles,create_particle(x+i-1,y,p[i],z))
    end
   end
@@ -91,7 +90,7 @@ function convert_to_particles(x,y,w,h)
    x=ax[1]
    y=y+1
   end
-  a1=convert_point_to_address(x,y)
+  a1=get_address(x,y)
  end
 end
 
@@ -101,7 +100,7 @@ function create_particle(x,y,colour,delay)
   y=y,
   colour=colour,
   delay=delay,
-  force=rnd(8)+2
+  force=rnd(9)+3
  }
  return p
 end
@@ -116,7 +115,9 @@ function _init()
  print("i borrow an old woman's hat",8,71)
  print("and fling it into the road",8,81)
  print("- james arthur",56,91,5)
- --memcpy(0x4300,0x6000,300)--8191)
+ a1=get_address(8,31)
+ a2=get_address(120,98)
+ memcpy(0x4300,0x6000,a2-a1)
  --cls()
  convert_to_particles(8,31,112,67)
 end
@@ -130,7 +131,6 @@ function _update60()
     p.y=p.y+rnd(6)-3
     if p.delay/t<0.97 and p.colour==7 then p.colour=6 end
     if p.delay/t<0.94 and p.colour==6 then p.colour=5 end
-    printh(p.delay/t)
     if p.x>127 then del(particles,p) end
    end
   end
@@ -141,7 +141,6 @@ end
 
 function _draw()
  cls()
- camera(0,0)
  for _,p in pairs(particles) do
   pset(p.x,p.y,p.colour)
  end
