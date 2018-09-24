@@ -77,7 +77,11 @@ emmiter={
   return o
  end,
  init_particle=function(self,ps,p)
-  p.angle=mrnd(self.angle)/360
+ 	if type(self.angle)=="number" then
+ 	 p.angle=self.angle/360
+ 	else
+   p.angle=mrnd(self.angle)/360
+  end
   p.force=mrnd(self.force,false)
  end
 }
@@ -265,12 +269,13 @@ particle_system={
 star_particle={
  create=function(self,params)
   local ps=particle_system.create(self,params)
-  add(ps.emitters,stationary:create({force={0.5,4},angle={90,90}}))
+  add(ps.emitters,stationary:create({force={0.5,3},angle=90}))
   add(ps.affectors,bounds:create())
   ps.add_particle=function(self)
-  	local s=spark:create({x=mrnd({2,125}),y=0,col={1,5,6,7},life={128,256}})
+  	local s=spark:create({x=mrnd({1,126}),y=0,col={1,5,6},life={256,256}})
    particle_system.add_particle(self,s)
   end
+  ps:add_particle()
   return ps
  end
 } setmetatable(star_particle,{__index=particle_system})
