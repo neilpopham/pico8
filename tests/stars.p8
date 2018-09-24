@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- 
+-- starfield
 -- by neil popham
 
 local screen={width=128,height=128}
@@ -17,15 +17,15 @@ particle={
   local o=params
   o.dx=mrnd(params.dx)
   o.dy=mrnd(params.dy)
-  o.x=o.x+o.dx
-  o.y=o.y+o.dy
+  o.x=params.x+o.dx
+  o.y=params.y+o.dy
   o.life=mrnd(params.life)
   o.ttl=o.life
   --o.enabled=true
-  if type(params.col)=="number" then
-   o.col=params.col
-  else
+  if #params.col==2 then
    o.col=mrnd(params.col)
+  else
+  	o.col=params.col[mrnd({1,#params.col})]
   end
   setmetatable(o,self)
   self.__index=self
@@ -36,14 +36,14 @@ particle={
 spark={
  create=function(self,params)
   local o=particle.create(self,params)
-  o.draw=function(self)
-   if self.life==0 then return true end
-   pset(self.x,self.y,self.col)
-   self.life=self.life-1
-   return self.life==0
-  end
   return o
- end
+ end,
+ draw=function(self)
+  if self.life==0 then return true end
+  pset(self.x,self.y,self.col)
+  self.life=self.life-1
+  return self.life==0
+ end 
 } setmetatable(spark,{__index=particle})
 
 circle={
@@ -118,6 +118,18 @@ affector={
   return o
  end
 }
+
+bounds={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    if p.y>127 then p.life=0 end
+   end
+  end
+  return o
+ end
+} setmetatable(bounds,{__index=affector})
 
 force={
  create=function(self,params)
@@ -227,7 +239,10 @@ particle_system={
     p.y=p.y+p.dy
     local dead=p:draw()
     done=done and dead
-    if dead then del(self.particles,p) end
+    if dead then
+     del(self.particles,p)
+     self.count=self.count-1
+    end
    end
    if done then self.complete=true end
   end
@@ -250,35 +265,30 @@ particle_system={
 star_particle={
  create=function(self,params)
   local ps=particle_system.create(self,params)
-  add(ps.emitters,stationary:create({force={1,3},angle={90,90}}))
+  add(ps.emitters,stationary:create({force={0.5,4},angle={90,90}}))
+  add(ps.affectors,bounds:create())
   ps.add_particle=function(self)
-   particle_system.add_particle(
-    self,
-    spark:create({x=mrnd(2,125),y=0,colour={10},life={128}})
-   )
+  	local s=spark:create({x=mrnd({2,125}),y=0,col={1,5,6,7},life={128,256}})
+   particle_system.add_particle(self,s)
   end
-  ps.reset=function(self)
-   particle_system.reset(self)
-   for i=1,self.params.count do
-    self:add_particle()
-   end
-  end
-  ps:reset()
   return ps
  end
-} setmetatable(spark_particle,{__index=particle_system})
+} setmetatable(star_particle,{__index=particle_system})
 
 
 function _init()
-	 stars=star_particle:create()
+ stars=star_particle:create()
 end
 
 function _update60()
- 
+ if rnd(2)>1 then stars:add_particle() end
+ stars:update() 
 end
 
 function _draw()
-
+ cls()
+ stars:draw()
+ print(stars.count,0,0,10)
 end
 
 function mrnd(x,f)
