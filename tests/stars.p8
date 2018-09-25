@@ -42,7 +42,7 @@ spark={
   pset(self.x,self.y,self.col)
   self.life=self.life-1
   return self.life==0
- end 
+ end
 } setmetatable(spark,{__index=particle})
 
 circle={
@@ -239,32 +239,32 @@ particle_system={
    count=0,
    tick=0
   }
-  s.update=function(self)
-   if self.complete then return end
-   for _,e in pairs(self.emitters) do e:update(self) end
-   for _,a in pairs(self.affectors) do a:update(self) end
-   self.tick=self.tick+1
-  end
-  s.draw=function(self)
-   if self.complete then return end
-   local done=true
-   for i,p in pairs(self.particles) do
-    p.dx=cos(p.angle)*p.force
-    p.dy=-sin(p.angle)*p.force
-    p.x=p.x+p.dx
-    p.y=p.y+p.dy
-    local dead=p:draw()
-    done=done and dead
-    if dead then
-     del(self.particles,p)
-     self.count=self.count-1
-    end
-   end
-   if done then self.complete=true end
-  end
   setmetatable(s,self)
   self.__index=self
   return s
+ end,
+ update=function(self)
+  if self.complete then return end
+  for _,e in pairs(self.emitters) do e:update(self) end
+  for _,a in pairs(self.affectors) do a:update(self) end
+  self.tick=self.tick+1
+ end,
+ draw=function(self)
+  if self.complete then return end
+  local done=true
+  for i,p in pairs(self.particles) do
+   p.dx=cos(p.angle)*p.force
+   p.dy=-sin(p.angle)*p.force
+   p.x=p.x+p.dx
+   p.y=p.y+p.dy
+   local dead=p:draw()
+   done=done and dead
+   if dead then
+    del(self.particles,p)
+    self.count=self.count-1
+   end
+  end
+  if done then self.complete=true end
  end,
  add_particle=function(self,p)
   add(self.particles,p)
@@ -289,6 +289,12 @@ star_particles={
     self,
     spark:create({x=mrnd({1,126}),y=0,col={1,5,6},life={255,255}})
    )
+  end
+  ps.update=function(self)
+   if rnd(3)<1 then
+    self:add_particle()
+   end
+   particle_system.update(self)
   end
   return ps
  end
@@ -331,7 +337,28 @@ enemy_smoke={
   end
   return ps
  end
-} setmetatable(enemy_particles,{__index=particle_system})
+} setmetatable(enemy_smoke,{__index=particle_system})
+
+ship_smoke={
+ create=function(self)
+  local ps=particle_system.create(self)
+  add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
+  add(ps.affectors,gravity:create({force=0.1}))
+  add(ps.affectors,size:create({shrink=0.9,col={10,9,8}}))
+  --add(ps.affectors,size:create({shrink=0.9,col={14,8,2}}))
+  --add(ps.affectors,size:create({shrink=0.92,col={11,3,1}}))
+  ps.add_particle=function(self)
+   particle_system.add_particle(
+    self,
+    circle:create({x=rd,y=40,dx={-10,10},dy={-10,10},size={6,16},col={7},life={30,80}})
+   )
+  end
+  for i=1,20 do
+   ps:add_particle()
+  end
+  return ps
+ end
+} setmetatable(enemy_smoke,{__index=particle_system})
 
 function _init()
  rd=mrnd({40,88})
@@ -342,8 +369,8 @@ end
 
 function _update60()
  rd=mrnd({40,88})
- if rnd(3)<1 then stars:add_particle() end
- stars:update() 
+ --if rnd(3)<1 then stars:add_particle() end
+ stars:update()
  if btnp(pad.btn1) then
   x=enemy_particles:create()
   y=enemy_smoke:create()
