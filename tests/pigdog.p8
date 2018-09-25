@@ -67,6 +67,21 @@ circle={
  end
 } setmetatable(circle,{__index=particle})
 
+linear={
+ create=function(self,params)
+  local o=particle.create(self,params)
+  o.size=params.size or 3
+  return o
+ end,
+ draw=function(self)
+  if self.life==0 then return true end
+  line(self.x,self.y,self.x+(cos(self.angle)*self.size),self.y-(sin(self.angle)*self.size),self.col)
+  self.life=self.life-1
+  return self.life==0
+ end
+} setmetatable(linear,{__index=particle})
+
+
 -- [[ emmiters ]]
 
 emmiter={
@@ -309,8 +324,9 @@ star_particles={
 } setmetatable(star_particles,{__index=particle_system})
 
 ship_particles={
- create=function(self,x,y,cols)
+ create=function(self,x,y,cols,count)
   cols=cols or {7,8,9,10}
+  count=count or 10
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={2,4},angle={1,360}}))
   add(ps.affectors,gravity:create({force=0.2}))
@@ -320,7 +336,7 @@ ship_particles={
     spark:create({x=x,y=y,col=cols,life={30,80}})
    )
   end
-  for i=1,10 do
+  for i=1,count do
    ps:add_particle()
   end
   return ps
@@ -328,8 +344,9 @@ ship_particles={
 } setmetatable(ship_particles,{__index=particle_system})
 
 ship_smoke={
- create=function(self,x,y,cols)
+ create=function(self,x,y,cols,count)
   cols=cols or {10,9,8} -- {14,8,2} -- {10,9,8} -- {11,3,1}
+  count=count or 20
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
   add(ps.affectors,gravity:create({force=0.1}))
@@ -340,7 +357,7 @@ ship_smoke={
     circle:create({x=x,y=y,dx={-10,10},dy={-10,10},size={6,16},col={7},life={30,80}})
    )
   end
-  for i=1,20 do
+  for i=1,count do
    ps:add_particle()
   end
   return ps
@@ -366,6 +383,34 @@ player_trail={
   return ps
  end
 } setmetatable(player_trail,{__index=particle_system})
+
+smart_bomb={
+ create=function(self,x,y)
+  local ps=particle_system.create(self)
+  ps.x=x
+  ps.y=y
+  add(ps.emitters,stationary:create({force={4,4},angle={1,360}}))
+  add(ps.affectors,randomise:create({angle={2,2}}))
+  ps.add_particle=function(self)
+   particle_system.add_particle(
+    self,
+    spark:create({x=x,y=y,life={16,40},col={1,3,5}})
+    --linear:create({x=x,y=y,size=2,life={16,40},col={1,3,5}})
+   )
+  end
+  for i=1,40 do
+   ps:add_particle()
+  end
+  return ps
+ end,
+ draw=function(self)
+  particle_system.draw(self)
+  if self.tick<5 then
+   circfill(self.x,self.y,32,11)
+   circfill(self.x,self.y,30,12)
+  end
+ end
+} setmetatable(smart_bomb,{__index=particle_system})
 
 -- [[ collections ]]
 
@@ -481,43 +526,43 @@ movable={
 animatable={
  create=function(self,x,y,ax,ay)
   local o=movable.create(self,x,y,ax,ay)
+  o.anim={
+   init=function(self,stage,dir)
+    -- record frame count for each stage dir
+    for s in pairs(self.stage) do
+     for d=1,3 do
+      self.stage[s].dir[d].fcount=#self.stage[s].dir[d].frames
+     end
+    end
+    -- init current values
+    self.current:set(stage,dir)
+   end,
+   stage={},
+   current={
+    reset=function(self)
+     self.frame=1
+     self.tick=0
+     self.loop=true
+     self.transitioning=false
+    end,
+    set=function(self,stage,dir)
+     if self.stage==stage then return end
+     self.reset(self)
+     self.stage=stage
+     self.dir=dir or self.dir
+    end
+   },
+   add_stage=function(self,name,ticks,loop,neutral,left,right,next)
+    self.stage[name]={
+     ticks=ticks,
+     loop=loop,
+     dir={{frames=left},{frames=right},{frames=neutral}},
+     next=next
+    }
+   end
+  }
   return o
  end,
- anim={
-  init=function(self,stage,dir)
-   -- record frame count for each stage dir
-   for s in pairs(self.stage) do
-    for d=1,3 do
-     self.stage[s].dir[d].fcount=#self.stage[s].dir[d].frames
-    end
-   end
-   -- init current values
-   self.current:set(stage,dir)
-  end,
-  stage={},
-  current={
-   reset=function(self)
-    self.frame=1
-    self.tick=0
-    self.loop=true
-    self.transitioning=false
-   end,
-   set=function(self,stage,dir)
-    if self.stage==stage then return end
-    self.reset(self)
-    self.stage=stage
-    self.dir=dir or self.dir
-   end
-  },
-  add_stage=function(self,name,ticks,loop,neutral,left,right,next)
-   self.stage[name]={
-    ticks=ticks,
-    loop=loop,
-    dir={{frames=left},{frames=right},{frames=neutral}},
-    next=next
-   }
-  end
- },
  animate=function(self)
   local c=self.anim.current
   local s=self.anim.stage[c.stage]
@@ -607,6 +652,20 @@ controllable={
   if btnp(pad.btn1) then
    b:add(bullet:create(p.x,p.y,self.bullet))
   end
+  if btnp(pad.btn2) then
+   s:add(smart_bomb:create(self.x+4,self.y+4))
+   cam:shake(5,0.93)
+   if e.count>0 then
+    for _,enemy in pairs(e.items) do
+     local dx=abs(self.x-enemy.x)
+     local dy=abs(self.y-enemy.y)
+     local distance=sqrt(dx^2+dy^2)
+     if distance<40 then
+      enemy:destroy()
+     end
+    end
+   end
+  end  
  end,
  draw=function(self)
   animatable.draw(self)
@@ -623,8 +682,8 @@ player={
   return p
  end,
  destroy=function(self)
-  x:add(ship_particles:create(self.x+4,self.y+4,{11,6,8}))
-  x:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1}))
+  x:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},20))
+  x:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},30))
   cam:shake(2,0.9)
   self.complete=true
  end,
@@ -687,13 +746,14 @@ bullet={
 } setmetatable(bullet,{__index=movable})
 
 alien_types={
- {ax=0.01,ay=0.01,neutral={19},left={19},right={19},score=100}
+ {ax=0.05,ay=0.5,neutral={20},left={20},right={20},score=100}
 }
 
 alien={
  create=function(self,x,y,type)
   local otype=alien_types[type]
   local o=animatable.create(self,x,y,otype.ax,otype.ay)
+  o.max.dy=1
   o.anim:add_stage("core",1,false,otype.neutral,otype.left,otype.right)
   o.anim:init("core",dir.neutral)
   o.type=otype
@@ -718,6 +778,9 @@ alien={
   self.dy=self.dy+self.ay
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   self.y=self.y+round(self.dy)
+
+  if self.y<-8 then self.y=120 end
+  if self.y>127 then self.y=0 end
 
   if self.y<0 or self.y>127 then
    self.complete=true
@@ -782,7 +845,7 @@ pick most diff firs then fill with easiest
 almost want affectors to apply an affector to an enemies path
 
 ]]
- for i=0,120,8 do
+ for i=0,120,16 do
   e:add(alien:create(i,20,1))
  end
 
@@ -839,11 +902,19 @@ __gfx__
 00000000080000008000080080000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000560000005600000056000b000b0000000000000d0070000800800000000000000000000000000000000000000000000000000000000000000000000000000
-005dd600005dd66005ddd6003d67b00002200ef00dd11c7004999aa0000000000000000000000000000000000000000000000000000000000000000000000000
-505ddd06005ddd00005ddd00dd667000222eeeffdd1cc1c7499999aa000000000000000000000000000000000000000000000000000000000000000000000000
-005bbd00053bd66005ddbbd05dd6600022dcc6ef01c8ec104998899a000000000000000000000000000000000000000000000000000000000000000000000000
-5053bd06003bdd6005ddbb0005dd000022ddccef0dc8ec7044288899000000000000000000000000000000000000000000000000000000000000000000000000
-55533ddd0533dd6005dd3bd000000000022eeee00dc88c7044288899000000000000000000000000000000000000000000000000000000000000000000000000
-5055550d05555d6005d555d0000000000322eeb00ddccc7004422990000000000000000000000000000000000000000000000000000000000000000000000000
-5080080d05028dd0055820d0000000000002200001dddd1000444400000000000000000000000000000000000000000000000000000000000000000000000000
+000560000005600000056000b000b0000000000000d00700008008003000000b0000000000000000000000000000000000000000000000000000000000000000
+005dd600005dd66005ddd6003d67b00002200ef00dd11c7004999aa00d0000600000000000000000000000000000000000000000000000000000000000000000
+505ddd06005ddd00005ddd00dd667000222eeeffdd1cc1c7499999aa55dd66660000000000000000000000000000000000000000000000000000000000000000
+005bbd00053bd66005ddbbd05dd6600022dcc6ef01c8ec104998899a528d68860000000000000000000000000000000000000000000000000000000000000000
+5053bd06003bdd6005ddbb0005dd000022ddccef0dc8ec7044288899522d62860000000000000000000000000000000000000000000000000000000000000000
+55533ddd0533dd6005dd3bd000000000022eeee00dc88c704428889905dd66600000000000000000000000000000000000000000000000000000000000000000
+5055550d05555d6005d555d0000000000322eeb00ddccc7004422990055ddd600000000000000000000000000000000000000000000000000000000000000000
+5080080d05028dd0055820d0000000000002200001dddd1000444400500000060000000000000000000000000000000000000000000000000000000000000000
+0bbbbbb00cccccc00888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bbbbbbbbcccccccc8888988800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bb7bb7bbc7c7c7cc88119a8800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bb7bb7bbc7c7c7cc8811999800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bb7bb7bbc7c7c7cc8811118800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bb7bb7bbc7c7c7cc8811118800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bbbbbbbbcccccccc8888888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0bbbbbb00cccccc00888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
