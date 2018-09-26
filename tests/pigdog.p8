@@ -9,10 +9,10 @@ pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 
 dir={left=1,right=2,neutral=3}
 drag={air=0.75}
-score=0
-level=0
+stage=nil
 
--- [[ particles ]]
+-->8
+--particles
 
 particle={
  create=function(self,params)
@@ -153,6 +153,24 @@ bounds={
   return o
  end
 } setmetatable(bounds,{__index=affector})
+
+delay={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    if ps.tick<=p.delay then
+     if p.oforce==nil then p.oforce=p.force end
+     p.force=0
+    elseif ps.tick>p.delay and p.oforce>0 then
+     p.force=p.oforce
+     p.oforce=0
+    end
+   end
+  end
+  return o
+ end
+} setmetatable(delay,{__index=affector})
 
 force={
  create=function(self,params)
@@ -412,7 +430,50 @@ smart_bomb={
  end
 } setmetatable(smart_bomb,{__index=particle_system})
 
--- [[ collections ]]
+-- [[ screen memory ]]
+
+--[[
+function get_address(x,y)
+ return 0x6000+flr(x/2)+(y*64)
+end
+
+function get_colour_pair(a)
+ local b=peek(a)
+ local l=b%16
+ local r=(b-l)/16
+ return {l,r}
+end
+
+function convert_to_particles(x,y,w,h)
+ w=w or 128
+ h=h or 128
+ local ax={x,x+w-1}
+ local ay={y,y+h-1}
+ local a2=get_address(ax[2],ay[2])
+ local ps=particle_system:create()
+ add(ps.emitters,stationary:create({force={6,16},angle={-10,10}}))
+ add(ps.affectors,delay:create())
+ repeat
+  local a1=get_address(x,y)
+  local p=get_colour_pair(a1)
+  for i=1,2 do
+   if p[i]>0 then
+    local z=(x+i-1-ax[1])+((y-ay[1])*(rnd()+1))
+    ps:add_particle(spark:create({x=x+i-1,y=y,col={p[i]},life={20,80},delay=z}))
+   end
+  end
+  x=x+2
+  if x>ax[2] then
+   x=ax[1]
+   y=y+1
+  end
+ until a1==a2
+ return ps
+end
+--]]
+
+-->8
+--collections
 
 collection={
  create=function(self)
@@ -444,6 +505,10 @@ collection={
  del=function(self,object)
   del(self.items,object)
   self.count=self.count-1
+ end,
+ reset=function(self)
+  self.items={}
+  self.count=0
  end
 }
 
@@ -457,7 +522,45 @@ bullets={
 enemies={
  create=function(self)
   local o=collection.create(self)
+  o.reset(self)
   return o
+ end,
+ reset=function(self)
+  collection.reset(self)
+  self.t=0
+  self.wave=0
+  self.delay={0,240,360}
+  self.wty=-8
+ end,
+ update=function(self)
+  if self.count==0 then
+   printh("no enemies")
+   if p.complete then return end
+   self.t=self.t+1
+   if self.t>self.delay[3] then
+    self.t=0
+    self.wty=-8
+    self.wave=self.wave+1
+    self.delay={120,240,360}
+    for i=0,120,16 do
+     self:add(alien:create(i,20,1))
+    end
+   elseif self.t>self.delay[2] then
+    self.wty=self.wty+1
+   elseif self.t>self.delay[1] then
+    if self.wty<61 then self.wty=self.wty+1 end
+    --s:add(self.ps)
+   --elseif self.t==self.delay[1]+5 then
+    --self.ps=convert_to_particles(50,61,29,7)
+   end
+  end
+  collection.update(self)
+ end,
+ draw=function(self)
+  collection.draw(self)
+  if self.t>self.delay[1] and self.t<self.delay[3] then
+   dprint("wave "..lpad(self.wave+1),50,self.wty)
+  end
  end
 } setmetatable(enemies,{__index=collection})
 
@@ -475,7 +578,8 @@ particles={
  end
 } setmetatable(particles,{__index=collection})
 
--- [[ objects ]]
+-->8
+--objects
 
 object={
  create=function(self,x,y)
@@ -650,8 +754,10 @@ controllable={
   end
   -- buttons
   if btnp(pad.btn1) then
+   sfx(0)
    b:add(bullet:create(p.x,p.y,self.bullet))
   end
+
   if btnp(pad.btn2) then
    s:add(smart_bomb:create(self.x+4,self.y+4))
    cam:shake(5,0.93)
@@ -665,7 +771,8 @@ controllable={
      end
     end
    end
-  end  
+  end
+
  end,
  draw=function(self)
   animatable.draw(self)
@@ -677,15 +784,23 @@ player={
   local p=controllable.create(self,x,y,0.2,0.2)
   p.anim:add_stage("core",1,false,{16},{17},{18})
   p.anim:init("core",dir.neutral)
-  p.bullet=3
   p.trail=player_trail:create(p)
+  p.reset(self)
   return p
  end,
+ reset=function(self)
+  self.complete=false
+  self.score=0
+  self.bullet=1
+ end,
  destroy=function(self)
+  sfx(3)
   x:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},20))
   x:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},30))
-  cam:shake(2,0.9)
+  cam:shake(5,0.9)
   self.complete=true
+  stage=game_over
+  game_over:init()
  end,
  update=function(self)
   if self.complete then return end
@@ -699,10 +814,13 @@ player={
  end
 } setmetatable(player,{__index=controllable})
 
+bullet_update_linear=function(self)
+ self.y=self.y+self.ay
+end
 bullet_types={
- {sprite=1,ax=0,ay=-4,w=2,h=6,player=true},
- {sprite=2,ax=0,ay=-6,w=6,h=6,player=true},
- {sprite=3,ax=0,ay=-6,w=8,h=6,player=true}
+ {sprite=1,ax=0,ay=-4,w=2,h=6,player=true,update=bullet_update_linear},
+ {sprite=2,ax=0,ay=-6,w=6,h=6,player=true,update=bullet_update_linear},
+ {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,update=bullet_update_linear}
 }
 
 bullet={
@@ -715,7 +833,7 @@ bullet={
  end,
  update=function(self)
   movable.update(self)
-  self.y=self.y+self.ay
+  self.type.update(self)
   if self.x<0 or self.x>127
    or self.y<0 or self.y>127 then
    self.complete=true
@@ -745,8 +863,28 @@ bullet={
  end
 } setmetatable(bullet,{__index=movable})
 
+alien_update_linear=function(self)
+  self.dx=self.dx+self.ax
+  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  self.dy=self.dy+self.ay
+  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+ end
+
 alien_types={
- {ax=0.05,ay=0.5,neutral={20},left={20},right={20},score=100}
+ {
+  ax=0.05,ay=0.5,
+  neutral={20},left={20},right={20},
+  sfx=3,
+  score=100,
+  update=alien_update_linear
+ },
+ {
+  ax=0.05,ay=0.5,
+  neutral={21},left={21},right={21},
+  sfx=3,
+  score=150,
+  update=alien_update_linear
+ }
 }
 
 alien={
@@ -760,25 +898,22 @@ alien={
   return o
  end,
  destroy=function(self)
+  sfx(self.type.sfx)
   x:add(ship_particles:create(self.x+4,self.y+4))
   x:add(ship_smoke:create(self.x+4,self.y+4))
   self.complete=true
-  score=score+self.type.score
+  p.score=p.score+self.type.score
   cam:shake(1,0.9)
  end,
  update=function(self)
-  --movable.update(self)
 
-  self.dx=self.dx+self.ax
-  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  self.type.update(self)
+
   self.x=self.x+round(self.dx)
   if self.x<-8 then self.x=120 end
   if self.x>127 then self.x=0 end
 
-  self.dy=self.dy+self.ay
-  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   self.y=self.y+round(self.dy)
-
   if self.y<-8 then self.y=120 end
   if self.y>127 then self.y=0 end
 
@@ -789,6 +924,7 @@ alien={
     printh("alien:collided with player") -- ######################
     p:destroy()
     self:destroy()
+    self.complete=true
    end
   end
  end,
@@ -799,7 +935,114 @@ alien={
  end
 } setmetatable(alien,{__index=animatable})
 
--- [[ camera ]]
+-->8
+--stages
+
+intro={
+ blank=false,
+ t=0,
+ c=1,
+ cols={1,2,5,4,8,3,13,14,12,9,6,11,15,7,10},
+ init=function(self)
+  -- set all colours to black so we can fade in
+   for i=1,15 do pal(i,0) end
+   self.blank=true
+ end,
+ update=function(self)
+  cam:update()
+  s:update() -- update particles
+  -- is it time to fade in?
+  if self.blank and time()>2 then
+   if self.t%5==0 then
+    pal(self.cols[self.c],self.cols[self.c])
+    self.c=self.c+1
+    if self.c==16 then self.blank=false end
+   end
+   self.t=self.t+1
+  end
+  if btnp(pad.btn1) or btnp(pad.btn2) then
+   cam:shake(2,0.7)
+   if self.blank then pal() end
+   stage=game
+   game:init()
+  end
+ end,
+ draw=function(self)
+  cls(0)
+  camera(cam:position())
+  s:draw() -- draw particles
+  dprint("press \142 or \151 to start",18,100)
+  print(stat(1),100,0,3)
+ end
+}
+
+game={
+ init=function(self)
+  e:reset()
+  p:reset()
+ end,
+ update=function(self)
+  cam:update()
+  p:update() -- update player
+  b:update() -- update bullets
+  e:update() -- update enemies
+  x:update() -- update explosions
+  s:update() -- update particles
+ end,
+ draw=function(self)
+  cls(0)
+  camera(cam:position())
+  s:draw() -- draw particles
+  b:draw() -- draw bullets
+  e:draw() -- draw enemies
+  x:draw() -- draw explosions
+  p:draw() -- draw player
+
+  print(stat(1),100,0,3)
+  print(p.score,0,10,6)
+  print(#e.items,0,0,2)
+  print(#x.items,20,0,2)
+  print(#b.items,40,0,2)
+  print(#s.items,60,0,2)
+ end
+}
+
+game_over={
+ t=0,
+ init=function(self)
+  self.t=0
+ end,
+ update=function(self)
+  cam:update()
+  b:update() -- update bullets
+  e:update() -- update enemies
+  x:update() -- update explosions
+  s:update() -- update particles
+  if self.t>60 then
+   if btn(pad.btn1) then
+    stage=game
+    game:init()
+   end
+  end
+  self.t=self.t+1
+ end,
+ draw=function(self)
+  cls(0)
+  camera(cam:position())
+  s:draw() -- draw particles
+  b:draw() -- draw bullets
+  e:draw() -- draw enemies
+  x:draw() -- draw explosions
+  if self.t>60 then
+   dprint("game over",46,61,10,8)
+   dprint("press \142 to restart",28,90)
+   dprint("or \151 to return to the menu",12,100)
+  end
+ end
+}
+
+-->8
+--core
 
 cam={
  x=0,y=0,force=0,decay=0,max=5,
@@ -816,6 +1059,8 @@ cam={
   if self.force<0.1 then
    self.force=0
    self.decay=0
+   self.x=0
+   self.y=0
   end
  end,
  position=function(self)
@@ -823,11 +1068,9 @@ cam={
  end
 }
 
--- [[ core routines ]]
-
 function _init()
  -- create player
- p=player:create(64,96)
+ p=player:create(60,96)
  -- create collections
  b=bullets:create()
  e=enemies:create()
@@ -835,50 +1078,20 @@ function _init()
  s=particles:create()
  -- populate collections
  s:add(star_particles:create())
-
- --[[
-
-use proc gen
-the earlier the level the less likely a difficult alien is likely to be picked
-pick most diff firs then fill with easiest
-
-almost want affectors to apply an affector to an enemies path
-
-]]
- for i=0,120,16 do
-  e:add(alien:create(i,20,1))
- end
-
+ -- set the stage
+ stage=intro
+ stage:init()
 end
 
 function _update60()
- cam:update()
- p:update() -- update player
- b:update() -- update bullets
- e:update() -- update enemies
- x:update() -- update explosions
- s:update() -- update particles
- --if rnd(20)>19.8 then cam:shake(rnd(5)+3,0.9) end
+ stage:update()
 end
 
 function _draw()
- cls(0)
- camera(cam:position())
- s:draw() -- draw particles
- b:draw() -- draw bullets
- e:draw() -- draw enemies
- x:draw() -- draw explosions
- p:draw() -- draw player
-
- print(stat(1),100,0,3)
- print(score,0,10,6)
- print(#e.items,0,0,2)
- print(#x.items,20,0,2)
- print(#b.items,40,0,2)
- print(#s.items,60,0,2)
+ stage:draw()
 end
 
--- [[ shared functions ]]
+-- shared functions
 
 -- e.g.> x=mrnd({5,10}) -- returns an integer between 5 and 10 inclusive
 -- x|table|the minimum and maximum values
@@ -892,6 +1105,15 @@ end
 -- e.g.> x=round(1.23) -- rounds 1.23 to the nearest integer
 -- x|float|the number to round
 function round(x) return flr(x+0.5) end
+
+function dprint(s,x,y,c1,c2)
+ c1=c1 or 7
+ c2=c2 or 2
+ print(s,x+1,y+1,c2)
+ print(s,x,y,c1)
+end
+
+function lpad(x) return sub("0"..x,-2) end
 
 __gfx__
 00000000770000007700770077066077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -918,3 +1140,9 @@ bb7bb7bbc7c7c7cc8811118800000000000000000000000000000000000000000000000000000000
 bb7bb7bbc7c7c7cc8811118800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 bbbbbbbbcccccccc8888888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0bbbbbb00cccccc00888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+00010000300502e0502c0502a0502905028050260402504025040240402404024040230402104020040200401f0401e0401d0401c0401b0401b0401a04019040140001000013000110000e0000b0000900007000
+000200003265031660306602f6702e6702d6702c6702a670276702567023660216601f6501d6501a65019640176301663012630106300f6200c6200a6200762003610016100f6000d6000b600096000760003600
+00150000086400a650086500865008650076500565005650066500565005640056400563004630036200362003610016100660005600046000460003600036000360003600026000430003300033000330003300
+00070000366502d660246601b65017650146500e640086300662004610016100161001600016001d6001c6001b6001a6001a60019600186001760017600000000000000000000000000000000000000000000000
+0006000038660246601d65015640116300e6200861003610036000360002600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
