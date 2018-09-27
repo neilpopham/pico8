@@ -68,6 +68,7 @@ circle={
   return o
  end
 } setmetatable(circle,{__index=particle})
+
 --[[
 sprite={
  create=function(self,params)
@@ -168,6 +169,7 @@ bounds={
   return o
  end
 } setmetatable(bounds,{__index=affector})
+
 --[[
 force={
  create=function(self,params)
@@ -185,6 +187,7 @@ force={
  end
 } setmetatable(force,{__index=affector})
 ]]
+
 randomise={
  create=function(self,params)
   local o=affector.create(self,params)
@@ -234,6 +237,7 @@ gravity={
   return o
  end
 } setmetatable(gravity,{__index=affector})
+
 --[[
 heat={
  create=function(self,params)
@@ -440,7 +444,6 @@ smart_bomb={
    particle_system.add_particle(
     self,
     spark:create({x=x,y=y,life={16,40},col={1,3,5}})
-    --linear:create({x=x,y=y,size=2,life={16,40},col={1,3,5}})
    )
   end
   for i=1,40 do
@@ -545,7 +548,7 @@ enemy_col={
  draw=function(self)
   collection.draw(self)
   if self.t>self.delay[1] and self.t<self.delay[3] then
-   dprint("wave "..lpad(self.wave+1),50,self.wty)
+   dprint("wave "..lpad(self.wave+1),50,self.wty,12,1)
   end
  end
 } setmetatable(enemy_col,{__index=collection})
@@ -839,8 +842,10 @@ bullet={
  end,
  destroy=function(self)
   self.complete=true
-  explosions:add(ship_particles:create(self.x+(self.type.w/2),self.y+(self.type.h/2),{7,8,9,10},10))
-  explosions:add(bullet_smoke:create(self.x+(self.type.w/2),self.y+(self.type.h/2),{6,5,1},8+self.type.w))
+  local x=self.x+(self.type.w/2)
+  local y=self.y+(self.type.h/2)
+  explosions:add(ship_particles:create(x,y,{7,8,9,10},10))
+  explosions:add(bullet_smoke:create(x,y,{6,5,1},8+self.type.w))
  end,
  update=function(self)
   movable.update(self)
@@ -903,7 +908,8 @@ alien_types={
   damage=100,
   pixels={7,8,9,10},
   smoke={10,9,8},
-  update=alien_update_linear
+  update=alien_update_linear,
+  fire_rate=0 -- multiply by the wave number
  },
  {
   ax=0.05,ay=0.5,
@@ -913,7 +919,8 @@ alien_types={
   damage=150,
   pixels={7,8,9,10},
   smoke={14,8,2},
-  update=alien_update_linear
+  update=alien_update_linear,
+  fire_rate=0.1
  },
  {
   ax=0.05,ay=0.5,
@@ -923,7 +930,8 @@ alien_types={
   damage=500,
   pixels={7,8,9,10},
   smoke={11,3,1},
-  update=alien_update_linear
+  update=alien_update_linear,
+  fire_rate=0.2
  }
 }
 
@@ -1021,12 +1029,19 @@ drop={
   sfx(5)
   cam:shake(1,0.8)
   local col=self.cols[self.type]
-  --explosions:add(ship_particles:create(self.x+4,self.y+4,{7,col,col},10))
   explosions:add(ship_smoke:create(self.x+4,self.y+4,{7,col,col},10))
  end,
  update=function(self)
   animatable.update(self)
-  if self.anim.current.tick%2==0 then self.y=self.y+1 end
+  local dx=abs(self.x-p.x)
+  local dy=abs(self.y-p.y)
+  local distance=sqrt(dx^2+dy^2)
+  if distance<16 then
+   self.x=self.x+(p.x>self.x and 1 or -1)
+   self.y=self.y+(p.y>self.y and 1 or -1)
+  elseif self.anim.current.tick%2==0 then
+    self.y=self.y+1
+  end
   if self.y>127 then
    self.complete=true
   else
@@ -1041,7 +1056,7 @@ drop={
     elseif self.type==3 then
      p.bullet=3
     elseif self.type==4 then
-     p.damage=max(p.max.damage,p.damage+200)
+     p.damage=min(p.max.damage,p.damage+200)
     elseif self.type==5 then
      for _,e in pairs(enemies.items) do 
       e:destroy()
@@ -1050,6 +1065,12 @@ drop={
      for _,d in pairs(drops.items) do
        d:destroy()
      end
+     local ps=particle_system:create()
+     add(ps.emitters,stationary:create({force={0,0},angle={1,360}}))     
+     ps:add_particle(
+      circle:create({x=64,y=64,size={128,128},col={7},life={5,5}})
+     )
+     explosions:add(ps)
     end
     for _,d in pairs(drops.items) do
      if d.type==self.type then
@@ -1064,7 +1085,6 @@ drop={
  draw=function(self) 
   if self.complete then return true end
   animatable.draw(self)
-  -- spr(self.sprite,self.x,self.y)
   return false
  end
 } setmetatable(drop,{__index=animatable})
@@ -1083,11 +1103,11 @@ intro={
   cam:update()
   particles:update() -- update particles
   if self.blank and time()>1 then
-   if self.t%2==0 then
+   --if self.t%2==0 then
     pal(colours[self.c],colours[self.c])
     self.c=self.c+1
     if self.c==16 then self.blank=false end
-   end
+   --end
    self.t=self.t+1
   end
   if btnp(pad.btn1) or btnp(pad.btn2) then
@@ -1167,14 +1187,14 @@ game_over={
    end
   end
   if self.blank then
-   if self.t%2 then
+   --if self.t%2 then
     pal(colours[self.c],0)
     self.c=self.c-1
     if self.c==0 then
      stage=intro
      stage:init()
     end
-   end
+   --end
   end
   self.t=self.t+1
  end,
