@@ -174,6 +174,26 @@ delay={
 } setmetatable(delay,{__index=affector})
 ]]
 
+--[[
+delay={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    if ps.tick<=p.delay then
+     if p.oforce==nil then p.oforce=p.force end
+     p.force=0
+    elseif ps.tick>p.delay and p.oforce>0 then
+     p.force=p.oforce
+     p.oforce=0
+    end
+   end
+  end
+  return o
+ end
+} setmetatable(delay,{__index=affector})
+]]
+
 size={
  create=function(self,params)
   local o=affector.create(self,params)

@@ -6,11 +6,12 @@ __lua__
 
 screen={width=128,height=128}
 pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
-
 dir={left=1,right=2,neutral=3}
-drag={air=0.75}
+drag=0.75
 stage=nil
-high_score=32000
+high_scores={7000,6500,6000,5500,5000,4500,4000,3500,3000,2500}
+colours={1,2,5,4,8,3,13,14,12,9,6,11,15,7,10}
+cartdata_version=1
 
 -->8
 --particles
@@ -68,6 +69,19 @@ circle={
  end
 } setmetatable(circle,{__index=particle})
 
+sprite={
+ create=function(self,params)
+  local o=particle.create(self,params)
+  return o
+ end,
+ draw=function(self)
+  if self.life==0 then return true end
+  spr(self.sprite,self.x,self.y)
+  self.life=self.life-1
+  return self.life==0
+ end
+} setmetatable(sprite,{__index=particle})
+
 linear={
  create=function(self,params)
   local o=particle.create(self,params)
@@ -82,7 +96,6 @@ linear={
  end
 } setmetatable(linear,{__index=particle})
 
-
 -- [[ emmiters ]]
 
 emmiter={
@@ -90,15 +103,15 @@ emmiter={
   local o=params or {}
   o.angle=o.angle or {1,360}
   o.force=o.force or {1,3}
-  o.update=function(self,ps)
+  --o.update=function(self,ps)
    -- do nothing
-  end
+  --end
   setmetatable(o,self)
   self.__index=self
   return o
  end,
  init_particle=function(self,ps,p)
-    p.angle=mrnd(self.angle)/360
+  p.angle=mrnd(self.angle)/360
   p.force=mrnd(self.force,false)
  end
 }
@@ -117,12 +130,12 @@ follower={
   params.dy=params.dy or params.dx
   o.dx=mrnd(params.dx)
   o.dy=mrnd(params.dy)
-  o.init_particle=function(self,ps,p)
-   emmiter.init_particle(self,ps,p)
-   p.x=self.target.x+self.dx+p.dx
-   p.y=self.target.y+self.dy+p.dy
-  end
   return o
+ end,
+ init_particle=function(self,ps,p)
+  emmiter.init_particle(self,ps,p)
+  p.x=self.target.x+self.dx+p.dx
+  p.y=self.target.y+self.dy+p.dy
  end
 } setmetatable(follower,{__index=emmiter})
 
@@ -131,12 +144,12 @@ follower={
 affector={
  create=function(self,params)
   local o=params or {}
-  o.update=function(self,ps)
-   -- do nothing
-  end
   setmetatable(o,self)
   self.__index=self
   return o
+ end,
+ update=function(self,ps)
+  -- do nothing
  end
 }
 
@@ -154,24 +167,6 @@ bounds={
   return o
  end
 } setmetatable(bounds,{__index=affector})
-
-delay={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    if ps.tick<=p.delay then
-     if p.oforce==nil then p.oforce=p.force end
-     p.force=0
-    elseif ps.tick>p.delay and p.oforce>0 then
-     p.force=p.oforce
-     p.oforce=0
-    end
-   end
-  end
-  return o
- end
-} setmetatable(delay,{__index=affector})
 
 force={
  create=function(self,params)
@@ -247,10 +242,22 @@ heat={
    {0,0,1,1,2,1,5,6,2,4,9,3,13,5,4,9},
    {0,0,0,0,1,1,1,1,5,13,1,2,4,1,5,1,2,2}
   }
+  o.action={
+   function(self,i,p) if i % 3==0 then p.col=10 else p.col=7 end end,
+   function(self,i,p) p.col=p.ocol end,
+   function(self,i,p) p.col=self.col[1][p.ocol+1] end,
+   function(self,i,p) p.col=self.col[2][p.ocol+1] end,
+   function(self,i,p) p.col=1 end
+  }
   o.update=function(self,ps)
    for i,p in pairs(ps.particles) do
     if p.ocol==nil then p.ocol=p.col end
     local life=p.life/p.ttl
+    local c=1
+    while life<self.cycle[c] do c=c-1 end
+    local action=self.action[c]
+    action(i,p)
+    --[[
     if life>self.cycle[1] then
      if i % 3==0 then p.col=10 else p.col=7 end
     elseif life>self.cycle[2] then
@@ -262,13 +269,14 @@ heat={
     else
      p.col=1
     end
+    ]]
    end
   end
   return o
  end
 } setmetatable(heat,{__index=affector})
 
--- [[ system ]]
+-- [[ particle system ]]
 
 particle_system={
  create=function(self)
@@ -286,7 +294,7 @@ particle_system={
  end,
  update=function(self)
   if self.complete then return end
-  for _,e in pairs(self.emitters) do e:update(self) end
+  --for _,e in pairs(self.emitters) do e:update(self) end -- #######################
   for _,a in pairs(self.affectors) do a:update(self) end
   self.tick=self.tick+1
  end,
@@ -312,11 +320,6 @@ particle_system={
   for _,e in pairs(self.emitters) do e:init_particle(self,p) end
   self.count=self.count+1
   self.complete=false
- end,
- reset=function(self)
-  self.complete=false
-  self.particles={}
-  self.count=0
  end
 }
 
@@ -383,6 +386,27 @@ ship_smoke={
  end
 } setmetatable(ship_smoke,{__index=particle_system})
 
+bullet_smoke={
+ create=function(self,x,y,cols,count)
+  cols=cols or {6,13,5} -- {14,8,2} -- {10,9,8} -- {11,3,1}
+  count=count or 10
+  local ps=particle_system.create(self)
+  add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
+  add(ps.affectors,gravity:create({force=0.1}))
+  add(ps.affectors,size:create({shrink=0.9,cycle={4,2,0},col=cols}))
+  ps.add_particle=function(self)
+   particle_system.add_particle(
+    self,
+    circle:create({x=x,y=y,dx={-4,4},dy={-4,4},size={2,4},col={6},life={30,60}})
+   )
+  end
+  for i=1,count do
+   ps:add_particle()
+  end
+  return ps
+ end
+} setmetatable(bullet_smoke,{__index=particle_system})
+
 player_trail={
  create=function(self,target)
   local ps=particle_system.create(self)
@@ -431,48 +455,6 @@ smart_bomb={
  end
 } setmetatable(smart_bomb,{__index=particle_system})
 
--- [[ screen memory ]]
-
---[[
-function get_address(x,y)
- return 0x6000+flr(x/2)+(y*64)
-end
-
-function get_colour_pair(a)
- local b=peek(a)
- local l=b%16
- local r=(b-l)/16
- return {l,r}
-end
-
-function convert_to_particles(x,y,w,h)
- w=w or 128
- h=h or 128
- local ax={x,x+w-1}
- local ay={y,y+h-1}
- local a2=get_address(ax[2],ay[2])
- local ps=particle_system:create()
- add(ps.emitters,stationary:create({force={6,16},angle={-10,10}}))
- add(ps.affectors,delay:create())
- repeat
-  local a1=get_address(x,y)
-  local p=get_colour_pair(a1)
-  for i=1,2 do
-   if p[i]>0 then
-    local z=(x+i-1-ax[1])+((y-ay[1])*(rnd()+1))
-    ps:add_particle(spark:create({x=x+i-1,y=y,col={p[i]},life={20,80},delay=z}))
-   end
-  end
-  x=x+2
-  if x>ax[2] then
-   x=ax[1]
-   y=y+1
-  end
- until a1==a2
- return ps
-end
---]]
-
 -->8
 --collections
 
@@ -513,14 +495,14 @@ collection={
  end
 }
 
-bullets={
+bullet_col={
  create=function(self)
   local o=collection.create(self)
   return o
  end
-} setmetatable(bullets,{__index=collection})
+} setmetatable(bullet_col,{__index=collection})
 
-enemies={
+enemy_col={
  create=function(self)
   local o=collection.create(self)
   o.reset(self)
@@ -528,31 +510,32 @@ enemies={
  end,
  reset=function(self)
   collection.reset(self)
-  self.t=0
   self.wave=0
-  self.delay={0,240,360}
-  self.wty=-8
+  self.delay={0,240,310}
+  self:clear()
+ end,
+ clear=function(self)
+  if self.wave>0 then self.delay[1]=120 end
+  self.t=0
+  self.wty=-6
  end,
  update=function(self)
   if self.count==0 then
-   printh("no enemies")
    if p.complete then return end
    self.t=self.t+1
    if self.t>self.delay[3] then
-    self.t=0
-    self.wty=-8
+    self:clear()
+    -- start new wave
     self.wave=self.wave+1
-    self.delay={120,240,360}
     for i=0,120,16 do
-     self:add(alien:create(i,20,1))
+     self:add(alien:create(i,20,mrnd({1,3})))
     end
    elseif self.t>self.delay[2] then
     self.wty=self.wty+1
    elseif self.t>self.delay[1] then
-    if self.wty<61 then self.wty=self.wty+1 end
-    --s:add(self.ps)
-   --elseif self.t==self.delay[1]+5 then
-    --self.ps=convert_to_particles(50,61,29,7)
+    if self.wty<61 then
+     self.wty=self.wty+1
+    end
    end
   end
   collection.update(self)
@@ -560,24 +543,32 @@ enemies={
  draw=function(self)
   collection.draw(self)
   if self.t>self.delay[1] and self.t<self.delay[3] then
+   printh("t:"..self.t.." wty:"..self.wty) -- ############################### when wty==128 we can stop t there
    dprint("wave "..lpad(self.wave+1),50,self.wty)
   end
  end
-} setmetatable(enemies,{__index=collection})
+} setmetatable(enemy_col,{__index=collection})
 
-explosions={
+explosion_col={
  create=function(self)
   local o=collection.create(self)
   return o
  end
-} setmetatable(explosions,{__index=collection})
+} setmetatable(explosion_col,{__index=collection})
 
-particles={
+particle_col={
  create=function(self)
   local o=collection.create(self)
   return o
  end
-} setmetatable(particles,{__index=collection})
+} setmetatable(particle_col,{__index=collection})
+
+drop_col={
+ create=function(self)
+  local o=collection.create(self)
+  return o
+ end
+} setmetatable(drop_col,{__index=collection})
 
 -->8
 --objects
@@ -609,6 +600,7 @@ movable={
   return o
  end,
  collide_object=function(self,object)
+  if self.complete then return false end
   local x=self.x+self.dx
   local y=self.y+self.dy
   local hitbox=self.hitbox
@@ -701,12 +693,44 @@ animatable={
  end
 } setmetatable(animatable,{__index=movable})
 
-controllable={
- create=function(self,x,y,ax,ay)
-  local o=animatable.create(self,x,y,ax,ay)
+player={
+ create=function(self,x,y)
+  local o=animatable.create(self,x,y,0.2,0.2)
+  o.anim:add_stage("core",1,false,{16},{17},{18})
+  o.anim:init("core",dir.neutral)
+  o.sx=x
+  o.sy=y
+  o.reset(self)
   return o
  end,
+ reset=function(self)
+  self.complete=false
+  self.score=0
+  self.bullet=1
+  self.damage=500
+  self.bombs=3
+  self.x=self.sx
+  self.y=self.sy
+  self.trail=player_trail:create(self)
+ end,
+ destroy=function(self)
+  sfx(3)
+  explosions:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},20))
+  explosions:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},30))
+  cam:shake(5,0.9)
+  self.complete=true
+  save_score(self.score)
+  stage=game_over
+  game_over:init()
+ end,
+ hit=function(self)
+  sfx(3)
+  explosions:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},10))
+  explosions:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},5))
+  cam:shake(2,0.8)
+ end,
  update=function(self)
+  if self.complete then return end
   animatable.update(self)
   -- horizontal movement
   if btn(pad.left) then
@@ -717,7 +741,7 @@ controllable={
    self.dx=self.dx+self.ax
   else
    self.anim.current.dir=dir.neutral
-   self.dx=self.dx*drag.air
+   self.dx=self.dx*drag
   end
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
   if abs(self.dx)<self.min.dx then self.dx=0 end
@@ -738,7 +762,7 @@ controllable={
   elseif btn(pad.down) then
    self.dy=self.dy+self.ay
   else
-   self.dy=self.dy*drag.air
+   self.dy=self.dy*drag
   end
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   if abs(self.dy)<self.min.dy then self.dy=0 end
@@ -753,77 +777,98 @@ controllable={
     self.dy=0
    end
   end
-  -- buttons
+  -- button 1
   if btnp(pad.btn1) then
    sfx(0)
-   b:add(bullet:create(p.x,p.y,self.bullet))
+   bullets:add(bullet:create(self.x,self.y,self.bullet))
   end
-
+  -- button 2
   if btnp(pad.btn2) then
-   s:add(smart_bomb:create(self.x+4,self.y+4))
-   cam:shake(5,0.93)
-   if e.count>0 then
-    for _,enemy in pairs(e.items) do
-     local dx=abs(self.x-enemy.x)
-     local dy=abs(self.y-enemy.y)
-     local distance=sqrt(dx^2+dy^2)
-     if distance<40 then
-      enemy:destroy()
+   if self.bombs>0 then
+    self.bombs=self.bombs-1
+    particles:add(smart_bomb:create(self.x+4,self.y+4))
+    cam:shake(5,0.93)
+    if enemies.count>0 then
+     for _,enemy in pairs(enemies.items) do
+      local dx=abs(self.x-enemy.x)
+      local dy=abs(self.y-enemy.y)
+      local distance=sqrt(dx^2+dy^2)
+      if distance<40 then
+       printh("smart bomb:hit enemy")
+       enemy.damage=enemy.damage-1000
+       if enemy.damage<1 then
+        enemy:destroy()
+       else
+        enemy:hit()
+       end
+      end
      end
     end
    end
   end
-
- end,
- draw=function(self)
-  animatable.draw(self)
- end
-} setmetatable(controllable,{__index=animatable})
-
-player={
- create=function(self,x,y)
-  local p=controllable.create(self,x,y,0.2,0.2)
-  p.anim:add_stage("core",1,false,{16},{17},{18})
-  p.anim:init("core",dir.neutral)
-  p.trail=player_trail:create(p)
-  p.reset(self)
-  return p
- end,
- reset=function(self)
-  self.complete=false
-  self.score=0
-  self.bullet=1
-  self.x=60
-  self.y=100
- end,
- destroy=function(self)
-  sfx(3)
-  x:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},20))
-  x:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},30))
-  cam:shake(5,0.9)
-  self.complete=true
-  stage=game_over
-  game_over:init()
- end,
- update=function(self)
-  if self.complete then return end
-  controllable.update(self)
+  -- trail
   self.trail:update()
  end,
  draw=function(self)
   if self.complete then return end
-  controllable.draw(self)
+  animatable.draw(self)
   self.trail:draw()
  end
-} setmetatable(player,{__index=controllable})
+} setmetatable(player,{__index=animatable})
+
+drop={
+ sprites={38,39,40},
+ cols={9,11,8,12},
+ create=function(self,x,y,type)
+  local o=movable.create(self,x,y,0,0.2)
+  o.type=type
+  o.sprite=self.sprites[type]
+  return o
+ end,
+ destroy=function(self)
+  self.complete=true
+  sfx(5)
+  cam:shake(1,0.8)
+  local col=self.cols[self.type]
+  --explosions:add(ship_particles:create(self.x+4,self.y+4,{7,col,col},10))
+  explosions:add(ship_smoke:create(self.x+4,self.y+4,{7,col,col},10))
+ end,
+ update=function(self)
+  --movable.update(self)
+  self.y=self.y+1
+  if self.y>127 then
+   self.complete=true
+  else
+   if self:collide_object(p) then
+    self:destroy()
+    printh("drop hit player!") -- ##################################
+    printh("type:"..self.type) -- ##################################
+    if self.type==1 then
+     p.bombs=p.bombs+1
+    elseif self.type==2 then
+     p.bullet=2
+    elseif self.type==3 then
+     p.bullet=3
+    end
+   end
+  end
+ end,
+ draw=function(self)
+  --movable.draw(self)
+  if self.complete then return true end
+  spr(self.sprite,self.x,self.y)
+  return false
+ end
+} setmetatable(drop,{__index=movable})
 
 bullet_update_linear=function(self)
  self.y=self.y+self.ay
 end
+
 bullet_types={
- {sprite=1,ax=0,ay=-4,w=2,h=6,player=true,update=bullet_update_linear},
- {sprite=2,ax=0,ay=-6,w=6,h=6,player=true,update=bullet_update_linear},
- {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,update=bullet_update_linear}
+ {sprite=1,ax=0,ay=-4,w=2,h=6,player=true,damage=200,update=bullet_update_linear},
+ {sprite=2,ax=0,ay=-6,w=6,h=6,player=true,damage=400,update=bullet_update_linear},
+ {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,damage=600,update=bullet_update_linear}
 }
 
 bullet={
@@ -834,6 +879,11 @@ bullet={
   o.add_hitbox(self,otype.w,otype.h)
   return o
  end,
+ destroy=function(self)
+  self.complete=true
+  explosions:add(ship_particles:create(self.x+(self.type.w/2),self.y+(self.type.h/2),{7,8,9,10},10))
+  explosions:add(bullet_smoke:create(self.x+(self.type.w/2),self.y+(self.type.h/2),{6,5,1},8+self.type.w))
+ end,
  update=function(self)
   movable.update(self)
   self.type.update(self)
@@ -842,18 +892,31 @@ bullet={
    self.complete=true
   else
    if self.type.player then
-    if e.count>0 then
-     for i,enemy in pairs(e.items) do
+    if enemies.count>0 then
+     for i,enemy in pairs(enemies.items) do
       if self:collide_object(enemy) then
        printh("bullet:collided with enemy") -- ######################
-       enemy:destroy()
+       self:destroy()
+       enemy.damage=enemy.damage-self.type.damage
+       if enemy.damage<1 then
+        enemy:destroy()
+       else
+        enemy:hit()
+       end
+       break
       end
      end
     end
    else
     if self:collide_object(p) then
      printh("bullet:collided with player") -- ######################
-     p:destroy()
+     self:destroy()
+     p.damage=p.damage-self.type.damage
+     if p.damage<1 then
+      p:destroy()
+     else
+      p:hit()
+     end
     end
    end
   end
@@ -867,10 +930,10 @@ bullet={
 } setmetatable(bullet,{__index=movable})
 
 alien_update_linear=function(self)
-  self.dx=self.dx+self.ax
-  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-  self.dy=self.dy+self.ay
-  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+  --self.dx=self.dx+self.ax
+  --self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  --self.dy=self.dy+self.ay
+  --self.dy=mid(-self.max.dy,self.dy,self.max.dy)
  end
 
 alien_types={
@@ -878,14 +941,30 @@ alien_types={
   ax=0.05,ay=0.5,
   neutral={20},left={20},right={20},
   sfx=3,
-  score=100,
+  score=50,
+  damage=100,
+  pixels={7,8,9,10},
+  smoke={10,9,8},
   update=alien_update_linear
  },
  {
   ax=0.05,ay=0.5,
   neutral={21},left={21},right={21},
   sfx=3,
-  score=150,
+  score=100,
+  damage=150,
+  pixels={7,8,9,10},
+  smoke={14,8,2},
+  update=alien_update_linear
+ },
+ {
+  ax=0.05,ay=0.5,
+  neutral={22},left={22},right={22},
+  sfx=3,
+  score=200,
+  damage=500,
+  pixels={7,8,9,10},
+  smoke={11,3,1},
   update=alien_update_linear
  }
 }
@@ -894,19 +973,35 @@ alien={
  create=function(self,x,y,type)
   local otype=alien_types[type]
   local o=animatable.create(self,x,y,otype.ax,otype.ay)
-  o.max.dy=1
+  o.max={dx=1,dy=1}
   o.anim:add_stage("core",1,false,otype.neutral,otype.left,otype.right)
   o.anim:init("core",dir.neutral)
   o.type=otype
+  o.damage=otype.damage
   return o
  end,
  destroy=function(self)
   sfx(self.type.sfx)
-  x:add(ship_particles:create(self.x+4,self.y+4))
-  x:add(ship_smoke:create(self.x+4,self.y+4))
+  explosions:add(ship_particles:create(self.x+4,self.y+4,self.type.pixels))
+  explosions:add(ship_smoke:create(self.x+4,self.y+4,self.type.smoke))
   self.complete=true
   p.score=p.score+self.type.score
   cam:shake(1,0.9)
+  if p.bombs<5 or p.bullet<3 then
+   local type=1
+   if true then--if rnd()>1 then -- should be based on self.score and maybe wave
+    if p.bullet<3 and (p.bombs==5 or rnd()>0.33) then
+     type=p.bullet==1 and 2 or 3
+    end
+    drops:add(drop:create(self.x,self.y,type))
+   end
+  end
+ end,
+ hit=function(self)
+  sfx(self.type.sfx)
+  explosions:add(ship_particles:create(self.x+4,self.y+4,self.type.pixels,10))
+  explosions:add(bullet_smoke:create(self.x+4,self.y+4,self.type.smoke,5))
+  cam:shake(1,0.7)
  end,
  update=function(self)
 
@@ -925,9 +1020,13 @@ alien={
   else
    if self:collide_object(p) then
     printh("alien:collided with player") -- ######################
-    p:destroy()
     self:destroy()
-    self.complete=true
+    p.damage=p.damage-self.damage
+    if p.damage<1 then
+     p:destroy()
+    else
+     p:hit()
+    end
    end
   end
  end,
@@ -942,22 +1041,18 @@ alien={
 --stages
 
 intro={
- blank=false,
- t=0,
- c=1,
- cols={1,2,5,4,8,3,13,14,12,9,6,11,15,7,10},
  init=function(self)
-  -- set all colours to black so we can fade in
-   for i=1,15 do pal(i,0) end
    self.blank=true
+   self.t=0
+   self.c=1
+   for i=1,15 do pal(i,0) end
  end,
  update=function(self)
   cam:update()
-  s:update() -- update particles
-  -- is it time to fade in?
-  if self.blank and time()>2 then
-   if self.t%5==0 then
-    pal(self.cols[self.c],self.cols[self.c])
+  particles:update() -- update particles
+  if self.blank and time()>1 then
+   if self.t%2==0 then
+    pal(colours[self.c],colours[self.c])
     self.c=self.c+1
     if self.c==16 then self.blank=false end
    end
@@ -973,59 +1068,80 @@ intro={
  draw=function(self)
   cls(0)
   camera(cam:position())
-  s:draw() -- draw particles
-  dprint("press \142 or \151 to start",18,100)
-  print(stat(1),100,0,3)
+  particles:draw()
+  dprint("press \142 or \151 to start",18,110)
+  for i=1,10 do
+   dprint(lpad(i).."                 "..lpad(high_scores[i],5),16,16+i*8,10,4)
+  end
  end
 }
 
 game={
  init=function(self)
-  e:reset()
+  enemies:reset()
   p:reset()
  end,
  update=function(self)
   cam:update()
-  p:update() -- update player
-  b:update() -- update bullets
-  e:update() -- update enemies
-  x:update() -- update explosions
-  s:update() -- update particles
+  p:update()
+  bullets:update()
+  enemies:update()
+  explosions:update()
+  particles:update()
+  drops:update()
  end,
  draw=function(self)
   cls(0)
   camera(cam:position())
-  s:draw() -- draw particles
-  b:draw() -- draw bullets
-  e:draw() -- draw enemies
-  x:draw() -- draw explosions
-  p:draw() -- draw player
-
-  print(stat(1),0,10,3)
-  print(lpad(p.score,5),108,2,7)
-  print(lpad(high_score,5),54,2,9)
-  print(#e.items,0,0,2)
-  print(#x.items,10,0,2)
-  print(#b.items,20,0,2)
-  print(#s.items,30,0,2)
+  particles:draw()
+  drops:draw()
+  bullets:draw()
+  enemies:draw()
+  explosions:draw()
+  p:draw()
+  draw_hud()
+  --[[
+  print(stat(1),0,40,1) --############################
+  print(#e.items,0,47,1) --############################
+  print(#x.items,0,54,1) --############################
+  print(#b.items,0,61,1) --############################
+  print(#s.items,0,68,1) --############################
+  --]]
  end
 }
 
 game_over={
  t=0,
  init=function(self)
+  self.blank=false
   self.t=0
+  self.c=15
  end,
  update=function(self)
   cam:update()
-  b:update() -- update bullets
-  e:update() -- update enemies
-  x:update() -- update explosions
-  s:update() -- update particles
-  if self.t>60 then
+  bullets:update()
+  enemies:update()
+  explosions:update()
+  particles:update()
+  drops:update()
+  if self.t>3600 then
+   self.blank=true
+  elseif self.t>60 then
    if btn(pad.btn1) then
     stage=game
-    game:init()
+    stage:init()
+   elseif btn(pad.btn2) then
+    self.blank=true
+   end
+  end
+  if self.blank then
+   if self.t%2 then
+    pal(colours[self.c],0)
+    self.c=self.c-1
+    if self.c==0 then
+     stage=intro
+     stage:init()
+    end
    end
   end
   self.t=self.t+1
@@ -1033,17 +1149,17 @@ game_over={
  draw=function(self)
   cls(0)
   camera(cam:position())
-  s:draw() -- draw particles
-  b:draw() -- draw bullets
-  e:draw() -- draw enemies
-  x:draw() -- draw explosions
+  particles:draw()
+  drops:draw()
+  bullets:draw()
+  enemies:draw()
+  explosions:draw()
   if self.t>60 then
-   dprint("game over",46,61,10,8)
+   dprint("game over",46,61,9,8)
    dprint("press \142 to restart",28,90)
    dprint("or \151 to return to the menu",12,100)
   end
-  print(lpad(p.score,5),108,2,7)
-  print(lpad(high_score,5),54,2,9)
+  draw_hud()
  end
 }
 
@@ -1074,16 +1190,62 @@ cam={
  end
 }
 
+function load_scores()
+ for i=1,10 do
+  local s=dget(i)
+  printh("dget("..i..")="..s)
+  if s>0 then
+   high_scores[i]=s
+  end
+  high_score=high_scores[1]
+ end
+end
+
+function save_score(s)
+ if s>high_scores[10] then
+  for i=1,10 do
+   if s>high_scores[i] then
+    for j=10,i+1,-1 do
+     high_scores[j]=high_scores[j-1]
+    end
+    high_scores[i]=s
+    for i=1,10 do dset(i,high_scores[i]) end
+    break
+   end
+  end
+ end
+end
+
+function draw_hud()
+ -- scores
+  dprint(lpad(p.score,5),108,2,7,5)
+  dprint(lpad(high_scores[1],5),54,2,9,4)
+  -- life
+  for i=1,5 do
+   spr(p.damage>=i*100 and 35 or 36,7*(i-1),3)
+  end
+  -- bombs
+  if p.bombs>0 then
+   for i=1,p.bombs do
+    spr(37,124-6*(i-1),124)
+   end
+  end
+end
+
 function _init()
+ -- cartdata
+ cartdata("pops_pigdog_"..cartdata_version)
+ load_scores()
  -- create player
  p=player:create(60,96)
  -- create collections
- b=bullets:create()
- e=enemies:create()
- x=explosions:create()
- s=particles:create()
+ bullets=bullet_col:create()
+ enemies=enemy_col:create()
+ explosions=explosion_col:create()
+ particles=particle_col:create()
+ drops=drop_col:create()
  -- populate collections
- s:add(star_particles:create())
+ particles:add(star_particles:create())
  -- set the stage
  stage=intro
  stage:init()
@@ -1101,7 +1263,7 @@ end
 
 -- e.g.> x=mrnd({5,10}) -- returns an integer between 5 and 10 inclusive
 -- x|table|the minimum and maximum values
--- f|boolean|whether to return the floor of the value. default is true.
+-- f|boolean|whether to return the floor of the value. default is true
 function mrnd(x,f)
  if f==nil then f=true end
  local v=(rnd()*(x[2]-x[1]+(f and 1 or 0.0001)))+x[1]
@@ -1112,6 +1274,12 @@ end
 -- x|float|the number to round
 function round(x) return flr(x+0.5) end
 
+-- e.g.> dprint("text",0,0,7,2) -- prints "text" at 0,0 in white with a purple shadow
+-- s|text|the text to print
+-- x|integer|x co-ordinate
+-- y|integer|y co-ordinate
+-- c1|integer|the main text colour. default is white
+-- c2|integer|the shadow colour. default is purple
 function dprint(s,x,y,c1,c2)
  c1=c1 or 7
  c2=c2 or 2
@@ -1119,6 +1287,9 @@ function dprint(s,x,y,c1,c2)
  print(s,x,y,c1)
 end
 
+-- e.g.> lpad(123,5) -- returns 00123
+-- x|integer|the number to pad
+-- n|integer|the number of characters to return. default is 2
 function lpad(x,n)
  n=n or 2
  return sub("0000000"..x,-n)
@@ -1141,17 +1312,148 @@ __gfx__
 55533ddd0533dd6005dd3bd000000000022eeee00dc88c704428889905dd66600000000000000000000000000000000000000000000000000000000000000000
 5055550d05555d6005d555d0000000000322eeb00ddccc7004422990055ddd600000000000000000000000000000000000000000000000000000000000000000
 5080080d05028dd0055820d0000000000002200001dddd1000444400500000060000000000000000000000000000000000000000000000000000000000000000
-00000000000000000888888008080000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000088889888888e800011110000000000000cccccc0033333300888888000000000000000000000000000000000000000000000000000000000
-000000000000000088119a88888880001111000000000000ccc18ccc333777338877788800000000000000000000000000000000000000000000000000000000
-000000000000000088119998088800000110000000000000cc1111cc333337338888788800000000000000000000000000000000000000000000000000000000
-000000000000000088111188008000000000000000000000cd1111dc337777338887778800000000000000000000000000000000000000000000000000000000
-000000000000000088111188000000000000000000000000cdd11ddc337733338888778800000000000000000000000000000000000000000000000000000000
-000000000000000088888888000000000000000000000000ccddddcc337777338877778800000000000000000000000000000000000000000000000000000000
-0000000000000000088888800000000000000000000000000cccccc0033333300888888000000000000000000000000000000000000000000000000000000000
+000000000000000008888880080800000d0d00000d80000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000088889888888e8000ddd6d0005ddd0000099999900bbbbbb0088888800cccccc0000000000000000000000000000000000000000000000000
+000000000000000088119a8888888000ddddd00055dd0000499689993bb777bb28777888dcc8c8cc000000000000000000000000000000000000000000000000
+000000000000000088119998088800000ddd000005500000496666993bbbb7bb28887888dc88888c000000000000000000000000000000000000000000000000
+0000000000000000881111880080000000d0000000000000416666193b7777bb28877788dc88888c000000000000000000000000000000000000000000000000
+000000000000000088111188000000000000000000000000411661193b77bbbb28887788dcc888cc000000000000000000000000000000000000000000000000
+00000000000000008888888800000000000000000000000044111194337777b322777782ddcc8ccd000000000000000000000000000000000000000000000000
+0000000000000000088888800000000000000000000000000444444003333330022222200dddddd0000000000000000000000000000000000000000000000000
+__label__
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888ffffff882222228888888888888888888888888888888888888888888888888888888888888888228228888ff88ff888222822888888822888888228888
+88888f8888f882888828888888888888888888888888888888888888888888888888888888888888882288822888ffffff888222822888882282888888222888
+88888ffffff882888828888888888888888888888888888888888888888888888888888888888888882288822888f8ff8f888222888888228882888888288888
+88888888888882888828888888888888888888888888888888888888888888888888888888888888882288822888ffffff888888222888228882888822288888
+88888f8f8f88828888288888888888888888888888888888888888888888888888888888888888888822888228888ffff8888228222888882282888222288888
+888888f8f8f8822222288888888888888888888888888888888888888888888888888888888888888882282288888f88f8888228222888888822888222888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000000000000000000000000000000000005555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555550000000000011111111112222222222333333333305555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550000000000011111111112222222222333333333305555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+5555555000000000cccccccccccccccccccccccccccccccccccccccccccccccc0000000005555550444444444455555555556666666666777777777705555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc05555550444444444455555555556666666666777777777705555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc05555550444444444455555555556666666666777777777705555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccccccccccc88888888cccccccc88888888cccccccccccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc0555555088888888889999999999aaaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550888888888777777777777aaaaaaaaabbbbbbbbbb05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc700000000007eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc70dddddddd07eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550ccccccccc700000000007eeeeeeeeeffffffffff05555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555550000000000777777777777000000000000000000005555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555555555555555555555555555555555555555555555555555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555555555555555555555555555555555555555555555555555555
+55555550ddddddddcccccccc8888888888888888888888888888888888888888cccccccc05555555555555555555555555555555555555555555555555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc05555550000000555556667655555555555555555555555555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc05555550000000555555666555555555555555555555555555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc0555555000000055555556dddddddddddddddddddddddd5555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc0555555000d0005555555655555555555555555555555d5555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc05555550000000555555576666666d6666666d666666655555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc05555550000000555555555555555555555555555555555555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc05555550000000555555555555555555555555555555555555555555
+55555550ddddddddcccccccccccccccc888888888888888888888888cccccccccccccccc05555555555555555555555555555555555555555555555555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd05555555555555555555555555555555555555555555555555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd05555556665666555556667655555555555555555555555555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd05555556555556555555666555555555555555555555555555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd0555555555555555555556dddddddddddddddddddddddd5555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd055555565555565555555655555555555555555555555d5555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd05555556665666555555576666666d6666666d666666655555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd05555555555555555555555555555555555555555555555555555555
+55555550ddddddddddddddddcccccccccccccccc88888888ccccccccccccccccdddddddd05555555555555555555555555555555555555555555555555555555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555555555555555555555555555555555555555555555555555555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555555555555555555555555555555555555555555555555555555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555550005550005550005550005550005550005550005550005555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd00000000055555011d05011d05011d05011d05011d05011d05011d05011d0555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555501110501110501110501110501110501110501110501110555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555501110501110501110501110501110501110501110501110555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555550005550005550005550005550005550005550005550005555
+5555555000000000dddddddddddddddddddddddddddddddddddddddddddddddd0000000005555555555555555555555555555555555555555555555555555555
+55555550000000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555550000000055555555555555555555555555555555555555555555555555
+5555555555555555555555555d555555ddd5555d5d5d5d5555d5d555555557555555550cccccc056666666666666555557777755555555555555555555555555
+555555555555555555555555ddd55555ddd555555555555555d5d5d555555575555555dcc8c8cc56ddd6d6d6dd66555577ddd775566666555666665556666655
+55555555555555555555555ddddd5555ddd5555d55555d5555d5d5d555555557555555dc88888c56d6d6d6d66d66555577d7d77566dd666566ddd66566ddd665
+5555555555555555555555ddddd55555ddd555555555555555ddddd555777777755555dc88888c56d6d6ddd66d66555577d7d775666d66656666d665666dd665
+555555555555555555555d5ddd5555ddddddd55d55555d55d5ddddd557577777555555dcc888cc56d6d666d66d66555577ddd775666d666566d666656666d665
+555555555555555555555d55d55555d55555d555555555555dddddd557557775555555ddcc8ccd56ddd666d6ddd655557777777566ddd66566ddd66566ddd665
+555555555555555555555ddd555555ddddddd55d5d5d5d55555ddd55575557555555550dddddd056666666666666555577777775666666656666666566666665
+55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555566666665ddddddd5ddddddd5ddddddd5
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000770000007700770077066077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000aa000000aa00aa00aa0990aa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000990000009900990099044099000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000980000009800890098044089000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000880000008800880088022088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000080000008000080080000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000560000005600000056000b000b0000000000000d00700008008003000000b0000000000000000000000000000000000000000000000000000000000000000
+005dd600005dd66005ddd6003d67b00002200ef00dd11c7004999aa00d0000600000000000000000000000000000000000000000000000000000000000000000
+505ddd06005ddd00005ddd00dd667000222eeeffdd1cc1c7499999aa55dd66660000000000000000000000000000000000000000000000000000000000000000
+005bbd00053bd66005ddbbd05dd6600022dcc6ef01c8ec104998899a528d68860000000000000000000000000000000000000000000000000000000000000000
+5053bd06003bdd6005ddbb0005dd000022ddccef0dc8ec7044288899522d62860000000000000000000000000000000000000000000000000000000000000000
+55533ddd0533dd6005dd3bd000000000022eeee00dc88c704428889905dd66600000000000000000000000000000000000000000000000000000000000000000
+5055550d05555d6005d555d0000000000322eeb00ddccc7004422990055ddd600000000000000000000000000000000000000000000000000000000000000000
+5080080d05028dd0055820d0000000000002200001dddd1000444400500000060000000777777777700000000000000000000000000000000000000000000000
+000000000000000008888880080800000d0d00000d80000000000000000000000000000700000000700000000000000000000000000000000000000000000000
+000000000000000088889888888e8000ddd6d0005ddd0000099999900bbbbbb0088888070cccccc0700000000000000000000000000000000000000000000000
+000000000000000088119a8888888000ddddd00055dd0000499689993bb777bb28777807dcc8c8cc700000000000000000000000000000000000000000000000
+000000000000000088119998088800000ddd000005500000496666993bbbb7bb28887807dc88888c700000000000000000000000000000000000000000000000
+0000000000000000881111880080000000d0000000000000416666193b7777bb28877707dc88888c700000000000000000000000000000000000000000000000
+000000000000000088111188000000000000000000000000411661193b77bbbb28887707dcc888cc700000000000000000000000000000000000000000000000
+00000000000000008888888800000000000000000000000044111194337777b322777707ddcc8ccd700000000000000000000000000000000000000000000000
+0000000000000000088888800000000000000000000000000444444003333330022222070dddddd0700000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000777777777700000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
+
 __sfx__
-00010000300502e0502c0502a0502905028050260402504025040240402404024040230402104020040200401f0401e0401d0401c0401b0401b0401a04019040140001000013000110000e0000b0000900007000
+00010000300502e0502c0502a0502905028050260402504025040240402404024040230402104020070200401f0401e0401d0401c0401b0401b0401a04019040140001000013000110000e0000b0000900007000
 000200003265031660306602f6702e6702d6702c6702a670276702567023660216601f6501d6501a65019640176301663012630106300f6200c6200a6200762003610016100f6000d6000b600096000760003600
 00150000086400a650086500865008650076500565005650066500565005640056400563004630036200362003610016100660005600046000460003600036000360003600026000430003300033000330003300
 00070000366502d660246601b65017650146500e640086300662004610016100161001600016001d6001c6001b6001a6001a60019600186001760017600000000000000000000000000000000000000000000000
 0006000038660246601d65015640116300e6200861003610036000360002600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00060000205502355028550235501d550304003040030400304000b50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
