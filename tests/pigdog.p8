@@ -10,7 +10,6 @@ dir={left=1,right=2,neutral=3}
 drag=0.75
 stage=nil
 high_scores={7000,6500,6000,5500,5000,4500,4000,3500,3000,2500}
-colours={1,2,5,4,8,3,13,14,12,9,6,11,15,7,10}
 cartdata_version=1
 
 -->8
@@ -204,7 +203,7 @@ randomise={
 size={
  create=function(self,params)
   local o=affector.create(self,params)
-  o.shrink=o.shrink or 0.96
+  o.shrink=o.shrink or 0.9
   o.cycle=o.cycle or {9,5,2}
   o.col=o.col or {6,5,1}
   o.update=function(self,ps)
@@ -231,7 +230,7 @@ gravity={
     local dy=-sin(p.angle)*p.force
     dy=dy+self.force
     p.angle=atan2(dx,-dy)
-    p.force=sqrt((dx^2)+(dy^2))
+    p.force=sqrt(dx^2+dy^2)
    end
   end
   return o
@@ -329,9 +328,30 @@ particle_system={
  end
 }
 
+-- hack to temporarily draw something to the screen
+-- add to a collection just like a particle system
+-- fn|function|the function to draw
+-- tick|integer|the number of ticks the deraw should occur for
+simple={
+ create=function(self,fn,tick)
+  local o={complete=false,tick=tick,fn=fn}
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end,
+ update=function(self)
+  self.tick=self.tick-1
+ end,
+ draw=function(self)
+  self.fn(tick)
+  self.complete=self.tick==0
+  return self.complete
+ end
+}
+
 -- [[ particle instances ]]
 
-star_particles={
+stars={
  create=function(self)
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={0.5,3},angle={90,90}}))
@@ -349,9 +369,9 @@ star_particles={
   end
   return ps
  end
-} setmetatable(star_particles,{__index=particle_system})
+} setmetatable(stars,{__index=particle_system})
 
-ship_particles={
+pixels={
  create=function(self,x,y,cols,count)
   cols=cols or {7,8,9,10}
   count=count or 10
@@ -369,16 +389,16 @@ ship_particles={
   end
   return ps
  end
-} setmetatable(ship_particles,{__index=particle_system})
+} setmetatable(pixels,{__index=particle_system})
 
-ship_smoke={
+big_smoke={
  create=function(self,x,y,cols,count)
   cols=cols or {10,9,8} -- {14,8,2} -- {10,9,8} -- {11,3,1}
   count=count or 20
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
   add(ps.affectors,gravity:create({force=0.1}))
-  add(ps.affectors,size:create({shrink=0.9,col=cols}))
+  add(ps.affectors,size:create({col=cols}))
   ps.add_particle=function(self)
    particle_system.add_particle(
     self,
@@ -390,16 +410,16 @@ ship_smoke={
   end
   return ps
  end
-} setmetatable(ship_smoke,{__index=particle_system})
+} setmetatable(big_smoke,{__index=particle_system})
 
-bullet_smoke={
+small_smoke={
  create=function(self,x,y,cols,count)
   cols=cols or {6,13,5} -- {14,8,2} -- {10,9,8} -- {11,3,1}
   count=count or 10
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
   add(ps.affectors,gravity:create({force=0.1}))
-  add(ps.affectors,size:create({shrink=0.9,cycle={4,2,0},col=cols}))
+  add(ps.affectors,size:create({cycle={4,2,0},col=cols}))
   ps.add_particle=function(self)
    particle_system.add_particle(
     self,
@@ -411,7 +431,7 @@ bullet_smoke={
   end
   return ps
  end
-} setmetatable(bullet_smoke,{__index=particle_system})
+} setmetatable(small_smoke,{__index=particle_system})
 
 player_trail={
  create=function(self,target)
@@ -532,9 +552,15 @@ enemy_col={
     self:clear()
     -- start new wave
     self.wave=self.wave+1
-    for i=0,120,16 do
-     self:add(alien:create(i,20,mrnd({1,3})))
+    -- needs updating!!! ---###################################################
+    -- needs updating!!! ---###################################################
+    -- needs updating!!! ---###################################################
+    for i=1,5 do
+     self:add(alien:create(42+i*16,-8,mrnd({1,3})))
     end
+    -- needs updating!!! ---###################################################
+    -- needs updating!!! ---###################################################
+    -- needs updating!!! ---###################################################
    elseif self.t>self.delay[2] then
     self.wty=self.wty+1
    elseif self.t>self.delay[1] then
@@ -601,17 +627,29 @@ movable={
   o.min={dx=0.05,dy=0.05}
   o.max={dx=2,dy=2}
   o.complete=false
+  o.health=0
   return o
  end,
  collide_object=function(self,object)
-  if self.complete then return false end
-  local x=self.x+self.dx
-  local y=self.y+self.dy
+  if self.complete or object.complete then return false end
+  local x=self.x--+self.dx
+  local y=self.y--+self.dy
   local hitbox=self.hitbox
-  return (x+hitbox.x<object.x+object.hitbox.x2) and
+  return (x+hitbox.x<=object.x+object.hitbox.x2) and
    (object.x+object.hitbox.x<x+hitbox.w) and
-   (y+hitbox.y<object.y+object.hitbox.y2) and
+   (y+hitbox.y<=object.y+object.hitbox.y2) and
    (object.y+object.hitbox.y<y+hitbox.h)
+ end,
+ damage=function(self,health)
+  self.health=self.health-health
+  if self.health>0 then
+   self:hit()
+  else
+   self:destroy()
+  end
+ end,
+ hit=function(self)
+  -- do nothing
  end,
  destroy=function(self)
   -- do nothing
@@ -693,6 +731,7 @@ animatable={
  end,
  draw=function(self)
   local sprite=self.animate(self)
+  --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,2)
   spr(sprite,self.x,self.y)
  end
 } setmetatable(animatable,{__index=movable})
@@ -704,14 +743,15 @@ player={
   o.anim:init("core",dir.neutral)
   o.sx=x
   o.sy=y
-  o.reset(self)
-  o.max.damage=o.damage
+  o:reset()
+  o.max.health=o.health
+  o.max.bombs=5
   return o
  end,
  reset=function(self)
   self.complete=false
   self.score=0
-  self.damage=500
+  self.health=500
   self.bullet=1
   self.bombs=3
   self.x=self.sx
@@ -720,8 +760,8 @@ player={
  end,
  destroy=function(self)
   sfx(3)
-  explosions:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},20))
-  explosions:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},30))
+  explosions:add(pixels:create(self.x+4,self.y+4,{2,3,11},20))
+  explosions:add(big_smoke:create(self.x+4,self.y+4,{11,3,1},30))
   cam:shake(5,0.9)
   self.complete=true
   save_score(self.score)
@@ -730,8 +770,8 @@ player={
  end,
  hit=function(self)
   sfx(3)
-  explosions:add(ship_particles:create(self.x+4,self.y+4,{2,3,11},10))
-  explosions:add(ship_smoke:create(self.x+4,self.y+4,{11,3,1},5))
+  explosions:add(pixels:create(self.x+4,self.y+4,{2,3,11},10))
+  explosions:add(big_smoke:create(self.x+4,self.y+4,{11,3,1},5))
   cam:shake(2,0.8)
  end,
  update=function(self)
@@ -782,31 +822,26 @@ player={
     self.dy=0
    end
   end
-  -- button 1
+  -- fire
   if btnp(pad.btn1) then
    sfx(0)
    bullets:add(bullet:create(self.x,self.y,self.bullet))
   end
-  -- button 2
+  -- smart bomb
   if btnp(pad.btn2) then
    if self.bombs>0 then
     self.bombs=self.bombs-1
     particles:add(smart_bomb:create(self.x+4,self.y+4))
     cam:shake(5,0.93)
     if enemies.count>0 then
-     for _,enemy in pairs(enemies.items) do
-      local dx=abs(self.x-enemy.x)
-      local dy=abs(self.y-enemy.y)
-      local distance=sqrt(dx^2+dy^2)
-      if distance<40 then
-       local damage=(40-distance)*50
+     for _,e in pairs(enemies.items) do
+      local dx=abs(self.x-e.x)
+      local dy=abs(self.y-e.y)
+      local d=sqrt(dx^2+dy^2)
+      if d<40 then
+       local health=(40-d)*50
        printh("smart bomb:hit enemy") -- ########################
-       enemy.damage=enemy.damage-damage
-       if enemy.damage<1 then
-        enemy:destroy()
-       else
-        enemy:hit()
-       end
+       e:damage(health)
       end
      end
     end
@@ -824,12 +859,16 @@ player={
 
 bullet_update_linear=function(self)
  self.y=self.y+self.ay
+ if self.y<-self.type.h or self.y>127 then
+   self.complete=true
+ end
 end
 
 bullet_types={
- {sprite=1,ax=0,ay=-4,w=2,h=6,player=true,damage=200,update=bullet_update_linear},
- {sprite=2,ax=0,ay=-6,w=6,h=6,player=true,damage=400,update=bullet_update_linear},
- {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,damage=600,update=bullet_update_linear}
+ {sprite=1,ax=0,ay=-4,w=2,h=6,player=true,health=200,update=bullet_update_linear},
+ {sprite=2,ax=0,ay=-5,w=6,h=6,player=true,health=400,update=bullet_update_linear},
+ {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,health=600,update=bullet_update_linear},
+ {sprite=4,ax=0,ay=1,w=2,h=6,player=false,health=200,update=bullet_update_linear}
 }
 
 bullet={
@@ -837,35 +876,28 @@ bullet={
   local otype=bullet_types[type]
   local o=movable.create(self,x,y,otype.ax,otype.ay)
   o.type=otype
-  o.add_hitbox(self,otype.w,otype.h)
+  o:add_hitbox(otype.w,otype.h)
+  o.x=o.x-o.hitbox.x+4-flr(o.type.w/2)
   return o
  end,
  destroy=function(self)
   self.complete=true
   local x=self.x+(self.type.w/2)
   local y=self.y+(self.type.h/2)
-  explosions:add(ship_particles:create(x,y,{7,8,9,10},10))
-  explosions:add(bullet_smoke:create(x,y,{6,5,1},8+self.type.w))
+  explosions:add(pixels:create(x,y,{7,8,9,10},10))
+  explosions:add(small_smoke:create(x,y,{6,5,1},8+self.type.w))
  end,
  update=function(self)
   movable.update(self)
   self.type.update(self)
-  if self.x<0 or self.x>127
-   or self.y<0 or self.y>127 then
-   self.complete=true
-  else
+  if not self.complete then
    if self.type.player then
     if enemies.count>0 then
-     for i,enemy in pairs(enemies.items) do
-      if self:collide_object(enemy) then
+     for _,e in pairs(enemies.items) do
+      if self:collide_object(e) then
        printh("bullet:collided with enemy") -- ######################
        self:destroy()
-       enemy.damage=enemy.damage-self.type.damage
-       if enemy.damage<1 then
-        enemy:destroy()
-       else
-        enemy:hit()
-       end
+       e:damage(self.type.health)
        break
       end
      end
@@ -874,20 +906,15 @@ bullet={
     if self:collide_object(p) then
      printh("bullet:collided with player") -- ######################
      self:destroy()
-     p.damage=p.damage-self.type.damage
-     if p.damage<1 then
-      p:destroy()
-     else
-      p:hit()
-     end
+     p:damage(self.type.health)
     end
    end
   end
  end,
  draw=function(self)
-  --movable.draw(self)
   if self.complete then return true end
-  spr(self.type.sprite,self.x-self.hitbox.x+4-flr(self.type.w/2),self.y)
+  --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,3)
+  spr(self.type.sprite,self.x,self.y)
   return false
  end
 } setmetatable(bullet,{__index=movable})
@@ -895,9 +922,26 @@ bullet={
 alien_update_linear=function(self)
   --self.dx=self.dx+self.ax
   --self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-  --self.dy=self.dy+self.ay
-  --self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+
+ if self.t%2==0
+  and (self.t<48 or self.t>480) then
+  self.y=self.y+1
  end
+
+ self.dx=self.dx+cos(self.angle)*0.2
+ self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+ self.x=self.x+round(self.dx)
+
+ self.angle=self.angle+0.01--rnd()*0.1
+
+---self.dy=-sin(self.angle)
+
+ local r=rnd()
+ if r<min(20,enemies.wave)*self.type.fire_rate then
+  bullets:add(bullet:create(self.x,self.y,self.type.bullet))
+ end
+
+end
 
 alien_types={
  {
@@ -905,33 +949,36 @@ alien_types={
   neutral={20},left={20},right={20},
   sfx=3,
   score=50,
-  damage=100,
+  health=100,
   pixels={7,8,9,10},
   smoke={10,9,8},
   update=alien_update_linear,
-  fire_rate=0 -- multiply by the wave number
+  fire_rate=0, -- multiply by the wave number
+  bullet=4
  },
  {
   ax=0.05,ay=0.5,
   neutral={21},left={21},right={21},
   sfx=3,
   score=100,
-  damage=150,
+  health=150,
   pixels={7,8,9,10},
   smoke={14,8,2},
   update=alien_update_linear,
-  fire_rate=0.1
+  fire_rate=0.001,
+  bullet=4
  },
  {
   ax=0.05,ay=0.5,
   neutral={22},left={22},right={22},
   sfx=3,
   score=200,
-  damage=500,
+  health=500,
   pixels={7,8,9,10},
   smoke={11,3,1},
   update=alien_update_linear,
-  fire_rate=0.2
+  fire_rate=0.002,
+  bullet=4
  }
 }
 
@@ -939,64 +986,82 @@ alien={
  create=function(self,x,y,type)
   local otype=alien_types[type]
   local o=animatable.create(self,x,y,otype.ax,otype.ay)
-  o.max={dx=1,dy=1}
   o.anim:add_stage("core",1,false,otype.neutral,otype.left,otype.right)
   o.anim:init("core",dir.neutral)
+  o.max={dx=1,dy=1}
   o.type=otype
-  o.damage=otype.damage
+  o.health=otype.health
+  o.angle=0.25
+  o.t=0
   return o
  end,
  destroy=function(self)
   sfx(self.type.sfx)
-  explosions:add(ship_particles:create(self.x+4,self.y+4,self.type.pixels))
-  explosions:add(ship_smoke:create(self.x+4,self.y+4,self.type.smoke))
+  explosions:add(pixels:create(self.x+4,self.y+4,self.type.pixels))
+  explosions:add(big_smoke:create(self.x+4,self.y+4,self.type.smoke))
+  cam:shake(1,0.9)
   self.complete=true
   p.score=p.score+self.type.score
-  cam:shake(1,0.9)
-  local type=0
-  if p.damage<p.max.damage and rnd()<(min(20,enemies.wave)*0.025) then
-   type=4
-  elseif p.bombs<5 and rnd()<(min(20,enemies.wave)*0.015) then
-   type=1
-  elseif p.bullet<3 and rnd()<(min(20,enemies.wave)*0.01) then
-   type=p.bullet==1 and 2 or 3
-  elseif rnd()<(min(20,enemies.wave)*0.005) then
-   type=5
+  local r=rnd()
+  if r<min(16,enemies.wave)*(0.05/(drops.count+1)) then
+   printh("considering drop") -- ###############################################
+   local type=0
+   local t={}
+   if p.health<p.max.health then
+    for i=1,3 do add(t,4) end
+   end
+   if p.bombs<p.max.bombs then
+    for i=1,3 do add(t,1) end
+   end
+   if p.bullet<3 then
+    local b=p.bullet==1 and 2 or 3
+    for i=1,2 do add(t,b) end
+   end
+   --if r<0.33 then add(t,5) end
+   add(t,5)
+   printh("drop array count:"..#t) -- ###############################################
+   if #t>0 then type=t[mrnd({1,#t})] end
+   if type>0 then
+    drops:add(drop:create(self.x,self.y,type))
+   end
   end
-  if type>0 then
-   drops:add(drop:create(self.x,self.y,type))
-  end
+--[[
+  --if rnd()<(min(16,enemies.wave)*0.01 then -- start off with a % chance of any drop occurring. leave for now for testing
+   local type=0
+   if p.health<p.max.health
+    and rnd()<(min(20,enemies.wave)*0.025) then
+    type=4
+   elseif p.bombs<p.max.bombs
+    and rnd()<(min(20,enemies.wave)*0.015) then
+    type=1
+   elseif p.bullet<3
+    and rnd()<(min(20,enemies.wave)*0.01) then
+    type=p.bullet==1 and 2 or 3
+   elseif rnd()<(min(20,enemies.wave)*0.005) then
+    type=5
+   end
+   if type>0 then
+    drops:add(drop:create(self.x,self.y,type))
+   end
+  --end
+  ]]
  end,
  hit=function(self)
   sfx(self.type.sfx)
-  explosions:add(ship_particles:create(self.x+4,self.y+4,self.type.pixels,10))
-  explosions:add(bullet_smoke:create(self.x+4,self.y+4,self.type.smoke,5))
+  explosions:add(pixels:create(self.x+4,self.y+4,self.type.pixels,10))
+  explosions:add(small_smoke:create(self.x+4,self.y+4,self.type.smoke,5))
   cam:shake(1,0.7)
  end,
  update=function(self)
-
   self.type.update(self)
-
-  self.x=self.x+round(self.dx)
-  if self.x<-8 then self.x=120 end
-  if self.x>127 then self.x=0 end
-
-  self.y=self.y+round(self.dy)
-  if self.y<-8 then self.y=120 end
-  if self.y>127 then self.y=0 end
-
-  if self.y<0 or self.y>127 then
+  self.t=self.t+1
+  if self.y>127 then
    self.complete=true
   else
    if self:collide_object(p) then
     printh("alien:collided with player") -- ######################
     self:destroy()
-    p.damage=p.damage-self.damage
-    if p.damage<1 then
-     p:destroy()
-    else
-     p:hit()
-    end
+    p:damage(self.health)
    end
   end
  end,
@@ -1019,26 +1084,38 @@ drop={
  create=function(self,x,y,type)
   local o=animatable.create(self,x,y,0,0.2)
   local sprites=self.sprites[type]
-  o.anim:add_stage("core",5,true,sprites,sprites,sprites)
+  o.anim:add_stage("core",8,true,sprites,sprites,sprites)
   o.anim:init("core",dir.neutral)
+  o.max={dx=1,dy=1}
   o.type=type
   return o
  end,
  destroy=function(self)
-  self.complete=true
   sfx(5)
+  explosions:add(big_smoke:create(self.x+4,self.y+4,{7,col,col},10))
   cam:shake(1,0.8)
+  self.complete=true
   local col=self.cols[self.type]
-  explosions:add(ship_smoke:create(self.x+4,self.y+4,{7,col,col},10))
  end,
  update=function(self)
   animatable.update(self)
-  local dx=abs(self.x-p.x)
-  local dy=abs(self.y-p.y)
-  local distance=sqrt(dx^2+dy^2)
+  local distance=16
+  if not p.complete then
+   local dx=abs(self.x-p.x)
+   local dy=abs(self.y-p.y)
+   distance=sqrt(dx^2+dy^2)
+  end
   if distance<16 then
-   self.x=self.x+(p.x>self.x and 1 or -1)
-   self.y=self.y+(p.y>self.y and 1 or -1)
+   if p.x>self.x then
+    self.x=self.x+1
+   elseif p.x<self.x then
+    self.x=self.x-1
+   end
+   if p.y>self.y then
+    self.y=self.y+1
+   elseif p.y<self.y then
+    self.y=self.y-1
+   end
   elseif self.anim.current.tick%2==0 then
     self.y=self.y+1
   end
@@ -1056,25 +1133,34 @@ drop={
     elseif self.type==3 then
      p.bullet=3
     elseif self.type==4 then
-     p.damage=min(p.max.damage,p.damage+200)
+     p.health=min(p.max.health,p.health+200)
     elseif self.type==5 then
-     for _,e in pairs(enemies.items) do 
+     cam:shake(5,0.95)
+     for _,e in pairs(enemies.items) do
       e:destroy()
-      cam:shake(5,0.95)
+     end
+     for _,b in pairs(bullets.items) do
+       b:destroy()
      end
      for _,d in pairs(drops.items) do
        d:destroy()
      end
+     explosions:add(simple:create(function() rectfill(0,0,127,127,7) end,5))
+     --[[
      local ps=particle_system:create()
-     add(ps.emitters,stationary:create({force={0,0},angle={1,360}}))     
+     add(ps.emitters,stationary:create({force={0,0},angle={1,360}}))
      ps:add_particle(
       circle:create({x=64,y=64,size={128,128},col={7},life={5,5}})
      )
      explosions:add(ps)
+     ]]
     end
     for _,d in pairs(drops.items) do
      if d.type==self.type then
-      if self.type>1 or (self.type==1 and p.bombs==5) then 
+      if (self.type==1 and p.bombs==p.max.bombs)
+       or self.type==2
+       or self.type==3
+       or (self.type==4 and p.health==p.max.health) then
        d:destroy()
       end
      end
@@ -1082,7 +1168,7 @@ drop={
    end
   end
  end,
- draw=function(self) 
+ draw=function(self)
   if self.complete then return true end
   animatable.draw(self)
   return false
@@ -1096,19 +1182,15 @@ intro={
  init=function(self)
    self.blank=true
    self.t=0
-   self.c=1
+   self.screen=1
+   self.s=1
    for i=1,15 do pal(i,0) end
  end,
  update=function(self)
   cam:update()
-  particles:update() -- update particles
+  particles:update()
   if self.blank and time()>1 then
-   --if self.t%2==0 then
-    pal(colours[self.c],colours[self.c])
-    self.c=self.c+1
-    if self.c==16 then self.blank=false end
-   --end
-   self.t=self.t+1
+   pal()
   end
   if btnp(pad.btn1) or btnp(pad.btn2) then
    cam:shake(2,0.7)
@@ -1116,14 +1198,51 @@ intro={
    stage=game
    game:init()
   end
+  self.t=self.t+1
+  if btnp(pad.left) then
+   self.screen=self.screen-1
+   self.t=0
+  end
+  if btnp(pad.right) or self.t>240 then
+   self.screen=self.screen+1
+   self.t=0
+  end
+  if self.screen==0 then self.screen=3 end
+  if self.screen==4 then self.screen=1 end
  end,
  draw=function(self)
   cls(0)
   camera(cam:position())
   particles:draw()
-  dprint("press \142 or \151 to start",18,110)
-  for i=1,10 do
-   dprint(lpad(i).."                 "..lpad(high_scores[i],5),16,16+i*8,10,4)
+  dprint("press \142 or \151 to start",18,110,12,1)
+  if self.screen==1 then
+   sspr(0,32,84,8,22,48,84,8)
+  elseif self.screen==2 then
+   for i=1,10 do
+    dprint("hall of fame",40,8,9,8)
+    dprint(lpad(i).."                 "..lpad(high_scores[i],5),16,12+i*8,10,4)
+   end
+  else
+   spr(drop.sprites[1][self.s],16,16)
+   dprint("extra smart bomb",48,18)
+   spr(drop.sprites[2][self.s],16,26)
+   dprint("increase fire power",36,28)
+   spr(drop.sprites[3][self.s],16,36)
+   dprint("increase fire power",36,38)
+   spr(drop.sprites[4][self.s],16,46)
+   dprint("restore ship health",36,48)
+   spr(drop.sprites[5][self.s],16,56)
+   dprint("mega bomb",76,58)
+   dprint("\139\145\148\131",16,72,6,13)
+   dprint("move ship",76,72)
+   dprint("\142",16,80,6,13)
+   dprint("fire",96,80)
+   dprint("\151",16,88,6,13)
+   dprint("smart bomb",72,88)
+   if self.t%8==0 then
+    self.s=self.s+1
+    if self.s==5 then self.s=1 end
+   end
   end
  end
 }
@@ -1165,9 +1284,7 @@ game={
 game_over={
  t=0,
  init=function(self)
-  self.blank=false
   self.t=0
-  self.c=15
  end,
  update=function(self)
   cam:update()
@@ -1176,25 +1293,12 @@ game_over={
   explosions:update()
   particles:update()
   drops:update()
-  if self.t>3600 then
-   self.blank=true
-  elseif self.t>60 then
-   if btn(pad.btn1) then
-    stage=game
-    stage:init()
-   elseif btn(pad.btn2) then
-    self.blank=true
-   end
-  end
-  if self.blank then
-   --if self.t%2 then
-    pal(colours[self.c],0)
-    self.c=self.c-1
-    if self.c==0 then
-     stage=intro
-     stage:init()
-    end
-   --end
+  if btn(pad.btn1) and self.t>120 then
+   stage=game
+   stage:init()
+  elseif btn(pad.btn2) or self.t>1800 then
+   stage=intro
+   stage:init()
   end
   self.t=self.t+1
  end,
@@ -1206,7 +1310,7 @@ game_over={
   bullets:draw()
   enemies:draw()
   explosions:draw()
-  if self.t>60 then
+  if self.t>120 then
    dprint("game over",46,61,9,8)
    dprint("press \142 to restart",28,90)
    dprint("or \151 to return to the menu",12,100)
@@ -1273,8 +1377,8 @@ function draw_hud()
   dprint(lpad(p.score,5),108,2,7,5)
   dprint(lpad(high_scores[1],5),54,2,9,4)
   -- life
-  for i=1,5 do
-   spr(p.damage>=i*100 and 32 or 33,7*(i-1),3)
+  for i=1,p.max.health/100 do
+   spr(p.health>=i*100 and 32 or 33,7*(i-1),3)
   end
   -- bombs
   if p.bombs>0 then
@@ -1297,7 +1401,7 @@ function _init()
  particles=particle_col:create()
  drops=drop_col:create()
  -- populate collections
- particles:add(star_particles:create())
+ particles:add(stars:create())
  -- set the stage
  stage=intro
  stage:init()
@@ -1348,12 +1452,12 @@ function lpad(x,n)
 end
 
 __gfx__
-00000000770000007700770077000077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000aa000000aa00aa00aa0660aa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000990000009900990099099099000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000980000009800890098094089000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000880000008800880088044088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000080000008000080080042008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000770000007700770077000077080000003330000008000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000aa000000aa00aa00aa0660aa280000000b00000028200000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000990000009900990099099099890000003330000089800000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000980000009800890098094089330000003ba0000066600000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000880000008800880088044088bb0000003ba0000077700000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000080000008000080080042008990000000300000057500000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000560000005600000056000b000b0000000000000d00700008008003000000b0000000000000000000000000000000000000000000000000000000000000000
@@ -1380,6 +1484,14 @@ bb777bb0033b670000333000066b33009979799004497600004440000d6944009797979004496700
 bb777bb0033b670000333000066b33009979799004497600004440000d6944009797979004496700004440000d69440088878880022886000022200006882200
 bbbbbbb0033bbb00003330000bbb3300999999900449990000444000099944009999999004499900004440000999440088888880022888000022200008882200
 0bbbbb000033b0000033300000b33000099999000044900000444000009440000999990000449000004440000094400008888800002280000022200000822000
+67777777777777709aa7007770777777777006777777777777700077777777707770007770777777777000000000000000000000000000000000000000000000
+d6670000000d667044490d6670000000dd700d6670000000d6670d6670000000d6670d6670000000667000000000000000000000000000000000000000000000
+d6670000000d667000000d667000000000000d6670000000d6670d6670000000d6670d6670000000000000000000000000000000000000000000000000000000
+d6670000000d667067770d667000000000000d6670000000d6670d667009aa00d6670d6670000000000000000000000000000000000000000000000000000000
+d6660dddddd66600d6670d667000070777770d6670000000d6670d6670044900d6670d6670000707777700000000000000000000000000000000000000000000
+d667000000000000d6670d6670000000d6670d6670000000d6670d6670000000d6670d6670000000d66700000000000000000000000000000000000000000000
+d667000000000000d6670d6670000000d6670d6670000000d6670d6670000000d6670d6670000000d66700000000000000000000000000000000000000000000
+ddd6000000000000ddd600ddddddddddddd60dddd0ddddddddd000ddddddddddddd000dddddddddddddd00000000000000000000000000000000000000000000
 __label__
 88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 88888ffffff882222228888888888888888888888888888888888888888888888888888888888888888228228888ff88ff888222822888888822888888228888
