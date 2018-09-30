@@ -556,7 +556,12 @@ enemy_col={
     -- needs updating!!! ---###################################################
     -- needs updating!!! ---###################################################
     for i=1,5 do
-     self:add(alien:create(42+i*16,-8,mrnd({1,3})))
+     local type=mrnd({1,3})
+     self:add(alien:create(
+      i*16-18,
+      -32,
+      type
+      ))
     end
     -- needs updating!!! ---###################################################
     -- needs updating!!! ---###################################################
@@ -920,27 +925,39 @@ bullet={
 } setmetatable(bullet,{__index=movable})
 
 alien_update_linear=function(self)
-  --self.dx=self.dx+self.ax
-  --self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-
- if self.t%2==0
-  and (self.t<48 or self.t>480) then
-  self.y=self.y+1
+ if self.t<50 then 
+  self.dx=self.dx+self.ax
+  self.dy=self.dy+self.ay
+ elseif self.t<240 then
+  self.angle=self.angle+0.02
+  self.dx=self.dx+(cos(self.angle)*1)
+  self.dy=self.dy-(sin(self.angle)*1)
+ else
+  self.dx=self.dx+self.ax
+  self.dy=self.dy+self.ay
  end
-
- self.dx=self.dx+cos(self.angle)*0.2
- self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+ self.dx=mid(-1,self.dx,1)
+ self.x=self.x+self.dx--round(self.dx)
+ self.dy=mid(-1,self.dy,1)
+ self.y=self.y+self.dy--round(self.dy)
+ 
+ --[[
+ if self.t==1 then
+  self.y=24
+ else
+ self.dx=self.dx+(cos(self.angle)*1)--*0.15
+ self.dy=self.dy-(sin(self.angle)*1)--*0.15
+ self.angle=self.angle+0.01--self.t%45/45--self.angle+0.02
+ self.dx=mid(-2,self.dx,2)
  self.x=self.x+round(self.dx)
-
- self.angle=self.angle+0.01--rnd()*0.1
-
----self.dy=-sin(self.angle)
-
+ self.dy=mid(-2,self.dy,2)
+ self.y=self.y+round(self.dy)
+ end
+ ]]
  local r=rnd()
  if r<min(20,enemies.wave)*self.type.fire_rate then
   bullets:add(bullet:create(self.x,self.y,self.type.bullet))
  end
-
 end
 
 alien_types={
@@ -988,11 +1005,13 @@ alien={
   local o=animatable.create(self,x,y,otype.ax,otype.ay)
   o.anim:add_stage("core",1,false,otype.neutral,otype.left,otype.right)
   o.anim:init("core",dir.neutral)
-  o.max={dx=1,dy=1}
+  o.max={dx=2,dy=2}
   o.type=otype
   o.health=otype.health
   o.angle=0.25
   o.t=0
+  idx=idx==nil and 1 or idx+1
+  o.index=idx
   return o
  end,
  destroy=function(self)
@@ -1068,6 +1087,7 @@ alien={
  draw=function(self)
   if self.complete then return true end
   animatable.draw(self)
+  print(self.angle,0,40+self.index*8)
   return false
  end
 } setmetatable(alien,{__index=animatable})
@@ -1183,7 +1203,7 @@ intro={
    self.blank=true
    self.t=0
    self.screen=1
-   self.s=1
+   self.s=1 
    for i=1,15 do pal(i,0) end
  end,
  update=function(self)
@@ -1286,6 +1306,12 @@ game_over={
  init=function(self)
   self.t=0
  end,
+ reset=function()
+  enemies:reset()
+  drops:reset()
+  bullets:reset()
+  explosions:reset()    
+  end,
  update=function(self)
   cam:update()
   bullets:update()
@@ -1294,9 +1320,11 @@ game_over={
   particles:update()
   drops:update()
   if btn(pad.btn1) and self.t>120 then
+   self:reset()
    stage=game
    stage:init()
   elseif btn(pad.btn2) or self.t>1800 then
+   self:reset()  
    stage=intro
    stage:init()
   end
