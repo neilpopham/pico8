@@ -25,6 +25,16 @@ function _init()
   ay=0.2,
   angle=0
  }
+ p3={
+  x=110,
+  y=-32,
+  max={dx=3,dy=3},
+  dx=0,
+  dy=0,
+  ax=0.2,
+  ay=0.2,
+  angle=0.5
+ }
  t=0
  cls()
 end
@@ -54,15 +64,30 @@ function _update60()
  p2.dy=mid(-p2.max.dy,p2.dy,p2.max.dy)
  p2.y=p2.y+round(p2.dy)
 
+
+ p3.angle=(p3.angle-0.01)%1
+
+ p3.dx=p3.dx+(cos(p3.angle)*p3.ax)
+ p3.dx=mid(-p3.max.dx,p3.dx,p3.max.dx)
+ p3.x=p3.x+round(p3.dx)
+
+ p3.dy=p3.dy-(sin(p3.angle)*p3.ay)
+ p3.dy=mid(-p3.max.dy,p3.dy,p3.max.dy)
+ p3.y=p3.y+round(p3.dy)
+
  t=t+1
 
 end
 
 function _draw()
- --cls(1)
- pset(p.x,p.y,t%16)
+ cls(1)
+ --pset(p.x,p.y,t%16)
 
- pset(p2.x,p2.y,t%16)
+ --pset(p2.x,p2.y,t%16)
+
+ pset(p3.x,p3.y,t%16)
+
+ --[[
 
  print(p.dx,0,0)
  print(p.dy,0,10)
@@ -72,6 +97,8 @@ function _draw()
 
  print(cos(p.angle),0,80)
  print(-sin(p.angle),40,80)
+
+ ]]
 end
 
 function round(x) return flr(x+0.5) end
