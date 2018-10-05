@@ -4,7 +4,7 @@ __lua__
 -- pigdog
 -- by neil popham
 
-screen={width=128,height=128}
+screen={width=128,height=128,x2=127,y2=127}
 pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 dir={left=1,right=2,neutral=3}
 drag=0.75
@@ -68,35 +68,6 @@ circle={
  end
 } setmetatable(circle,{__index=particle})
 
---[[
-sprite={
- create=function(self,params)
-  local o=particle.create(self,params)
-  return o
- end,
- draw=function(self)
-  if self.life==0 then return true end
-  spr(self.sprite,self.x,self.y)
-  self.life=self.life-1
-  return self.life==0
- end
-} setmetatable(sprite,{__index=particle})
-
-linear={
- create=function(self,params)
-  local o=particle.create(self,params)
-  o.size=params.size or 3
-  return o
- end,
- draw=function(self)
-  if self.life==0 then return true end
-  line(self.x,self.y,self.x+(cos(self.angle)*self.size),self.y-(sin(self.angle)*self.size),self.col)
-  self.life=self.life-1
-  return self.life==0
- end
-} setmetatable(linear,{__index=particle})
-]]
-
 -- [[ emmiters ]]
 
 emmiter={
@@ -159,8 +130,8 @@ bounds={
   local o=affector.create(self,params)
   o.update=function(self,ps)
    for _,p in pairs(ps.particles) do
-    if p.x<0 or p.x>127
-     or p.y<0 or p.y>127 then
+    if p.x<0 or p.x>screen.x2
+     or p.y<0 or p.y>screen.y2 then
      p.life=0
     end
    end
@@ -168,24 +139,6 @@ bounds={
   return o
  end
 } setmetatable(bounds,{__index=affector})
-
---[[
-force={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    if self.force then
-     p.force=mrnd(self.force,false)
-    elseif self.dforce then
-     p.force=p.force+mrnd(self.dforce,false)
-    end
-   end
-  end
-  return o
- end
-} setmetatable(force,{__index=affector})
-]]
 
 randomise={
  create=function(self,params)
@@ -237,50 +190,6 @@ gravity={
  end
 } setmetatable(gravity,{__index=affector})
 
---[[
-heat={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.cycle=o.cycle or {0.9,0.6,0.4,0.25}
-  o.col={
-   {0,0,1,1,2,1,5,6,2,4,9,3,13,5,4,9},
-   {0,0,0,0,1,1,1,1,5,13,1,2,4,1,5,1,2,2}
-  }
-  o.action={
-   function(self,i,p) if i % 3==0 then p.col=10 else p.col=7 end end,
-   function(self,i,p) p.col=p.ocol end,
-   function(self,i,p) p.col=self.col[1][p.ocol+1] end,
-   function(self,i,p) p.col=self.col[2][p.ocol+1] end,
-   function(self,i,p) p.col=1 end
-  }
-  o.update=function(self,ps)
-   for i,p in pairs(ps.particles) do
-    if p.ocol==nil then p.ocol=p.col end
-    local life=p.life/p.ttl
-    local c=1
-    while life<self.cycle[c] do c=c-1 end
-    local action=self.action[c]
-    action(i,p)
-    --[[
-    if life>self.cycle[1] then
-     if i % 3==0 then p.col=10 else p.col=7 end
-    elseif life>self.cycle[2] then
-     p.col=p.ocol
-    elseif life>self.cycle[3] then
-     p.col=self.col[1][p.ocol+1]
-    elseif life>self.cycle[4] then
-     p.col=self.col[2][p.ocol+1]
-    else
-     p.col=1
-    end
-    ]]
-   end
-  end
-  return o
- end
-} setmetatable(heat,{__index=affector})
-]]
-
 -- [[ particle system ]]
 
 particle_system={
@@ -299,7 +208,6 @@ particle_system={
  end,
  update=function(self)
   if self.complete then return end
-  --for _,e in pairs(self.emitters) do e:update(self) end -- #######################
   for _,a in pairs(self.affectors) do a:update(self) end
   self.tick=self.tick+1
  end,
@@ -328,10 +236,6 @@ particle_system={
  end
 }
 
--- hack to temporarily draw something to the screen
--- add to a collection just like a particle system
--- fn|function|the function to draw
--- tick|integer|the number of ticks the deraw should occur for
 simple={
  create=function(self,fn,tick)
   local o={complete=false,tick=tick,fn=fn}
@@ -743,6 +647,7 @@ player={
  end,
  destroy=function(self)
   sfx(3)
+  sfx(2)
   explosions:add(pixels:create(self.x+4,self.y+4,{2,3,11},20))
   explosions:add(big_smoke:create(self.x+4,self.y+4,{11,3,1},30))
   cam:shake(5,0.9)
@@ -752,7 +657,7 @@ player={
   game_over:init()
  end,
  hit=function(self)
-  sfx(3)
+  sfx(4)
   explosions:add(pixels:create(self.x+4,self.y+4,{2,3,11},10))
   explosions:add(big_smoke:create(self.x+4,self.y+4,{11,3,1},5))
   cam:shake(2,0.8)
@@ -779,8 +684,8 @@ player={
     self.x=0
     self.dx=0
    end
-   if self.x>120 then
-    self.x=120
+   if self.x>screen.width-self.hitbox.w then
+    self.x=screen.width-self.hitbox.w
     self.dx=0
    end
   end
@@ -800,8 +705,8 @@ player={
     self.y=0
     self.dy=0
    end
-   if self.y>120 then
-    self.y=120
+   if self.y>screen.height-self.hitbox.h then
+    self.y=screen.height-self.hitbox.h
     self.dy=0
    end
   end
@@ -812,7 +717,7 @@ player={
    sfx(0)
    bullets:add(bullet:create(self.x,self.y,self.bullet))
    self.b=6
-  else 
+  else
    self.b=0
   end
   -- smart bomb
@@ -858,7 +763,7 @@ player={
 
 bullet_update_linear=function(self)
  self.y=self.y+self.ay
- if self.y<-self.type.h or self.y>127 then
+ if self.y<-self.type.h or self.y>screen.y2 then
    self.complete=true
  end
 end
@@ -877,8 +782,8 @@ bullet_update_angled=function(self)
  end
  self.x=self.x+round(self.dx)
  self.y=self.y+round(self.dy)
- if self.x<-self.type.w or self.x>127
-  or self.y<-self.type.h or self.y>127 then
+ if self.x<-self.type.w or self.x>screen.x2
+  or self.y<-self.type.h or self.y>screen.y2 then
   self.complete=true
  end
 end
@@ -886,11 +791,9 @@ end
 bullet_update_homing=function(self)
  if self.phase==0 then
   self.max={dx=1,dy=1}
-  self.ax=1
-  self.ay=1
   self.phase=1
  end
- if not p.complete and self.t<60 then
+ if not p.complete and self.t<30 then
   local dx=p.x+p.hitbox.w/2-self.x+self.hitbox.w/2
   local dy=p.y+p.hitbox.h/2-self.y+self.hitbox.h/2
   self.angle=atan2(dx,-dy)
@@ -901,8 +804,8 @@ bullet_update_homing=function(self)
  end
  self.x=self.x+round(self.dx)
  self.y=self.y+round(self.dy)
- if self.x<-self.type.w or self.x>127
-  or self.y<-self.type.h or self.y>127 then
+ if self.x<-self.type.w or self.x>screen.x2
+  or self.y<-self.type.h or self.y>screen.y2 then
   self.complete=true
  end
 end
@@ -912,9 +815,9 @@ bullet_types={
  {sprite=2,ax=0,ay=-5,w=6,h=6,player=true,health=400,update=bullet_update_linear},
  {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,health=600,update=bullet_update_linear},
  {sprite=4,ax=0,ay=1,w=2,h=6,player=false,health=200,update=bullet_update_linear},
- {sprite=5,ax=0.2,ay=0.2,w=4,h=4,player=false,health=2,update=bullet_update_homing},
- {sprite=6,ax=0.2,ay=0.2,w=5,h=5,player=false,health=2,update=bullet_update_angled},
- {sprite=7,ax=0.2,ay=0.2,w=3,h=3,player=false,health=2,update=bullet_update_angled},
+ {sprite=5,ax=1,ay=1,w=4,h=4,player=false,health=2,update=bullet_update_angled},
+ {sprite=6,ax=1,ay=1,w=5,h=5,player=false,health=2,update=bullet_update_angled},
+ {sprite=7,ax=1,ay=1,w=3,h=3,player=false,health=2,update=bullet_update_homing},
 }
 
 bullet={
@@ -1013,19 +916,18 @@ end
 alien_update_linear=function(self)
  if self.phase==0 then
   self.max.dy=1
-  --self.ax=0.2
-  --self.ay=0.2
   self.x=self.index*16-8
   self.y=-8
   self.phase=1
- elseif self.phase==1 then
+ end
+ if self.phase==1 then
   if self.t>(self.index-1)*8 then
    self.phase=2
   end
  elseif self.phase==2 then
   self.dy=self.dy+self.ax
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
-  self.y=self.y+round(self.dy)
+  if self.t%self.type.rate==0 then self.y=self.y+round(self.dy) end
  end
 end
 
@@ -1034,7 +936,7 @@ alien_type={
   local o=params or {}
   o.ax=o.ax or 0.2
   o.ay=o.ay or 0.2
-  o.sfx=o.sfx or 3
+  o.sfx=o.sfx or {hit=4,destroy=3}
   o.neutral=o.neutral or {20}
   o.left=o.left or o.neutral
   o.right=o.right or o.neutral
@@ -1045,6 +947,7 @@ alien_type={
   o.update=o.update or alien_update_looper_anti
   o.fire_rate=o.fire_rate or 0.001
   o.bullet=o.bullet or 5
+  o.rate=2
   setmetatable(o,self)
   self.__index=self
   return o
@@ -1052,52 +955,10 @@ alien_type={
 }
 
 alien_types={
- alien_type:create({neutral={20},score=50,health=100,bullet=6,update=alien_update_looper}),
+ alien_type:create({neutral={20},score=50,health=100,bullet=6}),
  alien_type:create({neutral={21},score=100,health=200,bullete=5}),
  alien_type:create({neutral={22},score=150,health=500,bullet=7}),
 }
-
-
---[[
-alien_types={
- {
-  ax=0.2,ay=0.2,
-  neutral={20},left={20},right={20},
-  sfx=3,
-  score=50,
-  health=100,
-  pixels={7,8,9,10},
-  smoke={10,9,8},
-  update=alien_update_linear,
-  fire_rate=0.005,
-  bullet=5
- },
- {
-  ax=0.2,ay=0.2,
-  neutral={21},left={21},right={21},
-  sfx=3,
-  score=100,
-  health=150,
-  pixels={7,8,9,10},
-  smoke={14,8,2},
-  update=alien_update_linear,
-  fire_rate=0.001,
-  bullet=4
- },
- {
-  ax=0.2,ay=0.2,
-  neutral={22},left={22},right={22},
-  sfx=3,
-  score=200,
-  health=500,
-  pixels={7,8,9,10},
-  smoke={11,3,1},
-  update=alien_update_linear,
-  fire_rate=0.002,
-  bullet=4
- }
-}
-]]
 
 alien={
  create=function(self,x,y,index,type)
@@ -1114,7 +975,7 @@ alien={
   return o
  end,
  destroy=function(self)
-  sfx(self.type.sfx)
+  sfx(self.type.sfx.destroy)
   explosions:add(pixels:create(self.x+4,self.y+4,self.type.pixels))
   explosions:add(big_smoke:create(self.x+4,self.y+4,self.type.smoke))
   cam:shake(1,0.9)
@@ -1166,7 +1027,7 @@ alien={
   ]]
  end,
  hit=function(self)
-  sfx(self.type.sfx)
+  sfx(self.type.sfx.hit)
   explosions:add(pixels:create(self.x+4,self.y+4,self.type.pixels,10))
   explosions:add(small_smoke:create(self.x+4,self.y+4,self.type.smoke,5))
   cam:shake(1,0.7)
@@ -1181,7 +1042,7 @@ alien={
   self.type.update(self)
   self:fire()
   self.t=self.t+1
-  if self.y>127 then
+  if self.y>screen.y2 then
    self.complete=true
   else
    if self:collide_object(p) then
@@ -1243,7 +1104,7 @@ drop={
   elseif self.anim.current.tick%2==0 then
     self.y=self.y+1
   end
-  if self.y>127 then
+  if self.y>screen.y2 then
    self.complete=true
   else
    if self:collide_object(p) then
@@ -1261,7 +1122,7 @@ drop={
      for _,e in pairs(enemies.items) do e:destroy() end
      for _,b in pairs(bullets.items) do b:destroy() end
      for _,d in pairs(drops.items) do d:destroy() end
-     explosions:add(simple:create(function() rectfill(0,0,127,127,7) end,5))
+     explosions:add(simple:create(function() rectfill(0,0,screen.x2,screen.y2,7) end,5))
     elseif self.type==6 then
      p.drone:reset()
     end
@@ -1469,8 +1330,11 @@ game={
   explosions:draw()
   p:draw()
   draw_hud()
+
+
+  print(round(stat(1)*100),0,122,1) --############################
   --[[
-  print(stat(1),0,40,1) --############################
+
   print(#e.items,0,47,1) --############################
   print(#x.items,0,54,1) --############################
   print(#b.items,0,61,1) --############################
@@ -1829,8 +1693,8 @@ __label__
 
 __sfx__
 00010000300502e0502c0502a0502905028050260402504025040240402404024040230402104020070200401f0401e0401d0401c0401b0401b0401a04019040140001000013000110000e0000b0000900007000
-000200003265031660306602f6702e6702d6702c6702a670276702567023660216601f6501d6501a65019640176301663012630106300f6200c6200a6200762003610016100f6000d6000b600096000760003600
-00150000086400a650086500865008650076500565005650066500565005640056400563004630036200362003610016100660005600046000460003600036000360003600026000430003300033000330003300
+0001000038770367703477032770307702e7702d7702b7702977028770277702577024770237702277021770207701f7701e7701e7701d7701b7701a750187501674013740117300e7300c720097200771006710
+0009000027640206501b6501465008650076500565005650066500565005640056400563004630036200362003610016100660005600046000460003600036000360003600026000430003300033000330003300
 00070000366502d660246601b65017650146500e640086300662004610016100161001600016001d6001c6001b6001a6001a60019600186001760017600000000000000000000000000000000000000000000000
-0006000038660246601d65015640116300e6200861003610036000360002600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0004000038640246401d63015630116200e6200861003610036000360002600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00060000205502355028550235501d550304003040030400304000b50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
