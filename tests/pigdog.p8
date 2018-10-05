@@ -736,9 +736,10 @@ player={
   self.bombs=3
   self.x=self.sx
   self.y=self.sy
+  self.b=0
   self.trail=player_trail:create(self)
   self.drone=drone:create(self)
-  --self.drone.complete=true
+  self.drone.complete=true
  end,
  destroy=function(self)
   sfx(3)
@@ -805,9 +806,14 @@ player={
    end
   end
   -- fire
-  if btnp(pad.btn1) then
+  if self.b>0 then
+   self.b=self.b-1
+  elseif btn(pad.btn1) then
    sfx(0)
    bullets:add(bullet:create(self.x,self.y,self.bullet))
+   self.b=6
+  else 
+   self.b=0
   end
   -- smart bomb
   if btnp(pad.btn2) then
@@ -860,20 +866,41 @@ end
 bullet_update_angled=function(self)
  if self.phase==0 then
   self.max={dx=1,dy=1}
-  local dx=p.x+p.hitbox.w-self.x+self.hitbox.w
-  local dy=p.y+p.hitbox.h-self.y+self.hitbox.h
+  local dx=p.x+p.hitbox.w/2-self.x+self.hitbox.w/2
+  local dy=p.y+p.hitbox.h/2-self.y+self.hitbox.h/2
   self.angle=atan2(dx,-dy)
-  printh(self.t..": "..self.x..","..self.y.." -> p:"..p.x..","..p.y.." angle:"..self.angle) -- ###################
+  self.dx=self.dx+cos(self.angle)
+  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  self.dy=self.dy-sin(self.angle)
+  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   self.phase=1
  end
-
- self.dx=self.dx+(cos(self.angle)*self.ax)
- self.dx=mid(-self.max.dx,self.dx,self.max.dx)
  self.x=self.x+round(self.dx)
- self.dy=self.dy-(sin(self.angle)*self.ay)
- self.dy=mid(-self.max.dy,self.dy,self.max.dy)
  self.y=self.y+round(self.dy)
+ if self.x<-self.type.w or self.x>127
+  or self.y<-self.type.h or self.y>127 then
+  self.complete=true
+ end
+end
 
+bullet_update_homing=function(self)
+ if self.phase==0 then
+  self.max={dx=1,dy=1}
+  self.ax=1
+  self.ay=1
+  self.phase=1
+ end
+ if not p.complete and self.t<60 then
+  local dx=p.x+p.hitbox.w/2-self.x+self.hitbox.w/2
+  local dy=p.y+p.hitbox.h/2-self.y+self.hitbox.h/2
+  self.angle=atan2(dx,-dy)
+  self.dx=self.dx+cos(self.angle)*self.ax
+  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  self.dy=self.dy-sin(self.angle)*self.ay
+  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+ end
+ self.x=self.x+round(self.dx)
+ self.y=self.y+round(self.dy)
  if self.x<-self.type.w or self.x>127
   or self.y<-self.type.h or self.y>127 then
   self.complete=true
@@ -885,7 +912,7 @@ bullet_types={
  {sprite=2,ax=0,ay=-5,w=6,h=6,player=true,health=400,update=bullet_update_linear},
  {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,health=600,update=bullet_update_linear},
  {sprite=4,ax=0,ay=1,w=2,h=6,player=false,health=200,update=bullet_update_linear},
- {sprite=5,ax=0.2,ay=0.2,w=4,h=4,player=false,health=2,update=bullet_update_angled},
+ {sprite=5,ax=0.2,ay=0.2,w=4,h=4,player=false,health=2,update=bullet_update_homing},
  {sprite=6,ax=0.2,ay=0.2,w=5,h=5,player=false,health=2,update=bullet_update_angled},
  {sprite=7,ax=0.2,ay=0.2,w=3,h=3,player=false,health=2,update=bullet_update_angled},
 }
