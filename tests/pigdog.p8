@@ -478,6 +478,35 @@ enemy_collection={
  end
 } setmetatable(enemy_collection,{__index=collection})
 
+bullet_collection={
+ create=function(self)
+  local o=collection.create(self)
+  o.reset(self)
+  return o
+ end,
+ add=function(self,object)
+  if object.type.player then
+   self.player=self.player+1
+  else
+   self.alien=self.alien+1
+  end
+  collection.add(self,object)
+ end,
+ del=function(self,object)
+  if object.type.player then
+   self.player=self.player-1
+  else
+   self.alien=self.alien-1
+  end
+  collection.del(self,object)
+ end,
+ reset=function(self)
+  collection.reset(self)
+  self.player=0
+  self.alien=0
+ end
+} setmetatable(bullet_collection,{__index=collection})
+
 -->8
 --objects
 
@@ -793,20 +822,24 @@ bullet_update_homing=function(self)
   self.max={dx=1,dy=1}
   self.phase=1
  end
- if not p.complete and self.t<30 then
+ if p.complete or self.t>180 then
+  self:destroy()
+ else
   local dx=p.x+p.hitbox.w/2-self.x+self.hitbox.w/2
   local dy=p.y+p.hitbox.h/2-self.y+self.hitbox.h/2
   self.angle=atan2(dx,-dy)
   self.dx=self.dx+cos(self.angle)*self.ax
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  self.x=self.x+round(self.dx)
   self.dy=self.dy-sin(self.angle)*self.ay
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
- end
- self.x=self.x+round(self.dx)
- self.y=self.y+round(self.dy)
- if self.x<-self.type.w or self.x>screen.x2
-  or self.y<-self.type.h or self.y>screen.y2 then
-  self.complete=true
+  self.y=self.y+round(self.dy)
+  --[[
+  if self.x<-self.type.w or self.x>screen.x2
+   or self.y<-self.type.h or self.y>screen.y2 then
+   self.complete=true
+  end 
+  ]] 
  end
 end
 
@@ -843,6 +876,7 @@ bullet={
  update=function(self)
   movable.update(self)
   self.type.update(self)
+  self.t=self.t+1
   if not self.complete then
    if self.type.player then
     if enemies.count>0 then
@@ -945,7 +979,7 @@ alien_type={
   o.pixels=o.pixels or {7,8,9,10}
   o.smoke=o.smoke or {10,9,8}
   o.update=o.update or alien_update_looper_anti
-  o.fire_rate=o.fire_rate or 0.001
+  o.fire_rate=o.fire_rate or 0.0005
   o.bullet=o.bullet or 5
   o.rate=2
   setmetatable(o,self)
@@ -955,9 +989,10 @@ alien_type={
 }
 
 alien_types={
- alien_type:create({neutral={20},score=50,health=100,bullet=6}),
- alien_type:create({neutral={21},score=100,health=200,bullete=5}),
- alien_type:create({neutral={22},score=150,health=500,bullet=7}),
+alien_type:create({neutral={19},score=50,health=100,bullet=6,pixels={9,10,12},smoke={12,9,4}}), 
+ alien_type:create({neutral={20},score=50,health=100,bullet=6,pixels={1,2,8,12},smoke={14,8,2}}),
+ alien_type:create({neutral={21},score=100,health=200,bullete=5,pixels={8,9,11},smoke={11,9,3}}),
+ alien_type:create({neutral={22},score=150,health=500,bullet=7,pixels={1,4,9,10,13},smoke={6,13,1}}),
 }
 
 alien={
@@ -1034,7 +1069,8 @@ alien={
  end,
  fire=function(self)
   local r=rnd()
-  if r<min(20,enemies.wave)*self.type.fire_rate then
+  if r<min(20,enemies.wave)*self.type.fire_rate
+   and bullets.alien<3 then
    bullets:add(bullet:create(self.x+self.hitbox.w/2,self.y+self.hitbox.h/2,self.type.bullet))
   end
  end,
@@ -1059,7 +1095,7 @@ alien={
 } setmetatable(alien,{__index=animatable})
 
 drop={
- cols={11,9,9,8,12},
+ cols={11,9,9,8,0,12},
  sprites={
   {48,49,50,51},
   {52,53,54,55},
@@ -1079,10 +1115,10 @@ drop={
  end,
  destroy=function(self)
   sfx(5)
+  local col=self.cols[self.type]
   explosions:add(big_smoke:create(self.x+4,self.y+4,{7,col,col},10))
   cam:shake(1,0.8)
   self.complete=true
-  local col=self.cols[self.type]
  end,
  update=function(self)
   animatable.update(self)
@@ -1464,7 +1500,7 @@ function _init()
  -- create player
  p=player:create(60,96)
  -- create collections
- bullets=collection:create()
+ bullets=bullet_collection:create()
  explosions=collection:create()
  particles=collection:create()
  drops=collection:create()
@@ -1529,13 +1565,13 @@ __gfx__
 00000000080000008000080080042008cc0000000000000000000000000000005750000003000000000000000000000000000000000000000000000000000000
 00000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000560000005600000056000e90b09e022010220890b0980001dd10011111110000000000000000000000000000000000000000000d007000080080002200ef0
-005dd600005dd66005ddd6009abbba90282c28209abbba900dd44dd01bbbbb1000000000000000000000000000000000000000000dd11c7004999aa0222eeeff
-505ddd06005ddd00005ddd000beeeb0002e2e2000b888b001d4994d11b3b3b100000000000000000000000000000000000000000dd1cc1c7499999aa22dcc6ef
-005bbd00053bd66005ddbbd0bbeeebb01c2f2c10bb888bb0d49aa94d1bb3bb10000000000000000000000000000000000000000001c8ec104998899a22ddccef
-5053bd06003bdd6005ddbb000beeeb0002e2e2000b888b00d49aa94d1b3b3b1000000000000000000000000000000000000000000dc8ec7044288899022eeee0
-55533ddd0533dd6005dd3bd09abbba90282c28209abbba901d4994d11bbbbb1000000000000000000000000000000000000000000dc88c70442888990322eeb0
-5055550d05555d6005d555d0e90b09e022010220890b09800dd44dd01111111000000000000000000000000000000000000000000ddccc700442299000022000
+000560000005600000056000c90009c022010220890b0980001dd10011111110000000000000000000000000000000000000000000d007000080080002200ef0
+005dd600005dd66005ddd6009accca90282c28209abbba900dd44dd01bbbbb1000000000000000000000000000000000000000000dd11c7004999aa0222eeeff
+505ddd06005ddd00005ddd000cc9cc0002e2e2000b888b001d4994d11b3b3b100000000000000000000000000000000000000000dd1cc1c7499999aa22dcc6ef
+005bbd00053bd66005ddbbd00c999c001c2f2c10bb888bb0d49aa94d1bb3bb10000000000000000000000000000000000000000001c8ec104998899a22ddccef
+5053bd06003bdd6005ddbb000cc9cc0002e2e2000b888b00d49aa94d1b3b3b1000000000000000000000000000000000000000000dc8ec7044288899022eeee0
+55533ddd0533dd6005dd3bd09accca90282c28209abbba901d4994d11bbbbb1000000000000000000000000000000000000000000dc88c70442888990322eeb0
+5055550d05555d6005d555d0c90009c022010220890b09800dd44dd01111111000000000000000000000000000000000000000000ddccc700442299000022000
 5080080d05028dd0055820d0000000000000000000000000001dd10000000000000000000000000000000000000000000000000001dddd100044440000000000
 080800000d0d00000d80000000056000000560000005600000000000000000000000000000000000000000000000000000000000000000000000000000000000
 888e8000ddd6d0005ddd0000005dd600005dd66005ddd60000000000000000000666660000dd600000ddd000006dd0000ccccc0000ddc00000ddd00000cdd000
