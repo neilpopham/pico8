@@ -449,17 +449,21 @@ enemy_collection={
     self:clear()
     -- start new wave
     self.wave=self.wave+1
-    -- needs updating!!! ---###################################################
-    -- needs updating!!! ---###################################################
-    -- needs updating!!! ---###################################################
-    for i=1,mrnd({6,12}) do
-     local type=mrnd({1,3})
-    -- self:add(alien:create(i*16,-8,i,type))
-      self:add(alien:create(-16,-16,i,type))
+    local num=mrnd({6,min(12,5+(enemies.wave/5))})
+    local t={}
+    if enemies.wave>5 then
+     for i=1,enemies.wave/5,1 do add(t,4) end
     end
-    -- needs updating!!! ---###################################################
-    -- needs updating!!! ---###################################################
-    -- needs updating!!! ---###################################################
+    if enemies.wave>2 then
+     for i=1,enemies.wave/2,1 do add(t,3) end
+    end
+    while #t<num do
+     add(t,mrnd({1,2}))
+    end
+    for i=1,num do
+     local type=mrnd({1,4})
+      self:add(alien:create(-16,-16,i,t[i]))
+    end
    elseif self.t>self.delay[2] then
     self.wty=self.wty+1
    elseif self.t>self.delay[1] then
@@ -669,7 +673,7 @@ player={
   self.bombs=3
   self.x=self.sx
   self.y=self.sy
-  self.b=0
+  self.b=8
   self.trail=player_trail:create(self)
   self.drone=drone:create(self)
   self.drone.complete=true
@@ -834,12 +838,6 @@ bullet_update_homing=function(self)
   self.dy=self.dy-sin(self.angle)*self.ay
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   self.y=self.y+round(self.dy)
-  --[[
-  if self.x<-self.type.w or self.x>screen.x2
-   or self.y<-self.type.h or self.y>screen.y2 then
-   self.complete=true
-  end 
-  ]] 
  end
 end
 
@@ -847,10 +845,10 @@ bullet_types={
  {sprite=1,ax=0,ay=-4,w=2,h=6,player=true,health=200,update=bullet_update_linear},
  {sprite=2,ax=0,ay=-5,w=6,h=6,player=true,health=400,update=bullet_update_linear},
  {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,health=600,update=bullet_update_linear},
- {sprite=4,ax=0,ay=1,w=2,h=6,player=false,health=200,update=bullet_update_linear},
- {sprite=5,ax=1,ay=1,w=4,h=4,player=false,health=2,update=bullet_update_angled},
- {sprite=6,ax=1,ay=1,w=5,h=5,player=false,health=2,update=bullet_update_angled},
- {sprite=7,ax=1,ay=1,w=3,h=3,player=false,health=2,update=bullet_update_homing},
+ {sprite=4,ax=0,ay=1,w=2,h=6,player=false,health=50,update=bullet_update_linear},
+ {sprite=5,ax=1,ay=1,w=4,h=4,player=false,health=50,update=bullet_update_angled},
+ {sprite=6,ax=1,ay=1,w=5,h=5,player=false,health=75,update=bullet_update_angled},
+ {sprite=7,ax=1,ay=1,w=3,h=3,player=false,health=100,update=bullet_update_homing},
 }
 
 bullet={
@@ -932,6 +930,19 @@ alien_update_looper_core=function(self,a,da,x,y)
   self.dy=self.dy-(sin(self.angle)*self.ay)
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   self.y=self.y+round(self.dy)
+  if self.t>180 and rnd()<0.001 then
+   self.phase=3
+  end
+ elseif self.phase==3 then
+  local dx=p.x+p.hitbox.w/2-self.x+self.hitbox.w/2
+  local dy=p.y+p.hitbox.h/2-self.y+self.hitbox.h/2
+  self.angle=atan2(dx,-dy)
+  self.dx=self.dx+cos(self.angle)*self.ax
+  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  self.x=self.x+round(self.dx)
+  self.dy=self.dy-sin(self.angle)*self.ay
+  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+  self.y=self.y+round(self.dy)  
  end
 end
 
@@ -944,7 +955,7 @@ alien_update_looper_anti=function(self)
 end
 
 alien_update_looper_reverse=function(self)
- alien_update_looper_core(self,1,-0.01,{106,114},168)
+ alien_update_looper_core(self,1,-0.01,{16,24},168)
 end
 
 alien_update_linear=function(self)
@@ -978,7 +989,7 @@ alien_type={
   o.health=o.health or 100
   o.pixels=o.pixels or {7,8,9,10}
   o.smoke=o.smoke or {10,9,8}
-  o.update=o.update or alien_update_looper_anti
+  o.update=o.update or alien_update_looper_reverse
   o.fire_rate=o.fire_rate or 0.0005
   o.bullet=o.bullet or 5
   o.rate=2
@@ -989,10 +1000,10 @@ alien_type={
 }
 
 alien_types={
-alien_type:create({neutral={19},score=50,health=100,bullet=6,pixels={9,10,12},smoke={12,9,4}}), 
- alien_type:create({neutral={20},score=50,health=100,bullet=6,pixels={1,2,8,12},smoke={14,8,2}}),
- alien_type:create({neutral={21},score=100,health=200,bullete=5,pixels={8,9,11},smoke={11,9,3}}),
- alien_type:create({neutral={22},score=150,health=500,bullet=7,pixels={1,4,9,10,13},smoke={6,13,1}}),
+ alien_type:create({neutral={19},score=50,health=100,fire_rate=0,bullet=6,pixels={9,10,12},smoke={12,9,4}}), 
+ alien_type:create({neutral={20},score=100,health=200,bullet=6,pixels={1,2,8,12},smoke={14,8,2}}),
+ alien_type:create({neutral={21},score=150,health=400,bullete=5,pixels={8,9,11},smoke={11,9,3}}),
+ alien_type:create({neutral={22},score=300,health=1000,bullet=7,pixels={1,4,9,10,13},smoke={6,13,1}}),
 }
 
 alien={
@@ -1017,7 +1028,7 @@ alien={
   self.complete=true
   p.score=p.score+self.type.score
   local r=rnd()
-  if r<min(16,enemies.wave)*(0.05/(drops.count+1)) then
+  if r<min(20,enemies.wave)*(0.01/(drops.count+1)) then
    local type=0
    local t={}
    if p.health<p.max.health then
@@ -1030,9 +1041,8 @@ alien={
     local b=p.bullet==1 and 2 or 3
     for i=1,2 do add(t,b) end
    end
-   --if r<0.33 then add(t,5) end
-   add(t,5)
-   if p.drone.complete then
+   if r<0.33 then add(t,5) end
+   if r<0.25 and p.drone.complete then
     add(t,6)
    end
    if #t>0 then type=t[mrnd({1,#t})] end
@@ -1040,26 +1050,6 @@ alien={
     drops:add(drop:create(self.x,self.y,type))
    end
   end
---[[
-  --if rnd()<(min(16,enemies.wave)*0.01 then -- start off with a % chance of any drop occurring. leave for now for testing
-   local type=0
-   if p.health<p.max.health
-    and rnd()<(min(20,enemies.wave)*0.025) then
-    type=4
-   elseif p.bombs<p.max.bombs
-    and rnd()<(min(20,enemies.wave)*0.015) then
-    type=1
-   elseif p.bullet<3
-    and rnd()<(min(20,enemies.wave)*0.01) then
-    type=p.bullet==1 and 2 or 3
-   elseif rnd()<(min(20,enemies.wave)*0.005) then
-    type=5
-   end
-   if type>0 then
-    drops:add(drop:create(self.x,self.y,type))
-   end
-  --end
-  ]]
  end,
  hit=function(self)
   sfx(self.type.sfx.hit)
@@ -1079,7 +1069,7 @@ alien={
   self:fire()
   self.t=self.t+1
   if self.y>screen.y2 then
-   self.complete=true
+   --self.complete=true
   else
    if self:collide_object(p) then
     self:destroy()
@@ -1095,7 +1085,7 @@ alien={
 } setmetatable(alien,{__index=animatable})
 
 drop={
- cols={11,9,9,8,0,12},
+ cols={11,9,9,8,7,12},
  sprites={
   {48,49,50,51},
   {52,53,54,55},
@@ -1186,7 +1176,7 @@ drop={
 drone={
  create=function(self,target)
   local o=animatable.create(self,target.x+target.hitbox.w/2,target.y+target.hitbox.h/2,0.25,0.25)
-  o.anim:add_stage("core",4,true,{12,13,14,15},{},{})
+  o.anim:add_stage("core",4,true,{12,13,14,15},{12},{12})
   o.anim:init("core",dir.neutral)
   o:add_hitbox(5,5)
   o.max={dx=3,dy=3}
@@ -1288,7 +1278,6 @@ intro={
    pal()
   end
   if btnp(pad.btn1) or btnp(pad.btn2) then
-   cam:shake(2,0.7)
    if self.blank then pal() end
    stage=game
    game:init()
@@ -1307,7 +1296,6 @@ intro={
  end,
  draw=function(self)
   cls(0)
-  camera(cam:position())
   particles:draw()
   dprint("press \142 or \151 to start",18,110,12,1)
   if self.screen==1 then
@@ -1366,16 +1354,6 @@ game={
   explosions:draw()
   p:draw()
   draw_hud()
-
-
-  print(round(stat(1)*100),0,122,1) --############################
-  --[[
-
-  print(#e.items,0,47,1) --############################
-  print(#x.items,0,54,1) --############################
-  print(#b.items,0,61,1) --############################
-  print(#s.items,0,68,1) --############################
-  --]]
  end
 }
 
@@ -1557,12 +1535,12 @@ function lpad(x,n)
 end
 
 __gfx__
-000000007700000077007700770000778000000008800000009000000b000000080000003330000000000000000000000d6700000cac00000d6700000d670000
-00000000aa000000aa00aa00aa0660aa8800000088e8000009a90000b3b00000282000000b0000000000000000000000cd677000ddc77000dd67c000dd677000
-0000000099000000990099009909909999000000888800009a7a90000b00000089800000333000000000000000000000acd660005dd660005ddca0005dd66000
-00000000980000009800890098094089770000000880000009a9000000000000666000003ba000000000000000000000c5ddd00055ddd00055ddc00055cdd000
-00000000880000008800880088044088cc000000000000000090000000000000777000003ba000000000000000000000055d0000055d0000055d00000cac0000
-00000000080000008000080080042008cc0000000000000000000000000000005750000003000000000000000000000000000000000000000000000000000000
+000000007700000077007700770000778000000008800000009000000b000000000000000000000000000000000000000d6700000cac00000d6700000d670000
+00000000aa000000aa00aa00aa0660aa8800000088e8000009a90000b3b0000000000000000000000000000000000000cd677000ddc77000dd67c000dd677000
+0000000099000000990099009909909999000000888800009a7a90000b00000000000000000000000000000000000000acd660005dd660005ddca0005dd66000
+00000000980000009800890098094089770000000880000009a900000000000000000000000000000000000000000000c5ddd00055ddd00055ddc00055cdd000
+00000000880000008800880088044088cc00000000000000009000000000000000000000000000000000000000000000055d0000055d0000055d00000cac0000
+00000000080000008000080080042008cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000560000005600000056000c90009c022010220890b0980001dd10011111110000000000000000000000000000000000000000000d007000080080002200ef0
