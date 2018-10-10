@@ -461,8 +461,7 @@ enemy_collection={
      add(t,mrnd({1,2}))
     end
     for i=1,num do
-     local type=mrnd({1,4})
-      self:add(alien:create(-16,-16,i,t[i]))
+     self:add(alien:create(-16,-16,i,t[i]))
     end
    elseif self.t>self.delay[2] then
     self.wty=self.wty+1
@@ -922,7 +921,7 @@ alien_update_looper_core=function(self,a,da,x,y)
   self.angle=(self.angle+da)%1
   if self.angle<0.01 then
    self.loop=self.loop+1
-   printh("loop:"..self.loop)
+   printh("loop:"..self.loop) -- ######################################################################
   end
   self.dx=self.dx+(cos(self.angle)*self.ax)
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
@@ -942,7 +941,7 @@ alien_update_looper_core=function(self,a,da,x,y)
   self.x=self.x+round(self.dx)
   self.dy=self.dy-sin(self.angle)*self.ay
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
-  self.y=self.y+round(self.dy)  
+  self.y=self.y+round(self.dy)
  end
 end
 
@@ -956,6 +955,10 @@ end
 
 alien_update_looper_reverse=function(self)
  alien_update_looper_core(self,1,-0.01,{16,24},168)
+end
+
+alien_update_looper_high=function(self)
+ alien_update_looper_core(self,0,0.01,{16,24},-96)
 end
 
 alien_update_linear=function(self)
@@ -989,7 +992,7 @@ alien_type={
   o.health=o.health or 100
   o.pixels=o.pixels or {7,8,9,10}
   o.smoke=o.smoke or {10,9,8}
-  o.update=o.update or alien_update_looper_reverse
+  o.update=o.update or alien_update_looper_high
   o.fire_rate=o.fire_rate or 0.0005
   o.bullet=o.bullet or 5
   o.rate=2
@@ -1000,7 +1003,7 @@ alien_type={
 }
 
 alien_types={
- alien_type:create({neutral={19},score=50,health=100,fire_rate=0,bullet=6,pixels={9,10,12},smoke={12,9,4}}), 
+ alien_type:create({neutral={19},score=50,health=100,fire_rate=0,bullet=6,pixels={9,10,12},smoke={12,9,4}}),
  alien_type:create({neutral={20},score=100,health=200,bullet=6,pixels={1,2,8,12},smoke={14,8,2}}),
  alien_type:create({neutral={21},score=150,health=400,bullete=5,pixels={8,9,11},smoke={11,9,3}}),
  alien_type:create({neutral={22},score=300,health=1000,bullet=7,pixels={1,4,9,10,13},smoke={6,13,1}}),
@@ -1220,10 +1223,8 @@ drone={
   local x=false
   for _,e in pairs(enemies.items) do
    local d=self:distance(e)
-   printh("distance:"..d)
    if d<10 then
     x=true
-    printh("drone hit an enemy")
     e:damage(self.strength)
     self:damage(20)
     local angle=atan2(e.dx,-e.dy)
@@ -1235,7 +1236,6 @@ drone={
    if not b.type.player then
     local d=self:distance(b)
     if d<10 then
-     printh("drone hit a bullet")
      x=true
      b:damage(self.strength)
      self:damage(10)
@@ -1249,7 +1249,6 @@ drone={
     circfill(x,y,8,11)
     circfill(x,y,7,12)
    end
-   --explosions:add(simple:create(function() circfill(self.x+self.hitbox.w/2,self.y+self.hitbox.h/2,7,12) end,5))
    explosions:add(simple:create(aura,5))
   end
  end,
