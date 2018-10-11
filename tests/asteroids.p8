@@ -15,11 +15,11 @@ drag=0.95
 function _init()
 
  for x=1,20 do
-  o={x=rnd(127),y=rnd(127),col=7,depth=1,col2=13}
+  o={x=rnd(127),y=rnd(127),col=7,depth=1,col2=13} --10}
   add(stars,o)
  end
  for x=1,20 do
-  o={x=rnd(127),y=rnd(127),col=13,depth=0.7,col2=1}
+  o={x=rnd(127),y=rnd(127),col=13,depth=0.7,col2=1} --9}
   add(stars,o)
  end
  for x=1,20 do
@@ -90,7 +90,7 @@ function _draw()
  if abs(p.force)>3 then
   for _,star in pairs(stars) do
    if star.depth>0.5 then
-    line(star.x,star.y,star.x-p.dx*0.5*star.depth,star.y-p.dy*0.5*star.depth,star.col2)
+    line(star.x,star.y,star.x+p.dx*p.force/3*star.depth,star.y+p.dy*p.force/3*star.depth,star.col2)
    end
   end
  end
@@ -101,8 +101,6 @@ function _draw()
 
  line(p.x,p.y,p.x-p.dx,p.y-p.dy,9)
  pset(p.x,p.y,8)
-
-
 
  local len=5
  local ang=0.37
