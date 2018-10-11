@@ -13,13 +13,12 @@ drag=0.95
 
 
 function _init()
-
  for x=1,20 do
-  o={x=rnd(127),y=rnd(127),col=7,depth=1,col2=13} --10}
+  o={x=rnd(127),y=rnd(127),col=7,depth=1,col2=13}--8}--13}
   add(stars,o)
  end
  for x=1,20 do
-  o={x=rnd(127),y=rnd(127),col=13,depth=0.7,col2=1} --9}
+  o={x=rnd(127),y=rnd(127),col=13,depth=0.7,col2=1}--12}--1}
   add(stars,o)
  end
  for x=1,20 do
@@ -30,17 +29,15 @@ function _init()
   o={x=rnd(127),y=rnd(127),col=1,depth=0.3}
   add(stars,o)
  end
-
- p={x=64,y=64,angle=0,force=0,dx=0,dy=0,da=0,aa=0.01,df=0,af=0.01}
-
+ p={x=64,y=64,angle=0,force=0,dx=0,dy=0,da=0.01,df=0,af=0.02}
 end
 
 function _update60()
 
  if btn(pad.left) then
-  p.angle=p.angle-p.aa
+  p.angle=p.angle-p.da
  elseif btn(pad.right) then
-  p.angle=p.angle+p.aa
+  p.angle=p.angle+p.da
  end
  p.angle=p.angle%1
 
@@ -49,15 +46,10 @@ function _update60()
  elseif btn(pad.btn2) or btn(pad.down) then
    p.df=p.df-p.af
  else
-  p.df=p.df*drag
+  p.df=0 --p.df*drag
   p.force=p.force*drag
  end
-
- --if abs(p.df)<0.001 then p.df=0 end
- p.df=mid(-2,p.df,2)
-
  p.force=p.force+p.df
-
  if abs(p.force)<0.04 then p.force=0 end
  p.force=mid(-6,p.force,6)
 
@@ -90,7 +82,13 @@ function _draw()
  if abs(p.force)>3 then
   for _,star in pairs(stars) do
    if star.depth>0.5 then
-    line(star.x,star.y,star.x+p.dx*p.force/3*star.depth,star.y+p.dy*p.force/3*star.depth,star.col2)
+    line(
+     star.x,
+     star.y,
+     star.x+p.dx*p.force/4*star.depth,
+     star.y+p.dy*p.force/4*star.depth,
+     star.col2
+    )
    end
   end
  end
@@ -101,26 +99,17 @@ function _draw()
 
  line(p.x,p.y,p.x-p.dx,p.y-p.dy,9)
  pset(p.x,p.y,8)
-
+ 
  local len=5
  local ang=0.37
  local ship=2
-
  local tx=p.x+cos(p.angle)*len
  local ty=p.y-sin(p.angle)*len
-
  local lx=p.x+cos(p.angle-ang)*len
  local ly=p.y-sin(p.angle-ang)*len
-
  local rx=p.x+cos(p.angle+ang)*len
  local ry=p.y-sin(p.angle+ang)*len
-
  line(tx,ty,lx,ly,ship)
  line(tx,ty,rx,ry,ship)
-
- --line(p.x,p.y,rx,ry,ship)
- --line(p.x,p.y,lx,ly,ship)
  line(rx,ry,lx,ly,ship)
-
- --print(p.force,0,0,10)
 end
