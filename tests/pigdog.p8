@@ -297,7 +297,7 @@ pixels={
 
 big_smoke={
  create=function(self,x,y,cols,count)
-  cols=cols or {10,9,8} -- {14,8,2} -- {10,9,8} -- {11,3,1}
+  cols=cols or {10,9,8} -- {14,8,2} {10,9,8} {11,3,1}
   count=count or 20
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
@@ -318,7 +318,7 @@ big_smoke={
 
 small_smoke={
  create=function(self,x,y,cols,count)
-  cols=cols or {6,13,5} -- {14,8,2} -- {10,9,8} -- {11,3,1}
+  cols=cols or {6,13,5} -- {14,8,2} {10,9,8} {11,3,1}
   count=count or 10
   local ps=particle_system.create(self)
   add(ps.emitters,stationary:create({force={0.2,0.5},angle={1,360}}))
@@ -647,7 +647,6 @@ animatable={
  end,
  draw=function(self)
   local sprite=self.animate(self)
-  --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,2)
   spr(sprite,self.x,self.y)
  end
 } setmetatable(animatable,{__index=movable})
@@ -845,9 +844,9 @@ bullet_types={
  {sprite=2,ax=0,ay=-5,w=6,h=6,player=true,health=400,update=bullet_update_linear},
  {sprite=3,ax=0,ay=-6,w=8,h=6,player=true,health=600,update=bullet_update_linear},
  {sprite=4,ax=0,ay=1,w=2,h=6,player=false,health=50,update=bullet_update_linear},
- {sprite=5,ax=1,ay=1,w=4,h=4,player=false,health=50,update=bullet_update_angled},
- {sprite=6,ax=1,ay=1,w=5,h=5,player=false,health=75,update=bullet_update_angled},
- {sprite=7,ax=1,ay=1,w=3,h=3,player=false,health=100,update=bullet_update_homing},
+ {sprite=5,ax=1,ay=1,w=4,h=4,player=false,health=75,update=bullet_update_angled},
+ {sprite=6,ax=1,ay=1,w=5,h=5,player=false,health=100,update=bullet_update_homing},
+ {sprite=7,ax=0.1,ay=0.1,w=3,h=3,player=false,health=50,update=bullet_update_angled},
 }
 
 bullet={
@@ -895,7 +894,6 @@ bullet={
  end,
  draw=function(self)
   if self.complete then return true end
-  --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,3)
   spr(self.type.sprite,self.x,self.y)
   return false
  end
@@ -919,10 +917,9 @@ alien_update_looper_core=function(self,a,da,x,y)
   end
  elseif self.phase==2 then
   self.angle=(self.angle+da)%1
-  if self.angle<0.01 then
-   self.loop=self.loop+1
-   printh("loop:"..self.loop) -- ######################################################################
-  end
+  --if self.angle<0.01 then
+  -- self.loop=self.loop+1
+  --end
   self.dx=self.dx+(cos(self.angle)*self.ax)
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
   self.x=self.x+round(self.dx)
@@ -930,7 +927,7 @@ alien_update_looper_core=function(self,a,da,x,y)
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   self.y=self.y+round(self.dy)
   if self.t>180 and rnd()<0.001 then
-   self.phase=3
+   --self.phase=3
   end
  elseif self.phase==3 then
   local dx=p.x+p.hitbox.w/2-self.x+self.hitbox.w/2
@@ -992,7 +989,7 @@ alien_type={
   o.health=o.health or 100
   o.pixels=o.pixels or {7,8,9,10}
   o.smoke=o.smoke or {10,9,8}
-  o.update=o.update or alien_update_looper_high
+  o.update=o.update or alien_update_looper
   o.fire_rate=o.fire_rate or 0.0005
   o.bullet=o.bullet or 5
   o.rate=2
@@ -1004,9 +1001,9 @@ alien_type={
 
 alien_types={
  alien_type:create({neutral={19},score=50,health=100,fire_rate=0,bullet=6,pixels={9,10,12},smoke={12,9,4}}),
- alien_type:create({neutral={20},score=100,health=200,bullet=6,pixels={1,2,8,12},smoke={14,8,2}}),
+ alien_type:create({neutral={20},score=100,health=200,bullet=7,pixels={1,2,8,12},smoke={14,8,2}}),
  alien_type:create({neutral={21},score=150,health=400,bullete=5,pixels={8,9,11},smoke={11,9,3}}),
- alien_type:create({neutral={22},score=300,health=1000,bullet=7,pixels={1,4,9,10,13},smoke={6,13,1}}),
+ alien_type:create({neutral={22},score=300,health=1000,bullet=6,pixels={1,4,9,10,13},smoke={6,13,1}}),
 }
 
 alien={
