@@ -326,7 +326,7 @@ function create_controllable_item(x,y,ax,ay)
        self.anim.current:set("jump_fall")
       else
        --if self.anim.current.transitioning==false then
-       if self.is.falling==false then 
+       if self.is.falling==false then
         self.anim.current:set("fall")
        end
       end
@@ -405,7 +405,7 @@ function _init()
    p.y=y*8
   end
  end end
- 
+
 --[[
  enemies={{64,64},{24,88},{32,16}}
  for i,enemy in pairs(enemies) do
@@ -428,7 +428,7 @@ function _init()
     end
    end
   end
- end 
+ end
 
  waters={{64,32},{72,32},{80,32}}
  for i,water in pairs(waters) do
