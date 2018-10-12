@@ -9,7 +9,6 @@ pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 
 stars={}
 p={}
-drag=0.95
 
 function _init()
  local depths={1,0.7,0.5,0.3}
@@ -28,7 +27,7 @@ function _init()
    }
   )
  end
- p={x=64,y=64,angle=0,force=0,dx=0,dy=0,da=0.01,df=0,af=0.02}
+ p={x=flr(screen.width/2),y=flr(screen.height/2),angle=0,force=0,dx=0,dy=0,da=0.01,df=0,af=0.02}
 end
 
 function _update60()
@@ -46,7 +45,7 @@ function _update60()
    p.df=p.df-p.af
  else
   p.df=0
-  p.force=p.force*drag
+  p.force=p.force*0.95
  end
  p.force=p.force+p.df
  if abs(p.force)<0.04 then p.force=0 end
@@ -77,16 +76,16 @@ function _draw()
  cls()
  -- if we're going fast draw a trail
  if abs(p.force)>3 then
-  for _,star in pairs(stars) do
-   if star.depth>0.5 then
+  local i=1
+  while stars[i].depth>0.5
     line(
-     star.x,
-     star.y,
-     star.x+p.dx*abs(p.force)/3*star.depth,
-     star.y+p.dy*abs(p.force)/3*star.depth,
-     star.col2
-    )
-   end
+    star.x,
+    star.y,
+    star.x+p.dx*abs(p.force)/3*star.depth,
+    star.y+p.dy*abs(p.force)/3*star.depth,
+    star.col2
+   )
+   i=i+1
   end
  end
  -- draw the stars
