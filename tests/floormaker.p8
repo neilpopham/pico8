@@ -5,31 +5,32 @@ __lua__
 -- by neil popham
 
 floormaker={
- makers={},
- tiles={},
- complete=false,
- drawn=0,
+	makers={},
  create=function(self,params)
   params=params or {}
   local o={}
   o.t90=params.t90 or 0.2
   o.t180=params.t180 or 0.1
-  o.x2=params.x2 or 0.05
-  o.x3=params.x3 or 0.05
-  o.max=params.max or 5
-  o.new=params.new or 0.1
+  o.x2=params.x2 or 0.1
+  o.x3=params.x3 or 0.075
+  o.max=params.max or 8
+  o.new=params.new or 0.5
   o.angle=params.angle or 0
-  o.x=params.x or 8
-  o.y=params.y or 8
-  o.total=params.total or 100
+  o.x=params.x or 64
+  o.y=params.y or 64
+  o.total=params.total or 128
+		--o.makers={}
+ 	o.tiles={}
+ 	o.closed={}
+ 	o.complete=false
+ 	o.drawn=0
   o.processed=false
   setmetatable(o,self)
   self.__index=self
   return o
  end,
- spawn=function(self,x,y)
-  add(self.makers,self:create({x=x,y=y}))
-
+ spawn=function(self,params)
+  add(self.makers,self:create(params))
  end,
  process=function(self)
   --printh("process")
@@ -45,25 +46,39 @@ floormaker={
   elseif r<self.t90+self.t180 then
    self.angle=self.angle+0.5
   end
-  printh(self.x..","..self.y.." ->")
-  self.angle=self.angle%1
+  if self.x<=48 then self.angle=0 end
+  if self.x>=80 then self.angle=0.5 end
+  if self.y<=48 then self.angle=0.25 end
+  if self.y>=80 then self.angle=0.75 end      
+  --printh(self.x..","..self.y.." ->")
+  --self.angle=self.angle%1
   self.x=self.x+cos(self.angle)
   self.y=self.y-sin(self.angle)
-  printh("<- "..self.x..","..self.y)
+  if self.x<48 then self.x=48 end
+  if self.x>80 then self.x=80 end
+  if self.y<48 then self.y=48 end
+  if self.y<44 then self.y=80 end
+  --printh("<- "..self.x..","..self.y)
   r=rnd()
-  if r<self.x2 then
-   self.tiles={{0,0},{-1,0},{0,1},{-1,1}}
-  elseif r<self.x2+self.x3 then
-   self.tiles={{0,0},{-1,0},{-2,0},{0,1},{-1,1},{-2,1},{0,2},{-1,2},{-2,2}}
+  if self.x>52 and self.x<76 and self.y>52 and self.y<76 then
+ 	 if r<self.x2 then
+  	 self.tiles={{0,0},{-1,0},{0,1},{-1,1}}
+  	elseif r<self.x2+self.x3 then
+   	self.tiles={{0,0},{-1,0},{-2,0},{0,1},{-1,1},{-2,1},{0,2},{-1,2},{-2,2}}
+  	end
   end
   if #self.makers<self.max then
    r=rnd()
    if r<self.new then
-    self:spawn(self.x,self.y)
+    self:spawn({
+    	x=self.x,
+    	x=self.y,
+    	angle=self.angle+0.5
+    })
    end
   end
   r=rnd()
-  if r<#self.makers*0.05 then
+  if r<#self.makers*0.02 then
    done=true
   end
   self.processed=true
@@ -75,23 +90,29 @@ floormaker={
   --printh("here")
   for _,maker in pairs(self.makers) do
    local done=maker:process()
-   if done then
-    if not self.complete and #self.makers==1 then
-     self:spawn(maker.x,maker.y)
-    end
+   if done and #self.makers>1 then
     del(self.makers,maker)
    end
   end
  end,
  draw=function(self)
-  if self.complete then return end
+  if self.complete then return true end
   for m,maker in pairs(self.makers) do
    if maker.processed then
-    printh("draw:tiles:"..#maker.tiles)
+    --printh("draw:tiles:"..#maker.tiles)
     for _,tile in pairs(maker.tiles) do
-     printh(m..":"..(maker.x+tile[1])..","..(maker.y+tile[2]))
-     spr(1,(maker.x+tile[1])*8,(maker.y+tile[2])*8)
-     self.drawn=self.drawn+1
+     --printh(m..":"..(maker.x+tile[1])..","..(maker.y+tile[2]))
+     --spr(1,(maker.x+tile[1])*8,(maker.y+tile[2])*8)
+     local x=maker.x+tile[1]
+     local y=maker.y+tile[2]
+     pset(x,y,8)
+     if self.closed[x]==nil or not self.closed[x][y] then
+     	self.drawn=self.drawn+1
+     	if self.closed[x]==nil then
+     		self.closed[x]={}
+     	end
+     	self.closed[x][y]=true
+     end
      --printh("drawn:"..self.drawn.." "..tile[1]..","..tile[2])
      if self.drawn==self.total then
       --printh("all drawn "..self.total)
@@ -101,23 +122,35 @@ floormaker={
     end
    end
   end
+  return false
  end
 }
 
 function _init()
+	t=0
+	reset()
+end
+
+function reset()
  maker=floormaker:create()
  maker:spawn()
- t=0
  cls()
 end
 
 function _update()
  t=t+1
- if t%10==0 then maker:update() end
+ if t%2==0 then maker:update() end
 end
 
 function _draw()
- if t%10==0 then maker:draw() end
+ rect(47,47,81,81,1)
+ if t%2==0 then
+ 	local done=maker:draw()
+ 	if done then
+ 		--print("done",0,0,9)
+ 		reset()
+ 	end
+ end
 end
 
 --[[
