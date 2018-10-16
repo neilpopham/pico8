@@ -20,7 +20,7 @@ vec2={
   return abs(cell.x-self.x)+abs(cell.y-self.y)
  end,
  index=function(self)
-  return ((self.x+1)*16)+self.y
+  return self.y*16+self.x
  end
 }
 
@@ -62,7 +62,7 @@ pathfinder={
     --add(t,vec2:create(cell.x,cell.y))
     for i=#t,1,-1 do
      add(self.path,t[i])
-    end    
+    end
     return true
    end
    add(self.closed,current)
@@ -87,21 +87,24 @@ pathfinder={
   local tile=mget(tx,ty)
   if not fget(tile,0) then
    local exists=false
-   local g=current.g+sqrt(x^2+y^2)   
+   --[[
+   local g=current.g+1
+   --]]
+   local g=current.g+sqrt(x^2+y^2)
    for _,closed in pairs(self.closed) do
     if closed.x==tx and closed.y==ty then
      exists=true
      break
     end
    end
-   if not exists then 
+   if not exists then
     for _,open in pairs(self.open) do
      if open.x==tx and open.y==ty then
       if g<open.g then
        open.g=g
        open.f=open.g+open.h
        open.parent=current
-      end     
+      end
       exists=true
       break
      end
@@ -114,7 +117,7 @@ pathfinder={
      astar:create(tx,ty,g,cell:distance(self.finish),current)
     )
    end
-  end 
+  end
  end,
  _add_neighbours=function(self,current)
  --[[
@@ -122,7 +125,7 @@ pathfinder={
   for _,o in pairs(offset) do
    self:_add_neighbour(current,o[1],o[2])
   end
-  ]]
+  --]]
   for x=-1,1 do
    for y=-1,1 do
     if not (x==0 and y==0) then
