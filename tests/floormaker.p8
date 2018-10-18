@@ -4,11 +4,12 @@ __lua__
 -- floormaker
 -- by neil popham
 
-delay=2
+delay=1
 
 --[[
 
-map: 128x32 8-bit cels (+128x32 shared)
+map:    128x32 8-bit cels (+128x32 shared)
+tic 80: 240x136
 
 cell up from floor needs to be a wall
 floor below wall needs shadow
@@ -25,6 +26,12 @@ if wall need to know area around to work out wall tile
 
 ]]
 
+canvas={width=128,height=32,x2=127,y2=31,ratio=4}
+--canvas={width=240,height=136,x2=239,y2=135,ratio=2}
+--canvas={width=128,height=16,x2=127,y2=15,ratio=8}
+
+
+
 function extend(...)
  local o,arg={},{...}
  for _,a in pairs(arg) do
@@ -38,15 +45,15 @@ function floormaker_defaults(params)
  local o={}
  o.t90=params.t90 or 0.1
  o.t180=params.t180 or 0.05
- o.x2=params.x2 or 0.01
- o.x3=params.x3 or 0.0075
+ o.x2=params.x2 or 0.2
+ o.x3=params.x3 or 0.1
  o.limit=params.limit or 6
- o.new=params.new or 0.25
+ o.new=params.new or 0.1
  o.life=params.life or 0.02
  o.angle=params.angle or 0
- o.x=params.x or 0
- o.y=params.y or 0
- o.total=params.total or 128
+ o.x=params.x or flr(canvas.width/2)
+ o.y=params.y or flr(canvas.height/2)
+ o.total=params.total or 512
  o.complete=false
  return o
 end
@@ -62,17 +69,18 @@ function create_floormaker(params)
  o.max={x=0,y=0}
  o.update=function(self)
   if self.complete then return true end
-  printh("floormaker update")
+  --printh("floormaker update")
   for key,value in pairs(self.makers) do
    local done=value:update(self)
-   if done and #self.makers>1 then
+   if done then
+    if #self.makers==1 then self:spawn() end
     del(self.makers,value)
    end
   end
  end
  o.draw=function(self)
   if self.complete then return true end
-  printh("floormaker draw")
+  --printh("floormaker draw")
   --[[
   for key,value in pairs(self.makers) do
    value:draw(self)
@@ -82,20 +90,32 @@ function create_floormaker(params)
    for _,tile in pairs(m.tiles) do
     local x=m.x+tile[1]
     local y=m.y+tile[2]
-    --pset(64+x,64+y,8)
+    pset(x,y,9)
     --spr(1,(8+x)*8,(8+y)*8)
-    rectfill(64+x*4,64+y*4,66+x*4,66+y*4,9) --7+i)
+    --rectfill(64+x*4,64+y*4,66+x*4,66+y*4,9) --7+i)
+
     if self.closed[x]==nil or not self.closed[x][y] then
      self.drawn=self.drawn+1
      if self.closed[x]==nil then
       self.closed[x]={}
      end
      self.closed[x][y]=true
+
      if x<self.min.x then self.min.x=x end
      if x>self.max.x then self.max.x=x end
      if y<self.min.y then self.min.y=y end
      if y>self.max.y then self.max.y=y end
+
+     if (self.closed[x+1]~=nill and self.closed[x+1][y])
+      or (self.closed[x-1]~=nill and self.closed[x-1][y])
+      or (self.closed[x][y+1])
+      or (self.closed[x][y-1]) then
+     -- ok
+     else
+      assert(true,"oh crap")
+     end
     end
+
     if self.drawn==self.total then
      self.complete=true
      break
@@ -111,6 +131,10 @@ function create_floormaker(params)
   return m
  end
  o:spawn()
+ canvas.pow={
+  x=max(3,flr(canvas.width/20)),
+  y=max(3,flr(canvas.height/20))
+ }
  return o
 end
 
@@ -118,47 +142,174 @@ function create_maker(params)
  params=params or {}
  local o=floormaker_defaults(params)
  o.tiles={{0,0}}
+ o.lx=1
+ o.ly=1
  o.update=function(self,parent)
-  printh("maker update")
+  --printh("maker update")
+
   local done=false
-  local r=rnd()
+  local t90=self.t90
+  local da=0.25
+  local m=0.5
+  local n=0
+  local t=0
+
   self.tiles={{0,0}}
-  if r<self.t90 then
-   if rnd()<0.5 then
-    self.angle=self.angle-0.25
+  self.lx=cos(self.angle)
+  self.ly=-sin(self.angle)
+
+  -- #1 if we're moving up or down then
+  -- increase the chance (t90) to turn 90º
+  -- as we need to stay wider than higher
+  -- #2 if we're close to the edge of the canvas
+  -- increase the chance (t90) to turn 90º
+  -- and increase the chance (m)
+  -- that the correct turn (da) is chosen
+  if self.angle==0.25 or self.angle==0.75 then
+   t90=t90*canvas.ratio
+   n=min(self.y,canvas.y2-self.y)
+   if n==0 then t=1 else t=2/n end
+   t90=max(t90,t)
+   m=max(0.5,(1-n/canvas.y2)^canvas.pow.y)
+   if self.x<canvas.width/2 then
+    da=self.angle-0.5
    else
-    self.angle=self.angle+0.25
+    da=0.5-self.angle
    end
-  elseif r<self.t90+self.t180 then
+  else
+   n=min(self.x,canvas.x2-self.x)
+   if n==0 then t=1 else t=2/n end
+   t90=max(t90,t)
+   m=max(0.5,(1-n/canvas.x2)^canvas.pow.x)
+   if self.y<canvas.height/2 then
+    da=0.25-self.angle
+   else
+    da=self.angle-0.25
+   end
+  end
+
+  printh(self.angle..","..t..","..t90..","..n..","..m..","..da..","..self.x..","..self.y,"floormaker.csv")
+
+  -- #####################################################
+  if m>0.5 or t90>0.1 then
+   if self.x<3 or self.x>124 or self.y<3 or self.y>29 then
+    printh("a:"..self.angle.." t90:"..t90.." m:"..m.." da:"..da.." x:"..self.x.." y:"..self.y)
+   end
+  end
+  -- #####################################################
+
+  local r=rnd()
+  if r<t90 then
+   if rnd()<m then
+    self.angle=self.angle+da
+   else
+    self.angle=self.angle-da
+   end
+  elseif r<t90+self.t180 then
    self.angle=self.angle+0.5
   end
-  if self.x==-12 then self.angle=0 end
-  if self.x==12 then self.angle=0.5 end
-  if self.y==-12 then self.angle=0.25 end
-  if self.y==12 then self.angle=0.75 end
+
+  local ox=self.x -- ##################
+  local oy=self.y -- ##################
+
   self.angle=self.angle%1
   self.x=self.x+cos(self.angle)
   self.y=self.y-sin(self.angle)
+
+  local dx=abs(self.x-ox) -- ##################
+  local dy=abs(self.y-oy) -- ##################
+  assert(dx+dy<=1,"we jumped") -- ##################
+
   r=rnd()
   if r<self.x2 then
-   self.tiles={{0,0},{-1,0},{0,1},{-1,1}}
+   self.tiles=self:get_room(2)
   elseif r<self.x2+self.x3 then
-   self.tiles={{0,0},{-1,0},{-2,0},{0,1},{-1,1},{-2,1},{0,2},{-1,2},{-2,2}}
+   self.tiles=self:get_room(3)
   end
+
   if #parent.makers<parent.limit then
    r=rnd()
    if r<self.new then
-    local m=parent:spawn({x=self.x,y=self.y,angle=self.angle+0.5})
+    local angle=self:get_angle()
+    local m=parent:spawn({x=self.x,y=self.y,angle=angle})
    end
   end
+
   r=rnd()
   if r<#parent.makers*self.life then
    done=true
   end
+
+  if self.x<=0 then
+   self.x=0
+   done=true
+   self.tiles={}
+  elseif self.x>=canvas.x2 then
+   self.x=canvas.x2
+   done=true
+   self.tiles={}
+  end
+  if self.y<=0 then
+   self.y=0
+   done=true
+   self.tiles={}
+  elseif self.y>=canvas.y2 then
+   self.y=canvas.y2
+   done=true
+   self.tiles={}
+  end
+
   return done
  end
+ o.get_room=function(self,size)
+  local dx=-self.lx
+  local dy=-self.ly
+  if self.x<size+4
+   then dx=1
+  elseif self.x>canvas.x2-size-4 then
+   dx=-1
+  end
+  if self.y<size+4 then
+   dy=1
+  elseif self.y>canvas.y2-size-4 then
+   dy=-1
+  end
+  local r={}
+  for x=0,size-1 do
+   for y=0,size-1 do
+    add(r,{x*dx,y*dy})
+   end
+  end
+  return r
+ end
+ o.get_angle=function(self)
+  --[[
+  local b={}
+  if self.x<4 then
+   add(b,0.5)
+  elseif self.x>canvas.x2-4 then
+   add(b,0)
+  end
+  if self.y<4 then
+   add(b,0.75)
+  elseif self.y>canvas.y2-4 then
+   add(b,0.25)
+  end
+  local a
+  local f
+  repeat
+   f=false
+   a=flr(rnd(4))*0.25
+   for _,ba in pairs(b) do
+    if ba==a then f=true break end
+   end
+  until f==false
+  ]]
+  local a=flr(rnd(4))*0.25
+  return a
+ end
  o.draw=function(self,parent)
-  printh("maker draw")
+  --printh("maker draw")
  end
  return o
 end
@@ -174,18 +325,20 @@ function reset()
  cls(1)
 end
 
-function _update()
+function _update60()
  t=t+1
- if t%delay==0 then maker:update() end
+ --if t%delay==0 then maker:update() end
+ maker:update()
  if btn(4) then reset() end
 end
 
 function _draw()
- --rect(47,47,81,81,1)
- if t%delay==0 then
+ line(0,32,127,32,2)
+ --if t%delay==0 then
  	local done=maker:draw()
  	if done then
  		printh("done")
+   --[[
    for x=0,32 do
     for y=0,32 do
      --rectfill(x*4,y*4,2+x*4,2+y*4,8) --7+i)
@@ -210,9 +363,10 @@ function _draw()
      end
     end
    end
- 		--reset()
+   ]]
+ 		reset()
  	end
- end
+ --end
 end
 
 --[[
