@@ -198,15 +198,16 @@ function create_maker(params)
   end
   -- #####################################################
 
+  local t180=max(self.t180,t)
   local r=rnd()
-  if r<t90 then
+  if r<t180 then
+   self.angle=self.angle+0.5
+  elseif r<t90+t180 then
    if rnd()<m then
     self.angle=self.angle+da
    else
     self.angle=self.angle-da
    end
-  elseif r<t90+self.t180 then
-   self.angle=self.angle+0.5
   end
 
   local ox=self.x -- ##################
