@@ -12,8 +12,8 @@ canvas={width=128,height=32,x2=127,y2=31,ratio=4}
 --pad={left=2,right=3,up=0,down=1,btn1=4,btn2=5,btn3=6,btn4=7}
 --canvas={width=240,height=136,x2=239,y2=135,ratio=2}
 
-dir={left=1,right=2,neutral=3}
-drag=0.75
+dir={left=1,right=2,up=3,down=4}
+drag=0.5
 
 vec2={
  create=function(self,x,y)
@@ -47,12 +47,13 @@ astar={
 } setmetatable(astar,{__index=vec2})
 
 pathfinder={
- find=function(self,start,finish)
+ find=function(self,start,finish,max)
   self.open={}
   self.closed={}
   self.path={}
   self.start=start
   self.finish=finish
+  self.max=max
   add(self.open,astar:create(start.x,start.y,0,start:distance(finish)))
   if self:_check_open() then
    return self.path
@@ -86,7 +87,7 @@ pathfinder={
  _get_next=function(self)
   local best={0,32727}
   for i,vec in pairs(self.open) do
-   if vec.f<best[2] then
+   if vec.f<best[2] and vec.g<self.max then
     best={i,vec.f}
    end
   end
@@ -179,6 +180,7 @@ floormaker={
   self.min={x=self.x,y=self.y}
   self.max={x=self.x,y=self.y}
   self:spawn()
+  -- loop through threads until we have enough tiles
   repeat
    for _,thread in pairs(self.threads) do
     local done=thread:update(self)
@@ -234,10 +236,10 @@ floormaker={
    local m=0.5
    local n=0
    local t=0
-   -- #1 if we're moving up or down then
+   -- #1. if we're moving up or down then
    -- increase the chance (t90) to turn 90º
    -- as we need to stay wider than higher
-   -- #2 if we're close to the edge of the canvas
+   -- #2. if we're close to the edge of the canvas
    -- increase the chance (t90) to turn 90º
    -- and increase the chance (m)
    -- that the correct turn (da) is chosen
@@ -354,8 +356,8 @@ floormaker={
   end
   o.get_angle=function(self)
    local options={}
-   if self.x>7 then add(options,0) end
-   if self.x<canvas.width-8 then add(options,0.5) end
+   if self.x>7 then add(options,0.5) end
+   if self.x<canvas.width-8 then add(options,0) end
    if self.y>7 then add(options,0.75) end
    if self.y<canvas.height-8 then add(options,0.25) end
    return options[flr(rnd(4)+1)]
@@ -460,7 +462,7 @@ animatable={
    init=function(self,stage,dir)
     -- record frame count for each stage dir
     for s in pairs(self.stage) do
-     for d=1,3 do
+     for d=1,4 do
       self.stage[s].dir[d].fcount=#self.stage[s].dir[d].frames
      end
     end
@@ -482,11 +484,11 @@ animatable={
      self.dir=dir or self.dir
     end
    },
-   add_stage=function(self,name,ticks,loop,neutral,left,right,next)
+   add_stage=function(self,name,ticks,loop,left,right,up,down,next)
     self.stage[name]={
      ticks=ticks,
      loop=loop,
-     dir={{frames=left},{frames=right},{frames=neutral}},
+     dir={{frames=left},{frames=right},{frames=up},{frames=down}},
      next=next
     }
    end
@@ -529,8 +531,9 @@ animatable={
 player={
  create=function(self,x,y)
   local o=animatable.create(self,x,y,0.2,0.2)
-  o.anim:add_stage("core",4,true,{5},{5},{5})
-  o.anim:init("core",dir.neutral)
+  o.anim:add_stage("still",5,true,{5},{6},{7},{8})
+  o.anim:add_stage("walking",5,true,{9,5,10},{11,6,12},{13,7,14},{15,8,16})
+  o.anim:init("still",dir.down)
   o.sx=x
   o.sy=y
   o:reset()
@@ -546,7 +549,6 @@ player={
   self.bombs=3
   self.x=self.sx
   self.y=self.sy
-  self.b=8
  end,
  destroy=function(self)
   cam:shake(5,0.9)
@@ -566,36 +568,39 @@ player={
    self.anim.current.dir=dir.right
    self.dx=self.dx+self.ax
   else
-   self.anim.current.dir=dir.neutral
    self.dx=self.dx*drag
   end
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
   if abs(self.dx)<self.min.dx then self.dx=0 end
   local move=self:can_move_x()
   if move.ok then
-   self.x=self.x+round(self.dx)  
+   self.x=self.x+round(self.dx)
   else
    self.x=move.tx+(self.dx>0 and -8 or 8)
   end
   -- vertical movement
   if btn(pad.up) then
-   --self.anim.current.dir=dir.left
+   self.anim.current.dir=dir.up
    self.dy=self.dy-self.ay
   elseif btn(pad.down) then
-   --self.anim.current.dir=dir.right
+   self.anim.current.dir=dir.down
    self.dy=self.dy+self.ay
   else
-   self.anim.current.dir=dir.neutral
    self.dy=self.dy*drag
   end
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   if abs(self.dy)<self.min.dy then self.dy=0 end
   local move=self:can_move_y()
   if move.ok then
-   self.y=self.y+round(self.dy)  
+   self.y=self.y+round(self.dy)
   else
    self.y=move.ty+(self.dy>0 and -8 or 8)
-  end  
+  end
+  if self.dx==0 and self.dy==0 then
+   self.anim.current:set("still")
+  else
+   self.anim.current:set("walking")
+  end
  end,
  draw=function(self)
   if self.complete then return end
@@ -603,37 +608,48 @@ player={
  end
 } setmetatable(player,{__index=animatable})
 
-function create_map(cells)
- local sprite={roof=1,wall=2,shadow=3,floor=4}
- memset(0x2000,0,0x1000)
- for x=0,maker.width-1 do
-  for y=0,maker.height-1 do
-   mset(x,y,sprite.roof)
+collection={
+ create=function(self)
+  local o={
+   items={},
+   count=0,
+  }
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end,
+ update=function(self)
+  if self.count==0 then return end
+  for _,i in pairs(self.items) do
+   i:update()
   end
- end
- for index,cell in pairs(cells) do
-  local north=vec2:create(cell.x,cell.y-1)
-  local n=maker:get_index(north)
-  if cells[n]==nil then
-   mset(cell.x,cell.y,sprite.wall)
-  else
-   north=vec2:create(cell.x,cell.y-2)
-   n=maker:get_index(north)
-   if cells[n]==nil then
-    mset(cell.x,cell.y,sprite.shadow)
-   else
-    mset(cell.x,cell.y,sprite.floor)
-   end
+ end,
+ draw=function(self)
+  if self.count==0 then return end
+  for _,i in pairs(self.items) do
+   i:draw()
+   if i.complete then self:del(i) end
   end
+ end,
+ add=function(self,object)
+  add(self.items,object)
+  self.count=self.count+1
+ end,
+ del=function(self,object)
+  del(self.items,object)
+  self.count=self.count-1
+ end,
+ reset=function(self)
+  self.items={}
+  self.count=0
  end
-end
+}
 
 function _init()
- maker=floormaker:create()
+ local maker=floormaker:create()
  local cells=maker:run()
- create_map(cells)
+ create_map(cells,maker.width,maker.height)
  p=player:create(maker.x*8,maker.y*8)
- printh("width:"..maker.width.." height:"..maker.height)
  cam=create_camera(p,maker.width*8,maker.height*8)
 end
 
@@ -647,9 +663,8 @@ function _draw()
  camera(cam:position())
  map(0,0)
  p:draw()
- --spr(5,maker.x*8,maker.y*8)
  camera(0,0)
- 
+ -- hud
 end
 
 function extend(...)
@@ -658,6 +673,31 @@ function extend(...)
   for k,v in pairs(a) do o[k]=v end
  end
  return o
+end
+
+function create_map(cells,w,h)
+ local sprite={roof=1,wall=2,shadow=3,floor=4}
+ memset(0x2000,0,0x1000)
+ for x=0,w-1 do
+  for y=0,h-1 do
+   mset(x,y,sprite.roof)
+  end
+ end
+ for index,cell in pairs(cells) do
+  local north=vec2:create(cell.x,cell.y-1)
+  local n=floormaker:get_index(north)
+  if cells[n]==nil then
+   mset(cell.x,cell.y,sprite.wall)
+  else
+   north=vec2:create(cell.x,cell.y-2)
+   n=floormaker:get_index(north)
+   if cells[n]==nil then
+    mset(cell.x,cell.y,sprite.shadow)
+   else
+    mset(cell.x,cell.y,sprite.floor)
+   end
+  end
+ end
 end
 
 function create_camera(item,x,y)
@@ -712,14 +752,30 @@ function mrnd(x,f)
 end
 
 __gfx__
-77777777999999994444444466666666777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999994444444466666666777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999994444444466666666777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999994444444467676767777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999996666666677777777777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999996666666677777777777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999996666666677777777777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
-77777777999999996666666677777777777777771111111100000000000000000000000000000000000000000000000000000000000000000000000000000000
+77777777999999994444444466666666777777770111111001111110011111100111111001111110011111100111111001111110011111100111111001111110
+77777777999999994444444466666666777777770111111001111110011111100111111001111110011111100111111001111110011111100111111001111110
+777777779999999944444444666666667777777701ffff1001ffff100111111001ffff1001ffff1001ffff1001ffff1001ffff10011111100111111001ffff10
+77777777999999994444444467676767777777770f1ff1f00f1ff1f0011111100f1ff1f00f1ff1f00f1ff1f00f1ff1f00f1ff1f001111110011111100f1ff1f0
+777777779999999966666666777777777777777702ffff2002ffff202222222222ffff2202ffff2002ffff2002ffff2002ffff20222222200222222222ffff22
+77777777999999996666666677777777777777770222222002222220f222222fff2222ff02222220022222200222222002222220222222200222222002222222
+77777777999999996666666677777777777777770222222002222220022222200222222002222220022222200222222002222220f222222002222220022222ff
+77777777999999996666666677777777777777776116611661166116611661166116611661166116611661166116611661166116611666666666611661166666
+01111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+01111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+01ffff10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0f1ff1f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+22ffff22000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+22222220000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ff222220000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+66666116000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+a999999a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+a999999a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+94444449000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+94499449000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+94444449000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+66666666000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+60606060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __gff__
 0001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
