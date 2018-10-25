@@ -34,8 +34,15 @@ create_path={
    x=flr(screen.width/2),
    y=flr(screen.height/2),
    points={},
-   radius=8
+   radius=16
   }
+  add(p.points,vec2:create(64,8))
+  add(p.points,vec2:create(104,24))
+  add(p.points,vec2:create(120,61))
+  add(p.points,vec2:create(108,95))
+  add(p.points,vec2:create(80,116))
+  add(p.points,vec2:create(40,112))
+  add(p.points,vec2:create(15,90))
  end,
  update=function(self)
   if btn(pad.left) then
@@ -50,6 +57,7 @@ create_path={
   end
   if btnp(pad.btn1) then
    add(p.points,vec2:create(p.x,p.y))
+   printh(p.x..","..p.y) -- ################################
   end
   if btnp(pad.btn2) then
    if #p.points>1 then
@@ -80,27 +88,28 @@ follow_path={
    dx=0,
    dy=0,
    angle=0,
-   force=0.5,
+   force=1,
+   da=0.005,
    current=1
   }
  end,
  update=function(self)
   local dx=p.points[e.current].x-e.x
   local dy=p.points[e.current].y-e.y
-  e.angle=atan2(dx,-dy)
-
-  e.dx=e.dx+cos(e.angle)*e.force
-  e.dy=e.dy-sin(e.angle)*e.force
-  e.dx=mid(-2,e.dx,2)
-  e.dy=mid(-2,e.dy,2)
-  e.force=min(2,sqrt((e.dx/4)^2+(e.dy/4)^2))
-  printh(e.force)
-  e.x=e.x+e.dx
-  e.y=e.y+e.dy
+  local angle=atan2(dx,-dy)
+  if abs(e.angle-angle)<e.da then
+   e.angle=angle
+  elseif e.angle>angle and e.angle<angle+0.5 then
+   e.angle=e.angle-e.da
+  else
+   e.angle=e.angle+e.da
+  end
+  e.angle=e.angle%1
+  e.x=e.x+cos(e.angle)*e.force
+  e.y=e.y-sin(e.angle)*e.force
   local pos=vec2:create(e.x,e.y)
   local d=pos:distance(p.points[e.current])
   if d<p.radius then
-   printh("point")
    if e.current==#p.points then
     e.current=1
    else

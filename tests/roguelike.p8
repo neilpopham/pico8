@@ -647,7 +647,7 @@ collection={
 
 function _init()
  local maker=floormaker:create()
- local cells=maker:run()
+ cells=maker:run()
  create_map(cells,maker.width,maker.height)
  p=player:create(maker.x*8,maker.y*8)
  cam=create_camera(p,maker.width*8,maker.height*8)
@@ -684,13 +684,13 @@ function create_map(cells,w,h)
   end
  end
  for index,cell in pairs(cells) do
-  local north=vec2:create(cell.x,cell.y-1)
-  local n=floormaker:get_index(north)
+  local n2=vec2:create(cell.x,cell.y-1)
+  local n=floormaker:get_index(n2)
   if cells[n]==nil then
    mset(cell.x,cell.y,sprite.wall)
   else
-   north=vec2:create(cell.x,cell.y-2)
-   n=floormaker:get_index(north)
+   n2=vec2:create(cell.x,cell.y-2)
+   n=floormaker:get_index(n2)
    if cells[n]==nil then
     mset(cell.x,cell.y,sprite.shadow)
    else
