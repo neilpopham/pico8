@@ -34,7 +34,7 @@ create_path={
    x=flr(screen.width/2),
    y=flr(screen.height/2),
    points={},
-   radius=16
+   radius=12
   }
   add(p.points,vec2:create(64,8))
   add(p.points,vec2:create(104,24))
@@ -43,6 +43,7 @@ create_path={
   add(p.points,vec2:create(80,116))
   add(p.points,vec2:create(40,112))
   add(p.points,vec2:create(15,90))
+  add(p.points,vec2:create(64,64))
  end,
  update=function(self)
   if btn(pad.left) then
@@ -97,13 +98,17 @@ follow_path={
   local dx=p.points[e.current].x-e.x
   local dy=p.points[e.current].y-e.y
   local angle=atan2(dx,-dy)
-  if abs(e.angle-angle)<e.da then
+  local ea=1-e.angle
+  local ra=(ea+angle)%1
+  local da=abs(ra)
+  if da<e.da then
    e.angle=angle
-  elseif e.angle>angle and e.angle<angle+0.5 then
-   e.angle=e.angle-e.da
-  else
+  elseif ra<0.5 then
    e.angle=e.angle+e.da
+  else
+   e.angle=e.angle-e.da
   end
+  e.force=min(1,max(0.33,0.075/da))
   e.angle=e.angle%1
   e.x=e.x+cos(e.angle)*e.force
   e.y=e.y-sin(e.angle)*e.force
@@ -133,8 +138,8 @@ follow_path={
    for i,pos in pairs(p.points) do
     circ(pos.x,pos.y,p.radius,3)
    end
-   local ax=e.x+cos(e.angle)*16
-   local ay=e.y-sin(e.angle)*16
+   local ax=e.x+cos(e.angle)*32
+   local ay=e.y-sin(e.angle)*32
    line(e.x,e.y,ax,ay,9)
   end
   circ(e.x,e.y,3,8)

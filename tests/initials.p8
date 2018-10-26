@@ -7,65 +7,76 @@ __lua__
 
 charpicker={
  glyphs="abcdefghijklmnopqrstuvwxyz0123456789 _*#",
- create=function(self,x,y)
-  local o={x=x,y=y,cx=0,sx=x,rx=x,dx=0,c=1,no=3,max=#charpicker.glyphs*-4+4,chars={},complete=false}
+ create=function(self,x,y,no)
+  local o={x=x,y=y,cx=0,sx=x,rx=x,dx=0,c=1,no=no,max=#charpicker.glyphs*-4+4,chars={},complete=false}
   setmetatable(o,self)
   self.__index=self
   return o
  end,
  save=function(self)
   local pos=self.rx/-4+1
-  printh("pos:"..pos)
-  printh(sub(self.glyphs,pos,pos))
   add(self.chars,sub(self.glyphs,pos,pos))
-  if self.c==self.no then self.complete=true end
-  self.c=self.c+1
-  self.x=self.x+4
-  self:reset()
-  for i,chr in pairs(self.chars) do printh(chr) end
+  if self.c==self.no then
+   self.complete=true
+  else
+   self.c=self.c+1
+   self.x=self.x+4
+   self:reset()
+  end
  end,
  reset=function(self)
   self.cx=0
-  rx=self.x
+  self.rx=self.x
   self.dx=0
+ end,
+ next=function(self)
+  self.dx=-0.5
+  if self.cx==self.max then self.rx=0 else self.rx=self.cx-4 end
+ end,
+ previous=function(self)
+  self.dx=0.5
+  if self.cx==0 then self.rx=self.max else self.rx=self.cx+4 end
+ end,
+ update=function(self)
+  self.cx= self.cx+self.dx
+  if self.cx==self.rx then self.dx=0 end
+  if self.dx<0 and self.cx==-157 then self.cx=3 end
+  if self.dx>0 and self.cx==1 then self.cx=-159 end
+ end,
+ draw=function(self)
+  -- loop code
+  for i,chr in pairs(picker.chars) do
+   print(chr,picker.sx+((i-1)*4),picker.y,7)
+  end
+  if not picker.complete then
+   clip(picker.x,picker.y,4,6)
+   print(picker.glyphs,picker.x+picker.cx,picker.y,7)
+   clip()
+  end
  end
 }
 
 function _init()
- picker=charpicker:create(58,64)
- printh(picker.max)
+ picker=charpicker:create(58,64,3)
 end
 
 function _update60()
  if btnp(0) then
-  picker.dx=0.5
-  if picker.cx==0 then picker.rx=picker.max else picker.rx=picker.cx+4 end
+  picker:previous()
  end
  if btnp(1) then
-  picker.dx=-0.5
-  if picker.cx==picker.max then picker.rx=0 else picker.rx=picker.cx-4 end
+  picker:next()
  end
- picker.cx= picker.cx+picker.dx
- if picker.cx==picker.rx then picker.dx=0 end
- if picker.dx<0 and picker.cx==-157 then picker.cx=3 end
- if picker.dx>0 and picker.cx==1 then picker.cx=-159 end
  if btnp(4) then
   picker:save()
- end
+ end 
+ picker:update()
 end
 
 function _draw()
  cls(1)
  circfill(64,64,60,2)
-  -- loop code
- for i,chr in pairs(picker.chars) do
-  print(chr,picker.sx+((i-1)*4),picker.y,7)
- end
- if not picker.complete then
-  clip(picker.x,picker.y,4,6)
-  print(picker.glyphs,picker.x+picker.cx,picker.y,7)
-  clip()
- end
+ picker:draw()
  circfill(24,24,12,3)
 end
 --[[
