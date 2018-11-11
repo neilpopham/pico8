@@ -177,8 +177,8 @@ function create_cells()
   end
  end
  for i,cell in pairs(cells) do
-  for x=-8,8 do
-   for y=-8,8 do
+  for x=-16,16 do
+   for y=-16,16 do
     if x==0 and y==0 then
      -- this cell
     else
@@ -191,12 +191,12 @@ function create_cells()
       local diff=cell.tile:diff(c2)
       local angle=atan2(diff.x,-diff.y)
       local distance=sqrt(diff.x^2+diff.y^2)
-      local dd=8
+      local dd=4
       local d=dd
       while d<distance do
        local x=cell.tile.px.x+cos(angle)*d
        local y=cell.tile.px.y-sin(angle)*d
-       --pset(x,y,i%15) -- ###################################
+       pset(x,y,i%15) -- ###################################
        local sprite=mget(flr(x/8),flr(y/8))
        if fget(sprite,0) then
         blocked=true
@@ -213,8 +213,9 @@ function create_cells()
     end
    end
   end
+  --break
  end
-
+--[[
  for x=0,canvas.x2 do
   for y=0,canvas.y2 do
    local i=y*canvas.width+x
@@ -222,24 +223,28 @@ function create_cells()
     printh("here")
     for key,value in pairs(cells[i].visibility) do
      s=s..key.."="..value.." "
-    end
-    printh(i..":"..s)
-   end
+    en
+    printh(i..":"..
+   en
   end
  end
-
+]]
  printh("total:"..#cells)
  printh("memory:"..stat(0)) -- 576.4297 (29% of available)
 
-
-
+--[[
  for i,cell in pairs(cells) do
   local s=""
-  for key,value in pairs(cell.visibility) do
-   s=s..value..","
+  for v=1,8 do
+   if cell.visibility[v]==nil then 
+    s=s.."0,"
+   else
+    s=s..cell.visibility[v]..","
+   end 
   end
-  printh(i..":"..s)
+  printh("visibility["..i.."]={"..s.."}")
  end
+]]
 
 end
 

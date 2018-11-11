@@ -79,33 +79,37 @@ function create_cells()
     local diff=c1:difference(c2)
     local angle=atan2(diff.x,-diff.y)
     local distance=sqrt(diff.x^2+diff.y^2)
-    if distance<40 then
-     local d=4
+    --if distance<40 then
+     local dd=2
+     local d=dd
      while d<distance do
       local x=c1.px.x+cos(angle)*d
       local y=c1.px.y-sin(angle)*d
-      --pset(x,y,i%14+1)
+      pset(x,y,i%14+1)
       local sprite=mget(flr(x/8),flr(y/8))
       if fget(sprite,0) then
        --pset(x,y,0)
        blocked=true
        break
       end
-      d=d+4
+      d=d+dd
      end
      if not blocked then
       add(visible[i],c2)
      end
-    end
+    --end
    end
   end
   --if i==40 then break end
  end
  local t2=time()
  printh(t2.." ("..(t2-t)..")")
-
+ map()
  r=flr(rnd(#c)+1)
  i=c[r]
+ --i=170
+ i=73
+ printh("i:"..i)
  c1=cells[i]
  spr(3,c1.x*8,c1.y*8)
  for j,c2 in pairs(visible[i]) do
