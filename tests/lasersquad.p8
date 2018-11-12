@@ -42,8 +42,8 @@ tile={
   o.px=vec2:create(o.x*16+8,o.y*16+8)
   return o
  end,
- from_px=function(self,pos)
-  return (pos.x-8)/16,(pos.y-8)/16
+ from_px=function(self,x,y)
+  return self:create(flr((x-8)/16),flr((y-8)/16))
  end,
  diff=function(self,cell)
   local dx=cell.px.x-self.px.x
@@ -164,9 +164,10 @@ pathfinder={
 
 cells={}
 
-function create_cells()
+function create_cells_slow()
  printh("===")
  map()
+ local t1=time()
  for y=0,spritemap.y2,2 do
   for x=0,spritemap.x2,2 do
    local sprite=mget(x,y)
@@ -177,16 +178,65 @@ function create_cells()
   end
  end
  for i,cell in pairs(cells) do
-  for x=-16,16 do
-   for y=-16,16 do
-    if x==0 and y==0 then
-     -- this cell
-    else
+  local closed={}
+  for idx=1,8 do cell.visibility[idx]=0 end
+  for x=-4,4 do
+   for y=-4,4 do
+    if not (x==0 and y==0) then
      local c2=tile:create(cell.tile.x+x,cell.tile.y+y)
      local j=c2:index()
-     if cells[j]==nil then
-      -- not a floor tile
-     else
+     local blocked=false
+     local diff=cell.tile:diff(c2)
+     local angle=atan2(diff.x,-diff.y)
+     local ai=flr(angle/0.125)+1
+     local distance=sqrt(diff.x^2+diff.y^2)
+     local dd=8
+     local d=dd
+     repeat
+      local x=cell.tile.px.x+cos(angle)*d
+      local y=cell.tile.px.y-sin(angle)*d
+      pset(x,y,i%14+1) -- ##################
+      local c3=tile:from_px(x,y)
+      local idx=c3:index()
+      if cells[idx]==nil then
+       blocked=true
+      end
+      closed[idx]=true
+      if not blocked then
+       cell.visibility[ai]=cell.visibility[ai]+1
+      end
+      d=d+dd
+     until c3.x<0 or c3.x>canvas.x2 or c3.y<0 or c3.y>canvas.y2
+    end
+   end
+  end
+ end
+ printh("total:"..#cells)
+ printh("memory:"..stat(0)) -- 576.4297 (29% of available)
+ printh(time()-t1)
+end
+
+function create_cells()
+ printh("===")
+ map()
+ local t1=time()
+ for y=0,spritemap.y2,2 do
+  for x=0,spritemap.x2,2 do
+   local sprite=mget(x,y)
+   if not fget(sprite,0) then
+    local tile=tile:create(x/2,y/2)
+    cells[tile:index()]={tile=tile,visibility={}}
+   end
+  end
+ end
+ for i,cell in pairs(cells) do
+  for idx=1,8 do cell.visibility[idx]=0 end
+  for x=-8,8 do
+   for y=-8,8 do
+    if not (x==0 and y==0) then
+     local c2=tile:create(cell.tile.x+x,cell.tile.y+y)
+     local j=c2:index()
+     if cells[j]~=nil then
       local blocked=false
       local diff=cell.tile:diff(c2)
       local angle=atan2(diff.x,-diff.y)
@@ -206,7 +256,6 @@ function create_cells()
       end
       if not blocked then
        local idx=flr(angle/0.125)+1
-       if cell.visibility[idx]==nil then cell.visibility[idx]=0 end
        cell.visibility[idx]=cell.visibility[idx]+1
       end
      end
@@ -231,16 +280,17 @@ function create_cells()
 ]]
  printh("total:"..#cells)
  printh("memory:"..stat(0)) -- 576.4297 (29% of available)
+ printh(time()-t1)
 
 --[[
  for i,cell in pairs(cells) do
   local s=""
   for v=1,8 do
-   if cell.visibility[v]==nil then 
+   if cell.visibility[v]==nil then
     s=s.."0,"
    else
     s=s..cell.visibility[v]..","
-   end 
+   end
   end
   printh("visibility["..i.."]={"..s.."}")
  end
@@ -310,7 +360,7 @@ end
 
 function _init()
  cls()
- create_cells()
+ create_cells_orig()
 end
 
 function _update()
