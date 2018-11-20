@@ -42,7 +42,7 @@ pathfinder={
   self.path={}
   self.start=start
   self.finish=finish
-  add(self.open,astar:create(start.x,start.y,0,start:distance(finish)))
+  self.open[start:index()]=astar:create(start.x,start.y,0,start:distance(finish))
   if self:_check_open() then
    return self.path
   end
@@ -52,7 +52,8 @@ pathfinder={
   if current==nil then
    return false
   else
-   if current.x==self.finish.x and current.y==self.finish.y then
+   local idx=current:index()
+   if idx==self.finish:index() then
     local t={}
     local cell=current
     while cell.parent do
@@ -65,9 +66,9 @@ pathfinder={
     end
     return true
    end
-   add(self.closed,current)
+   self.closed[idx]=current
    self:_add_neighbours(current)
-   del(self.open,current)
+   self.open[idx]=nil
    self:_check_open()
    return true
   end
@@ -82,40 +83,27 @@ pathfinder={
   return best[1]==0 and nil or self.open[best[1]]
  end,
  _add_neighbour=function(self,current,x,y)
-  local tx=current.x+x
-  local ty=current.y+y
-  local tile=mget(tx,ty)
+  local cell=vec2:create(current.x+x,current.y+y)
+  local idx=cell:index()
+  local tile=mget(cell.x,cell.y)
   if not fget(tile,0) then
    local exists=false
    --[[
    local g=current.g+1
    --]]
    local g=current.g+sqrt(x^2+y^2)
-   for _,closed in pairs(self.closed) do
-    if closed.x==tx and closed.y==ty then
-     exists=true
-     break
+   if type(self.closed[idx])=="table" then
+    exists=true
+   elseif type(self.open[idx])=="table" then
+    if g<self.open[idx].g then
+     self.open[idx].g=g
+     self.open[idx].f=self.open[idx].g+self.open[idx].h
+     self.open[idx].parent=current
     end
+    exists=true
    end
    if not exists then
-    for _,open in pairs(self.open) do
-     if open.x==tx and open.y==ty then
-      if g<open.g then
-       open.g=g
-       open.f=open.g+open.h
-       open.parent=current
-      end
-      exists=true
-      break
-     end
-    end
-   end
-   if not exists then
-    local cell=vec2:create(tx,ty)
-    add(
-     self.open,
-     astar:create(tx,ty,g,cell:distance(self.finish),current)
-    )
+    self.open[idx]=astar:create(cell.x,cell.y,g,cell:distance(self.finish),current)
    end
   end
  end,

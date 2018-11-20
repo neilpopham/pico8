@@ -40,6 +40,11 @@ vec2={
   local oface=(face-self.face)%8
   return oface>4 and oface-8 or oface
  end,
+ cost=function(self,cell)
+  local diff=self:diff(cell)
+  local cost=diff.x*diff.y==0 and ap.move90 or ap.move45
+  return cost
+ end,
  diff=function(self,cell)
   local dx=cell.x-self.x
   local dy=cell.y-self.y
@@ -69,10 +74,6 @@ tile={
   local dx=cell.px.x-self.px.x
   local dy=cell.px.y-self.px.y
   return vec2:create(dx,dy)
- end,
- cost=function(self,cell)
-  local diff=self:diff(cell)
-  local cost=diff.x*diff.y==0 and ap.move90 or ap.move45
  end
 } setmetatable(tile,{__index=vec2})
 
@@ -88,15 +89,20 @@ astar={
 } setmetatable(astar,{__index=vec2})
 
 pathfinder={
- find=function(self,start,finish,max)
-  max=max or 32727
+ reset=function(self,start)
   self.open={}
   self.closed={}
   self.path={}
   self.start=start
+  self.max=32727
+ end,
+ find=function(self,start,finish,max)
+  max=max or 32727
+  self:reset()
   self.finish=finish
   self.max=max
-  add(self.open,astar:create(start.x,start.y,0,start:distance(finish)))
+  --add(self.open,astar:create(start.x,start.y,0,start:distance(finish)))
+  self.open[start:index()]=astar:create(start.x,start.y,0,start:distance(finish))
   if self:_check_open() then
    return self.path
   end
@@ -106,22 +112,20 @@ pathfinder={
   if current==nil then
    return false
   else
-   if current.x==self.finish.x and current.y==self.finish.y then
+   local idx=current:index()
+   if idx==self.finish:index() then
     local t={}
     local cell=current
     while cell.parent do
      add(t,vec2:create(cell.x,cell.y))
      cell=cell.parent
     end
-    --add(t,vec2:create(cell.x,cell.y))
-    for i=#t,1,-1 do
-     add(self.path,t[i])
-    end
+    for i=#t,1,-1 do add(self.path,t[i]) end
     return true
    end
-   add(self.closed,current)
+   self.closed[idx]=current
    self:_add_neighbours(current)
-   del(self.open,current)
+   self.open[idx]=nil
    self:_check_open()
    return true
   end
@@ -137,35 +141,22 @@ pathfinder={
  end,
  _add_neighbour=function(self,current,x,y)
   local cell=vec2:create(current.x+x,current.y+y)
-  if type(cells[cell:index()])=="table" then
+  local idx=cell:index()
+  if type(cells[idx])=="table" then
    local exists=false
-   --local g=current.g+(x*y==0 and ap.move90 or ap.move45)
    local g=current.g+(x*y==0 and 1 or 1.5)
-   --local g=current.g+sqrt(x^2+y^2)
-   for _,closed in pairs(self.closed) do
-    if closed.x==cell.x and closed.y==cell.y then
-     exists=true
-     break
+   if type(self.closed[idx])=="table" then
+    exists=true
+   elseif type(self.open[idx])=="table" then
+    if g<self.open[idx].g then
+     self.open[idx].g=g
+     self.open[idx].f=self.open[idx].g+self.open[idx].h
+     self.open[idx].parent=current
     end
+    exists=true
    end
    if not exists then
-    for _,open in pairs(self.open) do
-     if open.x==cell.x and open.y==cell.y then
-      if g<open.g then
-       open.g=g
-       open.f=open.g+open.h
-       open.parent=current
-      end
-      exists=true
-      break
-     end
-    end
-   end
-   if not exists then
-    add(
-     self.open,
-     astar:create(cell.x,cell.y,g,cell:distance(self.finish),current)
-    )
+    self.open[idx]=astar:create(cell.x,cell.y,g,cell:distance(self.finish),current)
    end
   end
  end,
@@ -216,6 +207,15 @@ test: put ai at one cell and tell it to go to another
 test it being direct and cautious
 watch what it does
 start with number of ap, 4 to go straight, 6 to go diagonally
+
+move area
+start from current square
+check all 9 squares around the cell
+if they are a floor cells
+add to list to check
+keep a score for each cell
+calculate turn and move ap and add to previous cell's score
+
 
 --]]
 
@@ -300,12 +300,35 @@ function _init()
 
  p=vec2:create(2,2)
  p.face=6
+ p.ap=40
 
  local t=time()
  s=vec2:create(2,2)
  f=vec2:create(58,27)
  local path=pathfinder:find(s,f)
  printh("pathfinding:"..time()-t)
+
+ --[[
+ for k,v in pairs(path) do
+  turn=p:rotation(v)
+  local cost=abs(turn)
+  if p.ap>cost then
+   p.face=p.face+turn
+   if p.face<1 then p.face=8+p.face end
+   if p.face>8 then p.face=p.face%9+1 end
+   p.ap=p.ap-cost
+  end
+  local cost=p:cost(v)
+  if p.ap>cost then
+   p.x=v.x
+   p.y=v.y
+   p.ap=p.ap-cost
+   --for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,19+turn) end end
+   for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,31+p.face) end end
+  end
+  printh("ap:"..p.ap)
+ end
+ --]]
 
  for k,v in pairs(path) do
   printh(k..":"..(v.x)..","..(v.y))
@@ -317,7 +340,8 @@ function _init()
   p.x=v.x
   p.y=v.y
   --for x=0,1 do for y=0,1 do spr(2,8*(2*v.x+x),8*(2*v.y+y)) end end
-  for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,19+turn) end end
+  --for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,19+turn) end end
+  for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,31+p.face) end end
  end
 
 end
@@ -368,14 +392,14 @@ cccccc0ccccc0cccccccc0cccccc0c0cccccc0cccccc0ccccccccc0ccccccc0c0000000000000000
 cccc000ccccc000ccccc000ccccc000ccccc000ccccc000ccccc000ccccccc0c0000000000000000000000000000000000000000000000000000000000000000
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000
+cccc0cccc0cccccccccc0ccccccccc0cccc0ccccc0000cccccc0ccccccc0000c0000000000000000000000000000000000000000000000000000000000000000
+ccccc0cccc0ccccccccc0cccccccc0cccc0cccccc00ccccccc000cccccccc00c0000000000000000000000000000000000000000000000000000000000000000
+c000000cccc0cc0ccccc0cccc0cc0cccc000000cc0c0ccccc0c0c0cccccc0c0c0000000000000000000000000000000000000000000000000000000000000000
+ccccc0cccccc0c0ccc0c0c0cc0c0cccccc0cccccc0cc0cccccc0ccccccc0cc0c0000000000000000000000000000000000000000000000000000000000000000
+cccc0cccccccc00cccc000ccc00cccccccc0ccccccccc0ccccc0cccccc0ccccc0000000000000000000000000000000000000000000000000000000000000000
+ccccccccccc0000ccccc0cccc0000ccccccccccccccccc0cccc0ccccc0cccccc0000000000000000000000000000000000000000000000000000000000000000
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
