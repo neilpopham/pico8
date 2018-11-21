@@ -82,16 +82,13 @@ pathfinder={
   end
   return best[1]==0 and nil or self.open[best[1]]
  end,
- _add_neighbour=function(self,current,x,y)
-  local cell=vec2:create(current.x+x,current.y+y)
+ _add_neighbour=function(self,current,cell)
   local idx=cell:index()
   local tile=mget(cell.x,cell.y)
   if not fget(tile,0) then
    local exists=false
-   --[[
-   local g=current.g+1
-   --]]
-   local g=current.g+sqrt(x^2+y^2)
+ --local g=current.g+sqrt(cell.x^2+cell.y^2)
+   local g=current.g+(cell.x*cell.y==0 and 1 or 1.5)
    if type(self.closed[idx])=="table" then
     exists=true
    elseif type(self.open[idx])=="table" then
@@ -117,7 +114,8 @@ pathfinder={
   for x=-1,1 do
    for y=-1,1 do
     if not (x==0 and y==0) then
-     self:_add_neighbour(current,x,y)
+     local cell=vec2:create(current.x+x,current.y+y)
+     self:_add_neighbour(current,cell)
     end
    end
   end
@@ -141,7 +139,9 @@ function _draw()
  map(0,0)
  spr(3,s.x*8,s.y*8)
  spr(3,f.x*8,f.y*8)
+ local t=time()
  local path=pathfinder:find(s,f)
+ printh("time:"..time()-t)
  for _,v in pairs(path) do
   spr(2,v.x*8,v.y*8)
  end

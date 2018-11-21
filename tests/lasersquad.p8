@@ -8,13 +8,11 @@ screen={width=128,height=128,x2=127,y2=127}
 canvas={width=64,height=32,x2=63,y2=31}
 spritemap={width=128,height=64,x2=127,y2=63}
 pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
-ap={move90=4,move45=6,turn=1}
+ap={move90=4,move45=6,turn=1,open=2}
 
 --screen={width=240,height=136,x2=239,y2=135}
 --canvas={width=64,height=32,x2=63,y2=31}
 --pad={left=2,right=3,up=0,down=1,btn1=4,btn2=5,btn3=6,btn4=7}
-
-dir={left=1,right=2,up=3,down=4}
 
 vec2={
  create=function(self,x,y)
@@ -31,8 +29,28 @@ vec2={
  manhattan=function(self,cell)
   return abs(cell.x-self.x)+abs(cell.y-self.y)
  end,
+ diff=function(self,cell)
+  local dx=cell.x-self.x
+  local dy=cell.y-self.y
+  return vec2:create(dx,dy)
+ end,
+ index=function(self)
+  return self.y*canvas.width+self.x
+ end
+}
+
+turnable={
+ create=function(self,x,y)
+  local o=vec2.create(self,x,y)
+  return o
+ end,
  face_from_angle=function(self,angle)
   return flr(angle/0.125)+1
+ end,
+ change_face=function(self,turn)
+  self.face=self.face+turn
+  if self.face<1 then self.face=8+self.face end
+  if self.face>8 then self.face=self.face%9+1 end
  end,
  rotation=function(self,cell)
   local diff=self:diff(cell)
@@ -45,19 +63,11 @@ vec2={
   local cost=diff.x*diff.y==0 and ap.move90 or ap.move45
   return cost
  end,
- diff=function(self,cell)
-  local dx=cell.x-self.x
-  local dy=cell.y-self.y
-  return vec2:create(dx,dy)
- end,
- index=function(self)
-  return self.y*canvas.width+self.x
- end
-}
+} setmetatable(turnable,{__index=vec2})
 
 tile={
  create=function(self,x,y)
-  local o=vec2.create(self,x,y)
+  local o=turnable.create(self,x,y)
   o.px=vec2:create(o.x*16+8,o.y*16+8)
   return o
  end,
@@ -75,20 +85,20 @@ tile={
   local dy=cell.px.y-self.px.y
   return vec2:create(dx,dy)
  end
-} setmetatable(tile,{__index=vec2})
+} setmetatable(tile,{__index=turnable})
 
 astar={
  create=function(self,x,y,g,h,parent)
-  local o=vec2.create(self,x,y)
+  local o=turnable.create(self,x,y)
   o.f=g+h
   o.g=g
   o.h=h
   o.parent=parent
   return o
  end
-} setmetatable(astar,{__index=vec2})
+} setmetatable(astar,{__index=turnable})
 
-pathfinder={
+neighbourer={
  reset=function(self,start)
   self.open={}
   self.closed={}
@@ -96,13 +106,65 @@ pathfinder={
   self.start=start
   self.max=32727
  end,
+ _get_next=function(self)
+  local best={0,32727}
+  for i,vec in pairs(self.open) do
+   if vec.f<best[2] and vec.g<self.max then
+    best={i,vec.f}
+   end
+  end
+  return best[1]==0 and nil or self.open[best[1]]
+ end,
+ _add_neighbour=function(self,current,cell)
+  local idx=cell:index()
+  if type(cells[idx])=="table" then
+   local exists=false
+   local g=self:get_g(current,cell.x,cell.y)
+   if type(self.closed[idx])=="table" then
+    exists=true
+   elseif type(self.open[idx])=="table" then
+    if g<self.open[idx].g then
+     self.open[idx].g=g
+     self.open[idx].f=self.open[idx].g+self.open[idx].h
+     self.open[idx].parent=current
+    end
+    exists=true
+   end
+   if not exists then
+    self.open[idx]=self:new(cell,g,current)
+   end
+  end
+ end,
+ _add_neighbours=function(self,current)
+  for x=-1,1 do
+   for y=-1,1 do
+    if not (x==0 and y==0) then
+     local cell=turnable:create(current.x+x,current.y+y)
+     if cell.x>0 and cell.y>0 and cell.x<canvas.width and cell.y<canvas.height then
+      self:_add_neighbour(current,cell)
+     end
+    end
+   end
+  end
+ end
+}
+
+pathfinder={
+ get_h=function(self,cell)
+  return cell:distance(self.finish)
+ end,
+ get_g=function(self,current,x,y)
+  return current.g+(x*y==0 and 1 or 1.5)
+ end,
+ new=function(self,cell,g,parent)
+  return astar:create(cell.x,cell.y,g,cell:distance(self.finish),parent)
+ end,
  find=function(self,start,finish,max)
   max=max or 32727
   self:reset()
   self.finish=finish
   self.max=max
-  --add(self.open,astar:create(start.x,start.y,0,start:distance(finish)))
-  self.open[start:index()]=astar:create(start.x,start.y,0,start:distance(finish))
+  self.open[start:index()]=self:new(start,0)
   if self:_check_open() then
    return self.path
   end
@@ -129,49 +191,58 @@ pathfinder={
    self:_check_open()
    return true
   end
+ end
+} setmetatable(pathfinder,{__index=neighbourer})
+
+ranger={
+ get_h=function(self,cell)
+  return 0
  end,
- _get_next=function(self)
-  local best={0,32727}
-  for i,vec in pairs(self.open) do
-   if vec.f<best[2] and vec.g<self.max then
-    best={i,vec.f}
-   end
-  end
-  return best[1]==0 and nil or self.open[best[1]]
- end,
- _add_neighbour=function(self,current,x,y)
+ get_g=function(self,current,x,y)
   local cell=vec2:create(current.x+x,current.y+y)
-  local idx=cell:index()
-  if type(cells[idx])=="table" then
-   local exists=false
-   local g=current.g+(x*y==0 and 1 or 1.5)
-   if type(self.closed[idx])=="table" then
-    exists=true
-   elseif type(self.open[idx])=="table" then
-    if g<self.open[idx].g then
-     self.open[idx].g=g
-     self.open[idx].f=self.open[idx].g+self.open[idx].h
-     self.open[idx].parent=current
-    end
-    exists=true
-   end
-   if not exists then
-    self.open[idx]=astar:create(cell.x,cell.y,g,cell:distance(self.finish),current)
-   end
+  local turn=abs(current:rotation(cell))
+  local g=(turn*ap.turn)+(x*y==0 and ap.move90 or ap.move45)
+  return current.g+g
+ end,
+ new=function(self,cell,g,parent)
+  local a=astar:create(cell.x,cell.y,g,0,parent)
+  if type(parent)=="table" then
+    a.face=parent.face
+    local turn=parent:rotation(cell)
+    a:change_face(turn)
+  else
+   a.face=cell.face
+  end
+  return a
+ end,
+ create=function(self,start,ap)
+  self:reset()
+  self.ap=ap
+  self.open[start:index()]=self:new(start,0)
+  if self:_check_open() then
+   return self.closed
   end
  end,
- _add_neighbours=function(self,current)
-  for x=-1,1 do
-   for y=-1,1 do
-    if not (x==0 and y==0) then
-     self:_add_neighbour(current,x,y)
-    end
+ _check_open=function(self)
+  local current=self:_get_next()
+  if current==nil then
+   return true
+  else
+   local idx=current:index()
+   if current.g<=self.ap then
+    self.closed[idx]=current
+    self:_add_neighbours(current)
    end
+   self.open[idx]=nil
+   return self:_check_open()
   end
  end
-}
+} setmetatable(ranger,{__index=neighbourer})
 
 --[[
+
+explanation of some ap values
+https://www.lemonamiga.com/games/docs.php?id=961
 
 taking over 50 seconds to compute
 perhaps record visibility of each tile as required
@@ -208,19 +279,11 @@ test it being direct and cautious
 watch what it does
 start with number of ap, 4 to go straight, 6 to go diagonally
 
-move area
-start from current square
-check all 9 squares around the cell
-if they are a floor cells
-add to list to check
-keep a score for each cell
-calculate turn and move ap and add to previous cell's score
-
-
 --]]
 
 cells={}
 mapping={
+ --[[
  cell_indexes={},
  current_key=1,
  progress=function(self)
@@ -239,9 +302,10 @@ mapping={
     end
     self.current_key=self.current_key+1
    end
-   printh(time())
+   --printh(time())
   end
  end,
+ ]]
  create=function(self)
   for y=0,spritemap.y2,2 do
    for x=0,spritemap.x2,2 do
@@ -250,13 +314,12 @@ mapping={
      local tile=tile:create(x/2,y/2)
      local i=tile:index()
      cells[i]={tile=tile,visibility={}}
-     add(self.cell_indexes,i)
     end
    end
   end
  end,
  record_visibility=function(self,i)
-  for idx=1,8 do cells[i].visibility[idx]=0 end
+  for idx=1,9 do cells[i].visibility[idx]=0 end
   for x=-8,8 do
    for y=-8,8 do
     if not (x==0 and y==0) then
@@ -280,8 +343,9 @@ mapping={
        d=d+dd
       end
       if not blocked then
-       local idx=vec2:face_from_angle(angle)
+       local idx=turnable:face_from_angle(angle)
        cells[i].visibility[idx]=cells[i].visibility[idx]+1
+       cells[i].visibility[9]=cells[i].visibility[9]+1 -- total for cell
       end
      end
     end
@@ -298,7 +362,7 @@ function _init()
  mapping:create()
  --line(0,0,100,0,1)
 
- p=vec2:create(2,2)
+ p=turnable:create(2,2)
  p.face=6
  p.ap=40
 
@@ -344,10 +408,33 @@ function _init()
   for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,31+p.face) end end
  end
 
+ printh("ranger")
+ --p=turnable:create(3,3)
+ --p=turnable:create(4,6)
+ p=turnable:create(3,8)
+ p.face=6
+ p.ap=40
+ local t=time()
+ local range=ranger:create(p,p.ap)
+ printh("ranging:"..time()-t)
+ for k,v in pairs(range) do
+  printh(k..":"..v.x..","..v.y.." g:"..v.g)
+  for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,48+flr(v.g/5)) end end
+ end
+
+ local t=time()
+ for k,v in pairs(range) do
+  if #cells[k].visibility==0 then
+   mapping:record_visibility(k)
+   --printh("visibility:"..cells[k].visibility[9])
+  end
+ end
+ printh("visibility:"..time()-t)
+
 end
 
 function _update()
- mapping:update()
+ --mapping:update()
  if btn(pad.left) then p.x=p.x-1 end
  if btn(pad.right) then p.x=p.x+1 end
  if btn(pad.up) then p.y=p.y-1 end
@@ -370,8 +457,10 @@ function _draw()
  --line(64,0,64,screen.y2,0)
 
  --camera()
- line(0,0,100,0,1)
- line(0,0,mapping:progress(),0,8)
+ --line(0,0,100,0,1)
+ --line(0,0,mapping:progress(),0,8)
+
+
 
 end
 
@@ -400,14 +489,14 @@ ccccc0cccccc0c0ccc0c0c0cc0c0cccccc0cccccc0cc0cccccc0ccccccc0cc0c0000000000000000
 cccc0cccccccc00cccc000ccc00cccccccc0ccccccccc0ccccc0cccccc0ccccc0000000000000000000000000000000000000000000000000000000000000000
 ccccccccccc0000ccccc0cccc0000ccccccccccccccccc0cccc0ccccc0cccccc0000000000000000000000000000000000000000000000000000000000000000
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000
+fffffffffffffffffffffffffffffffffff000ffffffffffffffffffff00fffffff00fffffffffff000000000000000000000000000000000000000000000000
+fff0ffffff0000ffff000fffff0ff0ffff0fffffff00ffffff0000ffff0000ffff0000ffffffffff000000000000000000000000000000000000000000000000
+fff0fffffffff0ffffff00ffff0000ffff000fffff0ffffffffff0ffff0000ffff0000ffffffffff000000000000000000000000000000000000000000000000
+fff0ffffff000ffffff00ffffffff0ffffff00ffff000ffffffff0ffff0000fffffff0ffffffffff000000000000000000000000000000000000000000000000
+ffffffffff0fffffffff00fffffff0ffff00f0ffff0f00ffffff00ffff00f0fffffff0ffffffffff000000000000000000000000000000000000000000000000
+ffffffffff0000ffff000ffffffffffffff00ffffff00ffffffffffffff00ffffffff0ffffffffff000000000000000000000000000000000000000000000000
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
