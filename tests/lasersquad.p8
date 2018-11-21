@@ -154,10 +154,13 @@ pathfinder={
   return cell:distance(self.finish)
  end,
  get_g=function(self,current,x,y)
-  return current.g+(x*y==0 and 1 or 1.5)
+  local g
+  if current.x==x or current.y==y then g=1 else g=1.5 end
+  --printh("g:"..g)
+  return current.g+g
  end,
  new=function(self,cell,g,parent)
-  return astar:create(cell.x,cell.y,g,cell:distance(self.finish),parent)
+  return astar:create(cell.x,cell.y,g,self:get_h(cell),parent)
  end,
  find=function(self,start,finish,max)
   max=max or 32727
@@ -188,8 +191,7 @@ pathfinder={
    self.closed[idx]=current
    self:_add_neighbours(current)
    self.open[idx]=nil
-   self:_check_open()
-   return true
+   return self:_check_open()
   end
  end
 } setmetatable(pathfinder,{__index=neighbourer})
@@ -408,11 +410,12 @@ function _init()
   for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,31+p.face) end end
  end
 
+---[[
  printh("ranger")
  --p=turnable:create(3,3)
  --p=turnable:create(4,6)
  p=turnable:create(3,8)
- p.face=6
+ p.face=2
  p.ap=40
  local t=time()
  local range=ranger:create(p,p.ap)
@@ -430,7 +433,7 @@ function _init()
   end
  end
  printh("visibility:"..time()-t)
-
+--]]
 end
 
 function _update()
@@ -489,14 +492,14 @@ ccccc0cccccc0c0ccc0c0c0cc0c0cccccc0cccccc0cc0cccccc0ccccccc0cc0c0000000000000000
 cccc0cccccccc00cccc000ccc00cccccccc0ccccccccc0ccccc0cccccc0ccccc0000000000000000000000000000000000000000000000000000000000000000
 ccccccccccc0000ccccc0cccc0000ccccccccccccccccc0cccc0ccccc0cccccc0000000000000000000000000000000000000000000000000000000000000000
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000
-fffffffffffffffffffffffffffffffffff000ffffffffffffffffffff00fffffff00fffffffffff000000000000000000000000000000000000000000000000
-fff0ffffff0000ffff000fffff0ff0ffff0fffffff00ffffff0000ffff0000ffff0000ffffffffff000000000000000000000000000000000000000000000000
-fff0fffffffff0ffffff00ffff0000ffff000fffff0ffffffffff0ffff0000ffff0000ffffffffff000000000000000000000000000000000000000000000000
-fff0ffffff000ffffff00ffffffff0ffffff00ffff000ffffffff0ffff0000fffffff0ffffffffff000000000000000000000000000000000000000000000000
-ffffffffff0fffffffff00fffffff0ffff00f0ffff0f00ffffff00ffff00f0fffffff0ffffffffff000000000000000000000000000000000000000000000000
-ffffffffff0000ffff000ffffffffffffff00ffffff00ffffffffffffff00ffffffff0ffffffffff000000000000000000000000000000000000000000000000
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeffffffff000000000000000000000000000000000000000000000000
+eeee00eeeeee000eeeee000eeeee0e0eeeee000eeeee0eeeeeee000eeeee000eeeee000effffffff000000000000000000000000000000000000000000000000
+eeeee0eeeeeeee0eeeeeee0eeeee0e0eeeee0eeeeeee0eeeeeeeee0eeeee0e0eeeee0e0effffffff000000000000000000000000000000000000000000000000
+eeeee0eeeeee000eeeee000eeeee000eeeee000eeeee000eeeeeee0eeeee000eeeee000effffffff000000000000000000000000000000000000000000000000
+eeeee0eeeeee0eeeeeeeee0eeeeeee0eeeeeee0eeeee0e0eeeeeee0eeeee0e0eeeeeee0effffffff000000000000000000000000000000000000000000000000
+eeee000eeeee000eeeee000eeeeeee0eeeee000eeeee000eeeeeee0eeeee000eeeeeee0effffffff000000000000000000000000000000000000000000000000
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeffffffff000000000000000000000000000000000000000000000000
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeffffffff000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
