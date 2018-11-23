@@ -87,8 +87,7 @@ pathfinder={
   local tile=mget(cell.x,cell.y)
   if not fget(tile,0) then
    local exists=false
- --local g=current.g+sqrt(cell.x^2+cell.y^2)
-   local g=current.g+(cell.x*cell.y==0 and 1 or 1.5)
+   local g=current.g+((current.x==cell.x or current.y==cell.y) and 1 or 1.5)
    if type(self.closed[idx])=="table" then
     exists=true
    elseif type(self.open[idx])=="table" then

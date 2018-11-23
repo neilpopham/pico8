@@ -119,7 +119,7 @@ neighbourer={
   local idx=cell:index()
   if type(cells[idx])=="table" then
    local exists=false
-   local g=self:get_g(current,cell.x,cell.y)
+   local g=self:get_g(current,cell)
    if type(self.closed[idx])=="table" then
     exists=true
    elseif type(self.open[idx])=="table" then
@@ -153,9 +153,9 @@ pathfinder={
  get_h=function(self,cell)
   return cell:distance(self.finish)
  end,
- get_g=function(self,current,x,y)
+ get_g=function(self,current,cell)
   local g
-  if current.x==x or current.y==y then g=1 else g=1.5 end
+  if current.x==cell.x or current.y==cell.y then g=1 else g=1.5 end
   --printh("g:"..g)
   return current.g+g
  end,
@@ -200,10 +200,10 @@ ranger={
  get_h=function(self,cell)
   return 0
  end,
- get_g=function(self,current,x,y)
-  local cell=vec2:create(current.x+x,current.y+y)
+ get_g=function(self,current,cell)
   local turn=abs(current:rotation(cell))
-  local g=(turn*ap.turn)+(x*y==0 and ap.move90 or ap.move45)
+  local g=turn*ap.turn
+  g=g+((current.x==cell.x or current.y==cell.y) and ap.move90 or ap.move45)
   return current.g+g
  end,
  new=function(self,cell,g,parent)
@@ -410,7 +410,7 @@ function _init()
   for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,31+p.face) end end
  end
 
----[[
+
  printh("ranger")
  --p=turnable:create(3,3)
  --p=turnable:create(4,6)
@@ -425,6 +425,7 @@ function _init()
   for x=0,1 do for y=0,1 do mset(2*v.x+x,2*v.y+y,48+flr(v.g/5)) end end
  end
 
+--[[
  local t=time()
  for k,v in pairs(range) do
   if #cells[k].visibility==0 then
@@ -434,6 +435,7 @@ function _init()
  end
  printh("visibility:"..time()-t)
 --]]
+
 end
 
 function _update()
@@ -447,9 +449,9 @@ end
 function _draw()
  cls()
 
- map(p.x,p.y,0,0,16,16)
- --map()
- --camera(p.x*8,p.y*8)
+ --map(p.x,p.y,0,0,16,16)
+ map(0,0,0,0,128,64)
+ camera(p.x*8,p.y*8)
 
  --printh(p.x..","..p.y)
 
