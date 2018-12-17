@@ -5,14 +5,13 @@ __lua__
 -- by neil popham
 
 screen={width=128,height=128,x2=127,y2=127}
-canvas={width=64,height=32,x2=63,y2=31}
-spritemap={width=128,height=64,x2=127,y2=63}
 pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
-ap={move90=4,move45=6,turn=1,open=2}
-
 --screen={width=240,height=136,x2=239,y2=135}
---canvas={width=64,height=32,x2=63,y2=31}
 --pad={left=2,right=3,up=0,down=1,btn1=4,btn2=5,btn3=6,btn4=7}
+
+spritemap={width=128,height=64,x2=127,y2=63}
+canvas={width=64,height=32,x2=63,y2=31}
+ap={move90=4,move45=6,turn=1,open=2}
 
 vec2={
  create=function(self,x,y)
