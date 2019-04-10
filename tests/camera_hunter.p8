@@ -11,11 +11,26 @@ local screen={width=128,height=128}
 
 cam={
  create=function(self,item)
-  local o={target=item,x=item.x,y=item.y,force=0,angle=0,distance=0,max={force=32}}
+  local o={target=item,x=item.x,y=item.y,force=0,angle=0,distance=0,da=0.1,max={force=32}}
   o.min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}
   setmetatable(o,self)
   self.__index=self
   return o
+ end,
+ get_distance=function(self)
+  local dx=self.target.x/1000-self.x/1000
+  local dy=self.target.y/1000-self.y/1000
+  --[[
+  local dsq=dx^2+dy^2
+  if dsq>0 then
+   return sqrt(dsq)*1000
+  elseif dsq==0 then
+   return 0
+  else
+   return 32727
+  end
+  ]]
+  return sqrt(dx^2+dy^2)*1000
  end,
  update=function(self)
   local dx=round(self.target.x-self.x)
@@ -23,20 +38,45 @@ cam={
   if dx==0 and dy==0 then
    self.x=self.target.x
    self.y=self.target.y
+   self.force=0
+   self.distance=0
    return
   end
-  local distance=sqrt(dx^2+dy^2)
-  if distance<0 then distance=32727 end
-  self.angle=atan2(dx,-dy)
+  local distance=self:get_distance()
+  local angle=atan2(dx,-dy)
 
-  if (distance>self.distance) or (distance<16 and self.force>1) then
-   self.force=self.force-0.1
-  else
-   self.force=self.force+0.1
+  --printh(self.force)
+  if self.force==0 then
+   self.angle=angle
   end
 
+  self.force=self.force+0.1
+
+  self.x=self.x+cos(self.angle)*self.force
+  self.y=self.y-sin(self.angle)*self.force
+
+  if (distance<self.max.force) or (distance>self.distance) then
+   self.x=self.x+cos(angle)--*(self.max.force/distance)
+   self.y=self.y-sin(angle)--*(self.max.force/distance)
+   self.force=self.force-0.2
+
+
+  end
+
+   local ea=1-self.angle -- difference between our angle and 0
+   local ra=(ea+angle)%1 -- difference between our angle and the angle we need
+   local da=abs(ra)
+   if da<self.da then
+    self.angle=angle
+   elseif ra<0.5 then
+    self.angle=self.angle+self.da
+   else
+    self.angle=self.angle-self.da
+   end
+   self.angle=self.angle%1
+
   self.force=min(self.max.force,max(0.1,self.force))
-  self.distance = distance
+  self.distance=distance
 
   --[[
   local ea=1-self.angle -- difference between our angle and 0
