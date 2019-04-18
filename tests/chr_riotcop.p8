@@ -2,19 +2,33 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 
+function ssspr(s,x,y,n)
+ for i=0,n-1 do
+  sn=16+(i*2)
+  sn=sn+flr(sn/32)*16
+  for sy=0,1 do
+   for sx=0,1 do
+    spr(sn+sx+sy*16,x+sx*8,y-i+sy*8)
+   end
+  end
+ end
+end
+
 function _init()
  cls(7)
  palt(7, true)
  palt(0, false)
- local h=64
+ ssspr(16,32,64,12)
+ ---[[
  for i=0,11 do
   sn=16+(i*2)
-  if sn>30 then sn=sn+16 end
+  sn=sn+flr(sn/32)*16
   spr(sn,64,64-i)
   spr(sn+1,72,64-i)
   spr(sn+16,64,72-i)
   spr(sn+17,72,72-i)
  end
+ --]]
 end
 
 function _update()
