@@ -11,7 +11,7 @@ local screen={width=128,height=128}
 
 cam={
  create=function(self,item)
-  local o={target=item,x=item.x,y=item.y,force=0,angle=0,distance=0,da=0.1,max={force=32}}
+  local o={target=item,x=item.x,y=item.y,force=0,angle=0,distance=0,da=0.1,max={force=64}}
   o.min={x=8*flr(screen.width/16),y=8*flr(screen.height/16)}
   setmetatable(o,self)
   self.__index=self
@@ -33,8 +33,12 @@ cam={
   return sqrt(dx^2+dy^2)*1000
  end,
  update=function(self)
+
+  -- find out the vector between current position and target
   local dx=round(self.target.x-self.x)
   local dy=round(self.target.y-self.y)
+
+  -- if we are at the target clear all values
   if dx==0 and dy==0 then
    self.x=self.target.x
    self.y=self.target.y
@@ -42,43 +46,32 @@ cam={
    self.distance=0
    return
   end
+
+  -- calculate straight line distance to the target
   local distance=self:get_distance()
+  -- and the angle
   local angle=atan2(dx,-dy)
 
-  --printh(self.force)
+  -- if we are starting up then set the initial angle
   if self.force==0 then
-   self.angle=angle
+   self.angle=angle--+(rnd()/10)
   end
 
+  --accelerate
   self.force=self.force+0.1
 
+  -- add our momentum to our current position
   self.x=self.x+cos(self.angle)*self.force
   self.y=self.y-sin(self.angle)*self.force
 
-  if (distance<self.max.force) or (distance>self.distance) then
-   self.x=self.x+cos(angle)--*(self.max.force/distance)
-   self.y=self.y-sin(angle)--*(self.max.force/distance)
+  -- if we are close to the target or getting further away also move toward it and decrease force
+  if (distance<self.max.force and self.force>0.3) or (distance>self.distance) then
+   self.x=self.x+cos(angle)*0.2
+   self.y=self.y-sin(angle)*0.2
    self.force=self.force-0.2
-
-
   end
 
-   local ea=1-self.angle -- difference between our angle and 0
-   local ra=(ea+angle)%1 -- difference between our angle and the angle we need
-   local da=abs(ra)
-   if da<self.da then
-    self.angle=angle
-   elseif ra<0.5 then
-    self.angle=self.angle+self.da
-   else
-    self.angle=self.angle-self.da
-   end
-   self.angle=self.angle%1
-
-  self.force=min(self.max.force,max(0.1,self.force))
-  self.distance=distance
-
-  --[[
+  -- if the angle to the traget is different to our current angle start turning toward the target
   local ea=1-self.angle -- difference between our angle and 0
   local ra=(ea+angle)%1 -- difference between our angle and the angle we need
   local da=abs(ra)
@@ -91,28 +84,11 @@ cam={
   end
   self.angle=self.angle%1
 
-  if da<0.25 then
-   self.force=min(self.max.force,self.force+1)
-  else
-   self.force=max(1,self.force-1)
-  end
-  ]]
-
-  --self.force=2 --min(self.max.force,self.force+1/da) -- min(self.max.force/da,self.max.force)
-  --self.force=2 --min(self.force+1,self.max.force)
+  self.force=min(self.max.force,max(0.1,self.force))
+  self.distance=distance
 
   self.x=self.x+cos(self.angle)*self.force
   self.y=self.y-sin(self.angle)*self.force
-
-  --[[
-  local a=atan2(dx,-dy)
-  printh(self.target.x..","..self.target.y.."|"..self.x..","..self.y.."|"..dx..","..dy.."|"..a)
-  local d=sqrt(dx^2+dy^2)
-  printh(d)
-  self.force=min(self.force+1,self.max.force)
-  self.x=self.x+cos(a)*self.force
-  self.y=self.y-sin(a)*self.force
-  ]]
  end,
  position=function(self)
   return self.x-self.min.x,self.y-self.min.y
