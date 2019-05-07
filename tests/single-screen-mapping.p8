@@ -34,9 +34,12 @@ function compress(level)
   return data
 end
 
-local data={}
-function decompress()
- local total,level=0,{}
+
+
+-- use instead of decompress/renderlevel to not use memory to store all levels
+-- means we don't need to fill __map__ data as well
+function loadlevel(level)
+ local total,array,current=0,{},0
  for y=0,31 do
   for x=0,127 do
    if not (x<16 and y<16) then
@@ -44,31 +47,54 @@ function decompress()
     local sprite=raw%16
     local count=(raw-sprite)/16
     if count==0 then count=16 end
-    --for i=1,count do
-     --add(level,sprite)
-    --end
-    add(level,{count,sprite})
+    add(array,{count,sprite})
     total+=count
     if total==256 then
-     add(data,level)
-     total,level=0,{}
+     current+=1
+     if current==level then
+      local t=0
+      for _,block in pairs(array) do
+       for i=1,block[1] do
+        mset(t%16,flr(t/16),block[2])
+        t+=1
+       end
+      end
+      return
+     end
+     total,array=0,{}
     end
    end
   end
  end
 end
 
-function renderlevel(level)
- local x,y=0,0
- local array=data[level]
- for i=1,#array do
-  for j=1,array[i][1] do
-   mset(x,y,array[i][2])
-   x+=1
-   if x==16 then
-    x=0
-    y+=1
+-- can use the whole map data
+-- which would give us more room and be easier to generate the __map__ data initially
+local data={}
+function decompress()
+ local total,level=0,{}
+ for y=0,31 do
+  for x=0,127 do
+   local raw=mget(x,y)
+   local sprite=raw%16
+   local count=(raw-sprite)/16
+   if count==0 then count=16 end
+   add(level,{count,sprite})
+   total+=count
+   if total==256 then
+    add(data,level)
+    total,level=0,{}
    end
+  end
+ end
+end
+
+function renderlevel(level)
+ local t,array=0,data[level]
+ for _,block in pairs(array) do
+  for i=1,block[1] do
+   mset(t%16,flr(t/16),block[2])
+   t+=1
   end
  end
 end
@@ -94,8 +120,10 @@ function _init()
  --0141424381424381424381424381424381424381424381424381424381424381424381424381424381424381424341
  --02020202020202020202020202020202
  --0202321152317211421122117211721172116211821152515211023241f211c231f22192212231a231020282
-  decompress()
-  renderlevel(1)
+  cls()
+  --decompress()
+  --renderlevel(1)
+  loadlevel(1)
   map(0,0)
 end
 
