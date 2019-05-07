@@ -74,7 +74,6 @@ local tile={
  y=0,
  split=function(self,dir,index)
   if self.sliding==true then return end
-  --printh("sliding true")
   self.sliding=true
   self.dir=dir
   self.index=index
@@ -84,19 +83,14 @@ local tile={
      pane.sliding=true
      pane.dir=dir
      pane.new.x=dir==pad.left and pane.x-64 or pane.x+64
-     printh(pane.x..","..pane.y.." "..pane.new.x..","..pane.new.y)
     end
    else
     if pane.tile.x==index then
      pane.sliding=true
      pane.dir=dir
      pane.new.y=dir==pad.up and pane.y-64 or pane.y+64
-     printh(pane.x..","..pane.y.." "..pane.new.x..","..pane.new.y)
     end
    end
-  end
-  for _,pane in pairs(self.panes) do
-   --printh(pane.tile.x) --..","..pane.tile.y..":"..(pane.sliding and "y" or "n"))
   end
  end,
  init=function(self)
@@ -112,10 +106,7 @@ local tile={
   local sliding=false
   for _,pane in pairs(self.panes) do
    if pane.sliding then
-    --pane:update()--self.sliding=pane:update()
-    ----printh(self.sliding and "am sliding" or "am not sliding")
-    sliding=pane:update() and true or sliding
-    --printh(sliding and "am sliding" or "am not sliding")
+    sliding=pane:update() or sliding
    end
   end
   if not sliding then self.sliding=false end
