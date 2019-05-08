@@ -73,7 +73,7 @@ local tile={
  x=0,
  y=0,
  split=function(self,dir,index)
-  if self.sliding==true then return end
+  if self.sliding then return end
   self.sliding=true
   self.dir=dir
   self.index=index
@@ -112,8 +112,12 @@ local tile={
   if not sliding then self.sliding=false end
  end,
  draw=function(self)
-  for _,pane in pairs(self.panes) do
-   pane:draw()
+  if self.sliding then
+   for _,pane in pairs(self.panes) do
+    pane:draw()
+   end
+  else
+   map()
   end
  end
 }
