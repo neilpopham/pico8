@@ -106,30 +106,39 @@ local tile={
  y=0,
  split=function(self,dir,index)
   if self:disabled() then return end
+  self.dir=dir or self.dir
+  self.index=index or self.index
+  self.queued=true
+  printh("===")
+  printh("split "..self.dir.." "..self.index.." "..p.x..","..p.y)
+  for _,entity in pairs(entities) do
+    printh(entity.paused and "paused" or "not paused")
+    if not entity.paused then return end
+  end
+  printh("start slide")
+  self.queued=false
   self.sliding=true
-  self.dir=dir
-  self.index=index
   for _,pane in pairs(self.panes) do
-   if dir==pad.left or dir==pad.right then
-    if pane.tile.y==index then
+   if self.dir==pad.left or self.dir==pad.right then
+    if pane.tile.y==self.index then
      pane.sliding=true
-     pane.dir=dir
-     pane.new.x=dir==pad.left and pane.x-64 or pane.x+64
+     pane.dir=self.dir
+     pane.new.x=self.dir==pad.left and pane.x-64 or pane.x+64
     end
    else
-    if pane.tile.x==index then
+    if pane.tile.x==self.index then
      pane.sliding=true
-     pane.dir=dir
-     pane.new.y=dir==pad.up and pane.y-64 or pane.y+64
+     pane.dir=self.dir
+     pane.new.y=self.dir==pad.up and pane.y-64 or pane.y+64
     end
    end
   end
   for _,entity in pairs(entities) do
-    entity:split(dir,index)
+    entity:split(self.dir,self.index)
   end
  end,
  disabled=function(self)
-  return self.sliding or not self.active
+  return self.sliding or not self.active-- or self.queued or not self.active
  end,
  init=function(self)
   for y=0,1 do
@@ -140,6 +149,7 @@ local tile={
   end
  end,
  update=function(self)
+  if self.queued then self:split() end
   if not self.sliding then return end
   local sliding=false
   for _,pane in pairs(self.panes) do
@@ -151,6 +161,7 @@ local tile={
     self.sliding=false
     for _,entity in pairs(entities) do
       entity.sliding=false
+      --entity.paused=false
     end
   end
  end,
@@ -182,12 +193,14 @@ local movable={
   o.ay=ay
   o.dx=0
   o.dy=0
+  o.ox=0
   o.min={dx=0.05,dy=0.05}
   o.max={dx=dx,dy=dy}
   o.complete=false
   o.health=0
   o.sliding=false
   o.paused=false
+  o.tick=0
   return o
  end,
  distance=function(self,target)
@@ -247,7 +260,7 @@ local movable={
  end,
  fits_cell=function(self)
   return self.x%8==0 and self.y%8==0
- end
+ end,
  damage=function(self,health)
   self.health=self.health-health
   if self.health>0 then
@@ -274,8 +287,8 @@ local movable={
   return mget(self.pane.map.x+tx,self.pane.map.y+ty)
  end,
  split=function(self,dir,index)
-  if self.x>=57 and self.x<=64 then self.x=round(self.x/8)*8 end
-  if self.y>=57 and self.y<=64 then self.y=round(self.y/8)*8 end
+  --if self.x>=57 and self.x<=64 then self.x=round(self.x/8)*8 end
+  --if self.y>=57 and self.y<=64 then self.y=round(self.y/8)*8 end
   self.pane=self:get_pane()
   self.sliding=self.pane.sliding
   self.px=self.x-self.pane.x
@@ -289,21 +302,28 @@ local movable={
   -- do nothing
  end,
  update=function(self)
-  if p.queued and self:fits_cell() then
+  if tile.queued and self:fits_cell() then
    self.paused=true
+   self.dx=0
    return true
   end
   if self.sliding then
    self.x=self.pane.x+self.px
    self.y=self.pane.y+self.py
-   if self.x<=-8 then self.x+=128 end
-   if self.x>=128 then self.x-=128 end
-   if self.y<=-8 then self.y+=128 end
-   if self.y>=128 then self.y-=128 end
-   return true
   else
-   return false
+   if self.paused then
+    if self.tick==2 then
+     self.paused=false
+     self.tick=0
+    end
+    self.tick+=1
+   end
   end
+  if self.x<=-8 then self.x+=128 end
+  if self.x>=128 then self.x-=128 end
+  if self.y<=-8 then self.y+=128 end
+  if self.y>=128 then self.y-=128 end
+  return self.sliding
  end,
  draw=function(self)
   -- do nothing
@@ -372,9 +392,9 @@ local animatable={
   end
   return face.frames[current.frame]
  end,
- update=function(self)
-  movable.update(self)
- end,
+ --update=function(self)
+  --movable.update(self)
+ --end,
  draw=function(self)
   local sprite=self.animate(self)
   spr(sprite,self.x,self.y)
@@ -393,7 +413,7 @@ local animatable={
 
 local player={
  create=function(self,x,y)
-  local o=animatable.create(self,x,y,0.1,0,1,0)
+  local o=animatable.create(self,x,y,0.25,0,1,0)
   o.anim:add_stage("still",1,false,{20},{17})
   o.anim:add_stage("walk",5,true,{20,21,22,21},{17,18,19,18})
   o.anim:add_stage("walk_turn",3,false,{32,33,34},{34,33,32},"still")
@@ -406,6 +426,7 @@ local player={
  end,
  reset=function(self)
   self.complete=false
+  self.still=true
   self.score=0
   self.health=500
   self.x=self.sx
@@ -431,12 +452,6 @@ local player={
     tile:split(pad.right,self.y<64 and 1 or 2)
    end
   else
-   --[[
-   if btnp(pad.up) then self.y=self.y-64 end
-   if btnp(pad.down) then self.y=self.y+64 end
-   if btnp(pad.left) then self.x=self.x-64 end
-   if btnp(pad.right) then self.x=self.x+64 end
-   ]]
 
    local face=self.anim.current.face
    local stage=self.anim.current.stage
@@ -445,6 +460,7 @@ local player={
    -- checks for direction change
    local check=function(self,stage,face)
     if face~=self.anim.current.face then
+     printh("changing dir")
      if stage=="still" then stage="walk" end
      if not self.anim.current.transitioning then
       self.anim.current:set(stage.."_turn")
@@ -453,171 +469,69 @@ local player={
     end
    end
 
-   -- horizontal
-   if btn(pad.left) then
-    self.anim.current.face=dir.left
-    check(self,stage,face)
-    self.dx=self.dx-self.ax
-   elseif btn(pad.right) then
-    self.anim.current.face=dir.right
-    check(self,stage,face)
-    self.dx=self.dx+self.ax
-   else
-    self.dx=self.dx*drag.ground
-   end
-   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+   if not self.still then
+    if self:fits_cell() and self.x~=self.ox then
+     printh(self.x.." "..self.ox.." "..self.dx.." (done)")
+     self.still=true
+     self.anim.current:set("still")
+    elseif not self.anim.current.transitioning then
+     self.dx=self.dx*1.25
+     self.dx=mid(-self.max.dx,self.dx,self.max.dx)
 
-   move=self:can_move_x()
-   if move.ok then
-    move=self:can_move_y()
+     move=self:can_move_x()
      if move.ok then
-      self.x=self.x+round(self.dx)
-      if not self.anim.current.transitioning then
-       self.anim.current:set(round(self.dx)==0 and "still" or "walk")
+      move=self:can_move_y()
+      if move.ok then
+       self.x=self.x+round(self.dx)
+       printh(self.x.." "..self.ox.." "..self.dx)
+       if not self.anim.current.transitioning then
+        self.anim.current:set(self.dx==0 and "still" or "walk")
+       end
+      else
+       printh("will fall "..move.tx..","..move.ty)
       end
-     else
-      printh("will fall "..move.tx..","..move.ty)
-
      end
-   end
-   if not move.ok then
-    self.x=move.tx+(self.dx>0 and -8 or 8)
-    self.anim.current:set("still")
-   end
 
-  end
-
-  if btnp(pad.btn1) then
-   printh("p: "..p.x..","..p.y)
-   printh("b: "..b.x..","..b.y)
-  end
-
-
-
---[[
-  -- horizontal
-  if btn(pad.left) then
-   self.anim.current.face=dir.left
-   check(self,stage,face)
-   self.dx=self.dx-self.ax
-  elseif btn(pad.right) then
-   self.anim.current.face=dir.right
-   check(self,stage,face)
-   self.dx=self.dx+self.ax
-  else
-   if self.is.jumping or self.is.falling then
-    self.dx=self.dx*drag.air
-   else
-    self.dx=self.dx*drag.ground
-   end
-  end
-  self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-
-  move=self:can_move_x()
-
-  -- can move horizontally
-  if move.ok then
-   self.x=self.x+round(self.dx)
-
-  -- cannot move horizontally
-  else
-   self.x=move.tx+(self.dx>0 and -8 or 8)
-   if move.flag==1 then
-    if not self.is.grounded then
-     printh("hit a slide wall") -- #################################
-     local face=self.dx<0 and 1 or 2
-     if not self.is.sliding then
-      self.preslide:reset(self.preslide.min)
-      self.slide:reset(self.slide.min)
-      self.slide.dir=face
+     if not move.ok then
+      self.x=move.tx+(self.dx>0 and -8 or 8)
+      self.dx=0
+      self.still=true
+      printh("resetting to "..self.x)
+      self.anim.current:set("still")
      end
-     self.anim.current.face=face
-     self.anim.current:set("wall")
-     self:set_state("sliding")
+
     end
    end
-  end
 
-  -- jump
-  if self.btn1:pressed() and self:can_jump() then
-   self.dy=self.dy+self.ay
-  else
-   if self.is.jumping then
-    self.btn1.disabled=true
-   else
-    self.btn1.disabled=false
-   end
-  end
-  self.dy=self.dy+(self.is.sliding and drag.wall or drag.gravity)
-  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
+   if self.still then
 
-  move=self:can_move_y()
-
-  -- can move vertically
-  if move.ok then
-
-   -- moving down the screen
-   if self.dy>0 then
-    if self.is.grounded then
-     self.cayote:increment()
-     if self.cayote:valid() then
-      self.dy=0
-     else
-      self.anim.current:set("fall")
-      self:set_state("falling")
-     end
-    elseif self.is.sliding then
-     if self.preslide:valid() then
-       self.dy=0
-       self.preslide:increment()
-     else
-      if self.slide:valid() then
-       self.slide:increment()
-      end
-     end
+    -- left button pressed
+    if btn(pad.left) then
+     self.anim.current.face=dir.left
+     check(self,stage,face)
+     if stage=="still" then self.anim.current:set("walk") end
+     printh(self.dx)
+     if round(self.dx)==0 then self.dx=-self.ax end
+     self.still=false
+     self.ox=self.x
+     printh("moving left ")
+    -- right button pressed
+    elseif btn(pad.right) then
+     self.anim.current.face=dir.right
+     check(self,stage,face)
+     if stage=="still" then self.anim.current:set("walk") end
+     printh(self.dx)
+     if round(self.dx)==0 then self.dx=self.ax end
+     self.still=false
+     self.ox=self.x
+     printh("moving right")
+    -- still and no button pressed
     else
-     if not self.anim.current.transitioning then
-      self.anim.current:set(self.is.jumping and "jump_fall" or "fall")
-     end
-     self:set_state("falling")
+     self.dx=self.dx*drag.ground
+     if abs(self.dx)==0.01 then self.dx=0 end
     end
-
-   -- moving up the screen
-   else
-    if not self.is.jumping then
-     self.anim.current:set("jump")
-    end
-    self:set_state("jumping")
-   end
-   self.y=self.y+round(self.dy)
-
-  -- cannot move vertically
-  else
-   self.y=move.ty+(self.dy>0 and -8 or 8)
-   if self.dy>0 then
-    if not self.anim.current.transitioning then
-     self.anim.current:set(round(self.dx)==0 and "still" or "walk")
-     --self.anim.current:set(abs(self.dx)<self.min.dx and "still" or "walk")
-    end
-    self:set_state("grounded")
-    self.cayote:reset()
-    self.preslide:reset()
-    self.slide:reset()
-   else -- self.dy<0
-    self.btn1:reset()
-    self.dy=0
-    self.anim.current:set("jump_fall")
-    self:set_state("falling")
    end
   end
-
-  -- btn 2
-  if self.btn2:pressed() then
-
-  else
-
-  end
- ]]
  end,
  draw=function(self)
   if self.complete then return end
@@ -816,6 +730,9 @@ function placeholders()
 end
 
 function _init()
+ printh("####")
+ printh("init")
+ printh("####")
  tile:init()
  placeholders()
 
