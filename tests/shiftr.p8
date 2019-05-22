@@ -208,15 +208,44 @@ local movable={
   local dy=self.target.y/1000-self.y/1000
   return sqrt(dx^2+dy^2)*1000
  end,
+ collision=function(self,x1,y1,x2,y2)
+  return x1<x2+8 and x2<x1+8 and y1<y2+8 and y2<y1+8
+ end,
  collide_object=function(self,object)
   if self.complete or object.complete then return false end
-  local x=self.x
+  local x=self.x+round(self.dx)
   local y=self.y
+  local collided=self:collision(x,y,object.x,object.y)
+  if x>120 then
+   collided=collided or self:collision(x-128,y,object.x,object.y)
+   printh("x>120 "..x)
+   printh((x-128)..","..y..","..object.x..","..object.y)
+   printh(collided and "collided" or "didnt collide")
+  elseif x<0 then
+   collided=collided  or self:collision(x+128,y,object.x,object.y)
+   printh("x<0 "..x)
+   printh((x+128)..","..y..","..object.x..","..object.y)
+   printh(collided and "collided" or "didnt collide")
+  elseif object.x>120 then
+   collided=collided  or self:collision(x,y,object.x-128,object.y)
+   printh("x2>120 "..object.x)
+   printh(x..","..y..","..(object.x-128)..","..object.y)
+   printh(collided and "collided" or "didnt collide")
+  elseif object.x<0 then
+   collided=collided  or self:collision(x,y,object.x+128,object.y)
+   printh("x2<0 "..object.x)
+   printh(x..","..y..","..(object.x+128)..","..object.y)
+   printh(collided and "collided" or "didnt collide")
+  end
+  return collided
+
+  --[[
   local hitbox=self.hitbox
   return (x+hitbox.x<=object.x+object.hitbox.x2) and
    (object.x+object.hitbox.x<x+hitbox.w) and
    (y+hitbox.y<=object.y+object.hitbox.y2) and
    (object.y+object.hitbox.y<y+hitbox.h)
+  ]]
  end,
  can_move=function(self,points,flag)
   for _,p in pairs(points) do
@@ -232,31 +261,21 @@ local movable={
   return {ok=true}
  end,
  can_move_x=function(self)
-  local x=self.x+round(self.dx)
-  if self.dx>0 then x=x+7 end
-  x=x%128
+  local x=(self.x+round(self.dx)+(self.dx>0 and 7 or 0))%128
   return self:can_move({{x,self.y},{x,self.y+7}},1)
  end,
- --[[
- can_move_y=function(self)
-  local y=self.y+round(self.dy)
-  if self.dy>0 then y=y+7 end
-  y=y%128
-  return self:can_move({{self.x,y},{self.x+7,y}})
- end,
- ]]
  can_move_y=function(self)
   local y=(self.y+8)%128
   local x=(self.x+round(self.dx)+(self.dx>0 and 7 or 0))%128
-  --local x=self.x+round(self.dx)
-  --if self.dx>0 then x+=7 end
-  --x=x%128
   local move=self:can_move({{x,y}})
   return {ok=not move.ok,tx=x-x%8,ty=y-y%8}
-  --move.tx=x-x%8
-  --move.ty=y-y%8
-  --move.ok=not move.ok
-  --return move
+ end,
+ movable=function(self)
+  local move=self:can_move_x()
+  if move.ok then
+   move=self:can_move_y()
+  end
+  return move
  end,
  fits_cell=function(self)
   return self.x%8==0 and self.y%8==0
@@ -287,13 +306,24 @@ local movable={
   return mget(self.pane.map.x+tx,self.pane.map.y+ty)
  end,
  split=function(self,dir,index)
-  --if self.x>=57 and self.x<=64 then self.x=round(self.x/8)*8 end
-  --if self.y>=57 and self.y<=64 then self.y=round(self.y/8)*8 end
   self.pane=self:get_pane()
   self.sliding=self.pane.sliding
   self.px=self.x-self.pane.x
   self.py=self.y-self.pane.y
   return self.sliding
+ end,
+ checkbounds=function(self)
+  if self.x<=-8 then self.x+=128 end
+  if self.x>=128 then self.x-=128 end
+  if self.y<=-8 then self.y+=128 end
+  if self.y>=128 then self.y-=128 end
+ end,
+ setstill=function(self,x)
+  self.x=x
+  self.dx=0
+  self.still=true
+  printh("resetting to "..self.x)
+  self.anim.current:set("still")
  end,
  hit=function(self)
   -- do nothing
@@ -305,25 +335,17 @@ local movable={
   if tile.queued and self:fits_cell() then
    self.paused=true
    self.dx=0
-   return true
-  end
-  if self.sliding then
+  elseif self.sliding then
    self.x=self.pane.x+self.px
    self.y=self.pane.y+self.py
-  else
-   if self.paused then
-    if self.tick==2 then
-     self.paused=false
-     self.tick=0
-    end
-    self.tick+=1
-   end
+  elseif self.paused then
+   --if self.tick==2 then
+    self.paused=false
+    --self.tick=0
+   --end
+   --self.tick+=1
   end
-  if self.x<=-8 then self.x+=128 end
-  if self.x>=128 then self.x-=128 end
-  if self.y<=-8 then self.y+=128 end
-  if self.y>=128 then self.y-=128 end
-  return self.sliding
+  self:checkbounds()
  end,
  draw=function(self)
   -- do nothing
@@ -442,6 +464,7 @@ local player={
   if tile.sliding then return end
 
   if btn(pad.btn2) and not tile:disabled() then
+
    if btn(pad.up) then
     tile:split(pad.up,self.x<64 and 1 or 2)
    elseif btn(pad.down) then
@@ -451,16 +474,15 @@ local player={
    elseif btn(pad.right) then
     tile:split(pad.right,self.y<64 and 1 or 2)
    end
+
   else
 
    local face=self.anim.current.face
    local stage=self.anim.current.stage
-   local move
 
    -- checks for direction change
    local check=function(self,stage,face)
     if face~=self.anim.current.face then
-     printh("changing dir")
      if stage=="still" then stage="walk" end
      if not self.anim.current.transitioning then
       self.anim.current:set(stage.."_turn")
@@ -470,66 +492,80 @@ local player={
    end
 
    if not self.still then
+
     if self:fits_cell() and self.x~=self.ox then
-     printh(self.x.." "..self.ox.." "..self.dx.." (done)")
+     --printh(self.x.." "..self.ox.." "..self.dx.." (done)")
+     printh("moved from "..self.ox.." to "..self.x.." dx:"..self.dx.." (done) b.x:"..b.x)
      self.still=true
      self.anim.current:set("still")
     elseif not self.anim.current.transitioning then
      self.dx=self.dx*1.25
+     --self.dx=self.dx+self.ax
      self.dx=mid(-self.max.dx,self.dx,self.max.dx)
 
-     move=self:can_move_x()
-     if move.ok then
-      move=self:can_move_y()
-      if move.ok then
-       self.x=self.x+round(self.dx)
-       printh(self.x.." "..self.ox.." "..self.dx)
-       if not self.anim.current.transitioning then
-        self.anim.current:set(self.dx==0 and "still" or "walk")
-       end
-      else
-       printh("will fall "..move.tx..","..move.ty)
+     local move={ok=true}
+
+     if self:collide_object(b) then
+      printh("player collided with block")
+      printh("p.x:"..self.x.." p.dx:"..self.dx.." b.x"..b.x)
+      b.dx=self.dx
+      move=b:movable()
+      if not move.ok then
+       self:setstill(self.x-self.x%8)
+       printh("block not movable")
       end
      end
 
-     if not move.ok then
-      self.x=move.tx+(self.dx>0 and -8 or 8)
-      self.dx=0
-      self.still=true
-      printh("resetting to "..self.x)
-      self.anim.current:set("still")
-     end
+     if move.ok then
 
+      move=self:movable()
+      if move.ok then
+       self.x=self.x+round(self.dx)
+       self:checkbounds()
+       if not self.anim.current.transitioning then
+        self.anim.current:set(self.dx==0 and "still" or "walk")
+       end
+      end
+
+      if not move.ok then
+       self:setstill(move.tx+(self.dx>0 and -8 or 8))
+      end
+
+     end
     end
    end
 
+   -- if we are currently still
    if self.still then
+
+    local flagmoving=function()
+     if stage=="still" then self.anim.current:set("walk") end
+     self.still=false
+     self.ox=self.x
+    end
 
     -- left button pressed
     if btn(pad.left) then
      self.anim.current.face=dir.left
      check(self,stage,face)
-     if stage=="still" then self.anim.current:set("walk") end
-     printh(self.dx)
      if round(self.dx)==0 then self.dx=-self.ax end
-     self.still=false
-     self.ox=self.x
-     printh("moving left ")
+     printh("moving left")
+     flagmoving()
+
     -- right button pressed
     elseif btn(pad.right) then
      self.anim.current.face=dir.right
      check(self,stage,face)
-     if stage=="still" then self.anim.current:set("walk") end
-     printh(self.dx)
      if round(self.dx)==0 then self.dx=self.ax end
-     self.still=false
-     self.ox=self.x
      printh("moving right")
+     flagmoving()
+
     -- still and no button pressed
     else
      self.dx=self.dx*drag.ground
      if abs(self.dx)==0.01 then self.dx=0 end
     end
+
    end
   end
  end,
@@ -586,8 +622,10 @@ local enemy={
    move=self:can_move_y()
     if move.ok then
      self.x=self.x+round(self.dx)
+     self:checkbounds()
     end
   end
+
   if not move.ok then
    self.x=move.tx+(self.dx>0 and -8 or 8)
    self.anim.current.face=face==dir.left and dir.right or dir.left
@@ -634,10 +672,23 @@ local block={
   if self.complete then return end
   animatable.update(self)
   if tile.sliding then return end
-
-  local face=self.anim.current.face
-  local stage=self.anim.current.stage
-  local move
+  ---[[
+  if self:collide_object(p) then
+   printh("block collided with player")
+   printh("block x:"..b.x.." player x:"..p.x)
+   self.dx=p.dx
+   local move=self:movable()
+   if move.ok then
+    self.still=false
+    self.x=p.x+(p.dx>0 and 8 or -8)
+    self.x=self.x%128
+    self:checkbounds()
+   else
+    self:setstill(move.tx+(self.dx>0 and -8 or 8))
+    p:setstill(move.tx+(p.dx>0 and -16 or 16))
+   end
+  end
+  --]]
  end,
  draw=function(self)
   if self.complete then return end
@@ -768,9 +819,9 @@ end
 
 function _update60()
  tile:update()
- enemies:update()
  p:update()
  b:update()
+ enemies:update()
 end
 
 function _draw()
@@ -781,6 +832,10 @@ function _draw()
  enemies:draw()
  p:draw()
  b:draw()
+
+ for pane in all(tile.panes) do
+  print(pane.x..","..pane.y.." ("..pane.map.x..","..pane.map.y..")",pane.tile.x*64-64,pane.tile.y*64-64,3)
+ end
 
  -- draw beam flickr!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  --local y=8+rnd(24)
@@ -834,11 +889,11 @@ __map__
 0101010101010101010101010001010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1000000003000001010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000001010000001100100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0101010101010101010000000101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000110000010002000017010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000010002000017010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
