@@ -138,7 +138,7 @@ local tile={
   end
  end,
  disabled=function(self)
-  return self.sliding or not self.active-- or self.queued or not self.active
+  return self.sliding or not self.active -- or self.queued or not self.active
  end,
  init=function(self)
   for y=0,1 do
@@ -213,39 +213,31 @@ local movable={
  end,
  collide_object=function(self,object)
   if self.complete or object.complete then return false end
-  local x=self.x+round(self.dx)
+  local x=(self.x+round(self.dx))%128
   local y=self.y
   local collided=self:collision(x,y,object.x,object.y)
   if x>120 then
    collided=collided or self:collision(x-128,y,object.x,object.y)
-   printh("x>120 "..x)
+   printh("x>120 "..x.." dx:"..self.dx)
    printh((x-128)..","..y..","..object.x..","..object.y)
    printh(collided and "collided" or "didnt collide")
   elseif x<0 then
-   collided=collided  or self:collision(x+128,y,object.x,object.y)
+   collided=collided or self:collision(x+128,y,object.x,object.y)
    printh("x<0 "..x)
    printh((x+128)..","..y..","..object.x..","..object.y)
    printh(collided and "collided" or "didnt collide")
   elseif object.x>120 then
-   collided=collided  or self:collision(x,y,object.x-128,object.y)
+   collided=collided or self:collision(x,y,object.x-128,object.y)
    printh("x2>120 "..object.x)
    printh(x..","..y..","..(object.x-128)..","..object.y)
    printh(collided and "collided" or "didnt collide")
   elseif object.x<0 then
-   collided=collided  or self:collision(x,y,object.x+128,object.y)
+   collided=collided or self:collision(x,y,object.x+128,object.y)
    printh("x2<0 "..object.x)
    printh(x..","..y..","..(object.x+128)..","..object.y)
    printh(collided and "collided" or "didnt collide")
   end
   return collided
-
-  --[[
-  local hitbox=self.hitbox
-  return (x+hitbox.x<=object.x+object.hitbox.x2) and
-   (object.x+object.hitbox.x<x+hitbox.w) and
-   (y+hitbox.y<=object.y+object.hitbox.y2) and
-   (object.y+object.hitbox.y<y+hitbox.h)
-  ]]
  end,
  can_move=function(self,points,flag)
   for _,p in pairs(points) do
@@ -270,7 +262,7 @@ local movable={
   local move=self:can_move({{x,y}})
   return {ok=not move.ok,tx=x-x%8,ty=y-y%8}
  end,
- movable=function(self)
+ ismovable=function(self)
   local move=self:can_move_x()
   if move.ok then
    move=self:can_move_y()
@@ -313,10 +305,32 @@ local movable={
   return self.sliding
  end,
  checkbounds=function(self)
-  if self.x<=-8 then self.x+=128 end
-  if self.x>=128 then self.x-=128 end
-  if self.y<=-8 then self.y+=128 end
-  if self.y>=128 then self.y-=128 end
+  --[[
+  if (self.x<=-8) self.x+=128
+  if (self.x>=128) self.x-=128
+  if (self.y<=-8) self.y+=128
+  if (self.y>=128) self.y-=128
+  --]]
+  --[[
+  if self.x<=-8 then
+   self.x+=128
+  elseif self.x>=128 then
+   self.x-=128
+  end
+  if self.y<=-8 then
+   self.y+=128
+  elseif self.y>=128 then
+   self.y1-=128
+  end
+  --]]
+  --[[
+  if (self.x<0) self.x+=128
+  if (self.x>127) self.x-=128
+  if (self.y<0) self.y+=128
+  if (self.y>127) self.y-=128
+  --]]
+  self.x=self.x%128
+  self.y=self.y%128
  end,
  setstill=function(self,x)
   self.x=x
@@ -347,8 +361,18 @@ local movable={
   end
   self:checkbounds()
  end,
- draw=function(self)
-  -- do nothing
+ draw=function(self,sprite)
+  spr(sprite,self.x,self.y)
+  if self.x<0 then
+   spr(sprite,self.x+128,self.y)
+  elseif self.x>120 then
+   spr(sprite,self.x-128,self.y)
+  end
+  if self.y<0 then
+   spr(sprite,self.x,self.y+128)
+  elseif self.y>120 then
+   spr(sprite,self.x,self.y-128)
+  end
  end
 } setmetatable(movable,{__index=object})
 
@@ -419,17 +443,7 @@ local animatable={
  --end,
  draw=function(self)
   local sprite=self.animate(self)
-  spr(sprite,self.x,self.y)
-  if self.x<0 then
-   spr(sprite,self.x+128,self.y)
-  elseif self.x>120 then
-   spr(sprite,self.x-128,self.y)
-  end
-  if self.y<0 then
-   spr(sprite,self.x,self.y+128)
-  elseif self.y>120 then
-   spr(sprite,self.x,self.y-128)
-  end
+  movable.draw(self,sprite)
  end
 } setmetatable(animatable,{__index=movable})
 
@@ -498,6 +512,7 @@ local player={
      printh("moved from "..self.ox.." to "..self.x.." dx:"..self.dx.." (done) b.x:"..b.x)
      self.still=true
      self.anim.current:set("still")
+     --self.dx=0
     elseif not self.anim.current.transitioning then
      self.dx=self.dx*1.25
      --self.dx=self.dx+self.ax
@@ -509,7 +524,7 @@ local player={
       printh("player collided with block")
       printh("p.x:"..self.x.." p.dx:"..self.dx.." b.x"..b.x)
       b.dx=self.dx
-      move=b:movable()
+      move=b:ismovable()
       if not move.ok then
        self:setstill(self.x-self.x%8)
        printh("block not movable")
@@ -518,7 +533,7 @@ local player={
 
      if move.ok then
 
-      move=self:movable()
+      move=self:ismovable()
       if move.ok then
        self.x=self.x+round(self.dx)
        self:checkbounds()
@@ -603,20 +618,30 @@ local enemy={
   if self.complete then return end
 
   local current=self.anim.current
-  local face=current.face
-  local stage=current.stage
-  local move
 
   animatable.update(self)
+
   if tile.sliding then return end
+  if current.transitioning then return end -- don't move while turning
+
+  local face=current.face
+  local stage=current.stage
 
   if face==dir.left then
    self.dx=self.dx-self.ax
   else
    self.dx=self.dx+self.ax
   end
+
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
 
+  local move=self:ismovable()
+  if move.ok then
+   self.x=self.x+round(self.dx)
+   self:checkbounds()
+  end
+
+  --[[
   move=self:can_move_x()
   if move.ok then
    move=self:can_move_y()
@@ -625,19 +650,21 @@ local enemy={
      self:checkbounds()
     end
   end
+  ]]
 
   if not move.ok then
    self.x=move.tx+(self.dx>0 and -8 or 8)
    self.anim.current.face=face==dir.left and dir.right or dir.left
    self.dx=0
-   if not self.anim.current.transitioning then
+   --if not self.anim.current.transitioning then
     self.anim.current:set(stage.."_turn")
     self.anim.current.transitioning=true
-   end
+   --end
   end
 
   if self:collide_object(p) then
    printh("collided with player")
+   p:destroy()
   end
 
  end,
@@ -649,9 +676,7 @@ local enemy={
 
 local block={
  create=function(self,x,y)
-  local o=animatable.create(self,x,y,0.25,-3,2,4)
-  o.anim:add_stage("still",1,false,{16},{16})
-  o.anim:init("still",dir.right)
+  local o=movable.create(self,x,y,1,1,1,1)
   o.sx=x
   o.sy=y
   o:reset()
@@ -670,31 +695,171 @@ local block={
  end,
  update=function(self)
   if self.complete then return end
-  animatable.update(self)
+  movable.update(self)
   if tile.sliding then return end
-  ---[[
+  self.dx=0
   if self:collide_object(p) then
    printh("block collided with player")
    printh("block x:"..b.x.." player x:"..p.x)
    self.dx=p.dx
-   local move=self:movable()
+   local move=self:ismovable()
    if move.ok then
     self.still=false
-    self.x=p.x+(p.dx>0 and 8 or -8)
-    self.x=self.x%128
+    --self.x=p.x+(p.dx>0 and 8 or -8)
+    self.x+=round(p.dx)
     self:checkbounds()
    else
     self:setstill(move.tx+(self.dx>0 and -8 or 8))
-    p:setstill(move.tx+(p.dx>0 and -16 or 16))
+    --p:setstill(move.tx+(p.dx>0 and -16 or 16))
    end
   end
-  --]]
+
+  if self:collide_object(p) then
+   printh("block collided with player")
+   printh("block x:"..b.x.." player x:"..p.x)
+   self.dx=p.dx
+   local move=self:ismovable()
+   if move.ok then
+    self.still=false
+    --self.x=p.x+(p.dx>0 and 8 or -8)
+    self.x+=round(p.dx)
+    self:checkbounds()
+   else
+    self:setstill(move.tx+(self.dx>0 and -8 or 8))
+    --p:setstill(move.tx+(p.dx>0 and -16 or 16))
+   end
+  end
+
  end,
  draw=function(self)
   if self.complete then return end
-  animatable.draw(self)
+  movable.draw(self,4)
  end
-} setmetatable(block,{__index=animatable})
+} setmetatable(block,{__index=movable})
+
+local door={
+ create=function(self,x,y)
+  local o=movable.create(self,x,y,1,1,1,1)
+  o.sx=x
+  o.sy=y
+  o.t=0
+  o:reset()
+  o.max.health=o.health
+  return o
+ end,
+ reset=function(self)
+  self.complete=false
+  self.health=2500
+  self.x=self.sx
+  self.y=self.sy
+ end,
+ destroy=function(self)
+ end,
+ hit=function(self)
+ end,
+ update=function(self)
+  if self.complete then return end
+  movable.update(self)
+  if tile.sliding then return end
+  self.t=(self.t+1)%16
+ end,
+ draw=function(self)
+  if self.complete then return end
+  movable.draw(self,5)
+  local x2,y2,t=self.x+7,self.y+7,self.t/2
+  line(self.x,self.y,self.x+t,self.y,6)
+  line(x2,self.y+7,x2-t,y2,6)
+  line(self.x,self.y,self.x,self.y+t,6)
+  line(x2,y2,x2,y2-t,6)
+ end
+} setmetatable(door,{__index=movable})
+
+local portal={
+ create=function(self,x,y)
+  local o=movable.create(self,x,y,1,1,1,1)
+  o.sx=x
+  o.sy=y
+  o.t=0
+  o.odx={p=0,b=0}
+  o.destination=false
+  o:reset()
+  o.max.health=o.health
+  return o
+ end,
+ reset=function(self)
+  self.complete=false
+  self.health=2500
+  self.x=self.sx
+  self.y=self.sy
+ end,
+ destroy=function(self)
+ end,
+ hit=function(self)
+ end,
+ update=function(self)
+  if self.complete then return end
+  movable.update(self)
+  if tile.sliding then return end
+  self.t=(self.t+1)%8
+
+  if self:collide_object(b) then
+   printh("colliding with block "..self.x..","..self.y.." "..b.x..","..b.y)
+   if self.odx.b~=0 then
+    printh("destination b "..self.dx)
+    b.dx=self.odx.b
+    b.still=false
+    b.x=b.x+round(self.odx.b)
+    if b.x%8==0 then
+     self.odx.b=0
+     b.dx=0
+     b.still=true
+    end
+    printh("portal.update: b.x:"..b.x)
+   elseif b.x==self.x and b.y==self.y then
+    printh("transporting b "..b.dx)
+    for _,portal in pairs(portals.items) do
+     if portal.x~=self.x or portal.y~=self.y then
+      b.x=portal.x
+      b.y=portal.y
+      portal.odx.b=b.dx
+     end
+    end
+   end
+  end
+
+  if self:collide_object(p) then
+   printh("colliding with player "..self.x..","..self.y.." "..p.x..","..p.y)
+   if self.odx.p~=0 then
+    printh("destination p "..self.odx.p)
+    p.dx=self.odx.p
+    p.still=false
+    printh("portal.update: p.x:"..p.x)
+   elseif p.x==self.x and p.y==self.y then
+    printh("transporting b "..p.dx)
+    for _,portal in pairs(portals.items) do
+     if portal.x~=self.x or portal.y~=self.y then
+      p.x=portal.x
+      p.y=portal.y
+      p.ox=p.x
+      portal.odx.p=p.dx
+      p:setstill(p.x)
+     end
+    end
+   end
+  else
+   self.odx.p=0
+  end
+
+ end,
+ draw=function(self)
+  if self.complete then return end
+  movable.draw(self,7)
+  local c=t()%2==0 and 3 or 11
+  pset(self.x+1+rnd(6),self.y+6,c)
+  pset(self.x+1+rnd(6),self.y+6,c)
+  pset(self.x+1+rnd(6),self.y+5,c)
+ end
+} setmetatable(portal,{__index=movable})
 
 collection={
  create=function(self)
@@ -754,27 +919,36 @@ enemy_collection={
  end
 } setmetatable(enemy_collection,{__index=collection})
 
-enemies,entities,p,b=enemy_collection:create(),{}
+portals,enemies,entities,p,b=collection:create(),collection:create(),{}
 
 -- turn placeholders into objects
 function placeholders()
  local s
- for y=0,15 do
-  for x=0,15 do
-   s=mget(x,y)
-   if s==17 then
-    p=player:create(x*8,y*8)
+ for ty=0,15 do
+  for tx=0,15 do
+   s,x,y=mget(tx,ty),tx*8,ty*8
+   if s==2 then
+    p=player:create(x,y)
     add(entities,p)
-    mset(x,y,0)
-   elseif s==16 then
-    b=block:create(x*8,y*8)
-    add(entities,b)
-    mset(x,y,0)
-   elseif s==23 then
-    local e=enemy:create(x*8,y*8)
+    mset(tx,ty,0)
+   elseif s==3 then
+    local e=enemy:create(x,y)
     enemies:add(e)
     add(entities,e)
-    mset(x,y,0)
+    mset(tx,ty,0)
+   elseif s==4 then
+    b=block:create(x,y)
+    add(entities,b)
+    mset(tx,ty,0)
+   elseif s==5 then
+    d=door:create(x,y)
+    add(entities,d)
+    mset(tx,ty,0)
+   elseif s==7 then
+    local r=portal:create(x,y)
+    portals:add(r)
+    add(entities,r)
+    mset(tx,ty,0)
    end
   end
  end
@@ -784,44 +958,19 @@ function _init()
  printh("####")
  printh("init")
  printh("####")
+ --mapdata:decompress()
+ --mapdata:load(1)
  tile:init()
  placeholders()
-
- -- turn placeholders into objects
- --[[
- local cell={}
- for y=0,15 do
-  cell[y]={}
-  for x=0,15 do
-   cell[y][x]=mget(x,y)
-  end
- end
- for _,entity in pairs(entities) do
-  local current=entity.anim.current
-  local stage=entity.anim.stage[current.stage]
-  local face=stage.face[current.face]
-  local frame=face.frames[current.frame]
-  local found=false
-  for y=0,15 do for x=0,15 do
-   if not found then
-    if cell[y][x]==frame then
-     mset(x,y,0)
-     cell[y][x]=0
-     entity.x=x*8
-     entity.y=y*8
-     found=true
-    end
-   end
-  end end
- end
-]]
 end
 
 function _update60()
  tile:update()
  p:update()
  b:update()
+ d:update()
  enemies:update()
+ portals:update()
 end
 
 function _draw()
@@ -829,13 +978,17 @@ function _draw()
  rectfill(0,0,63,63,1)
  rectfill(64,64,127,127,1)
  tile:draw()
+ d:draw()
  enemies:draw()
+ portals:draw()
  p:draw()
  b:draw()
 
+ --[[
  for pane in all(tile.panes) do
   print(pane.x..","..pane.y.." ("..pane.map.x..","..pane.map.y..")",pane.tile.x*64-64,pane.tile.y*64-64,3)
  end
+ ]]
 
  -- draw beam flickr!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  --local y=8+rnd(24)
@@ -846,14 +999,14 @@ end
 function round(x) return flr(x+0.5) end
 
 __gfx__
-00000000777777760000000000000000aaaaaaa97777777607c77c701cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000007666666d0000000000000000a99999947666666d7cccccc71cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000007666666d0000000000000000a99999947666666dcccccccc1cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000007666666d00000b3000000000a99999947666666d7cccccc71cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000007666666d0000bbb300000000a99999947666666d7cccccc71cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000007666666d00003b3300000000a99999947666666dcccccccc1cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000007666666d0006d33000000000a99999947666666d7cccccc71cc77cc10000000000000000000000000000000000000000000000000000000000000000
-000000006ddddddd0006d00000000000944444446ddddddd07c77c701cc77cc10000000000000000000000000000000000000000000000000000000000000000
+0000000077777776000000000000000099999999ccccccccaaaaaaa9000000001000000100000000000000001cc77cc1cccccccc00000000aaaaaaa900000000
+000000007666666d0bbbb3300000007c94644642cccccccca9999994000000000000000000000000000000001cc77cc1cccccccc00000000a999999400000000
+000000007666666dbbbb777c0000087142222222cccccccc94444444000000000000000000000000000000001cc77cc1cccccccc00000000a999999400000000
+000000007666666dbbbb71718288287194444442cccccccc6ddddddd000000000001100000000000000000001cc77cc1cccccccc00000000a999999400000b30
+000000007666666dbbbb777c8288287c94444442cccccccc7666666d000000000001100000000000000000001cc77cc1cccccccc00000000a99999940000bbb3
+000000007666666dbbbbbb338288288299999999cccccccc7666666d000000000000000000000000aaaaaaa91cc77cc1cccccccc00000000a999999400003b33
+000000007666666d3bbbb3338288288294644642cccccccc7666666d000000000000000000000000a99999941cc77cc1cccccccc00000000a99999940006d330
+000000006ddddddd333333332222222242222222cccccccc6ddddddd3bb77bb31000000100000000944444441cc77cc1cccccccc00000000944444440006d000
 99999999000000000bbbb33000000000000000000bbbb33000000000000000000000007c0000027c000000007c0000007c80000000000000777c777c00000000
 946446420bbbb330bbbb777c000000000bbbb330777cbb33000000000000007c00000871000282717c0000001c2000001c8280000007777c711c711c7c77c000
 42222222bbbb777cbbbb71710bbbb330777cbb33171cbb330bbbb3300000087100282871008282711c2000001c2828001c82820002871111711c711c1111c280
@@ -879,22 +1032,22 @@ bbbbbb33bbbbbb33bbbbbb3300000000000000000000000000000000000000000000000000000000
 022dd000000dd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0006d0000006d0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __gff__
-0001000001010001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0001000000000100010000010000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
-0100000001010101010101010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0003000007000001001700000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0101010101010101010101010001010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000001010000001100100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0101010101010101010000000101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000010002000017010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000700000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0101010600000000010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000010300000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0101010100000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000050000000007000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000001010101000006010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000010000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
