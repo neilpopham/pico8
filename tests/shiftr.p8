@@ -766,9 +766,9 @@ local door={
  draw=function(self)
   if self.complete then return end
   movable.draw(self,5)
-  local x2,y2,t=self.x+7,self.y+7,self.t/2
+  local x2,y2,t=self.x+7,self.y+7,flr(self.t/2)
   line(self.x,self.y,self.x+t,self.y,6)
-  line(x2,self.y+7,x2-t,y2,6)
+  line(x2,y2,x2-t,y2,6)
   line(self.x,self.y,self.x,self.y+t,6)
   line(x2,y2,x2,y2-t,6)
  end
