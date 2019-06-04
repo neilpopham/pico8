@@ -477,111 +477,110 @@ local player={
   animatable.update(self)
   if tile.sliding then return end
 
-  if btn(pad.btn2) and not tile:disabled() then
+  local face=self.anim.current.face
+  local stage=self.anim.current.stage
 
-   if btn(pad.up) then
-    tile:split(pad.up,self.x<64 and 1 or 2)
-   elseif btn(pad.down) then
-    tile:split(pad.down,self.x<64 and 1 or 2)
-   elseif btn(pad.left) then
-    tile:split(pad.left,self.y<64 and 1 or 2)
-   elseif btn(pad.right) then
-    tile:split(pad.right,self.y<64 and 1 or 2)
-   end
-
-  else
-
-   local face=self.anim.current.face
-   local stage=self.anim.current.stage
-
-   -- checks for direction change
-   local check=function(self,stage,face)
-    if face~=self.anim.current.face then
-     if stage=="still" then stage="walk" end
-     if not self.anim.current.transitioning then
-      self.anim.current:set(stage.."_turn")
-      self.anim.current.transitioning=true
-     end
+  -- checks for direction change
+  local check=function(self,stage,face)
+   if face~=self.anim.current.face then
+    if stage=="still" then stage="walk" end
+    if not self.anim.current.transitioning then
+     self.anim.current:set(stage.."_turn")
+     self.anim.current.transitioning=true
     end
    end
+  end
 
-   if not self.still then
+  if not self.still then
 
-    if self:fits_cell() and self.x~=self.ox then
-     --printh(self.x.." "..self.ox.." "..self.dx.." (done)")
-     printh("moved from "..self.ox.." to "..self.x.." dx:"..self.dx.." (done) b.x:"..b.x)
-     self.still=true
-     self.anim.current:set("still")
-     --self.dx=0
-    elseif not self.anim.current.transitioning then
-     self.dx=self.dx*1.25
-     --self.dx=self.dx+self.ax
-     self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+   if self:fits_cell() and self.x~=self.ox then
+    --printh(self.x.." "..self.ox.." "..self.dx.." (done)")
+    printh("moved from "..self.ox.." to "..self.x.." dx:"..self.dx.." (done) b.x:"..b.x)
+    self.still=true
+    self.anim.current:set("still")
+    --self.dx=0
+   elseif not self.anim.current.transitioning then
+    self.dx=self.dx*1.25
+    --self.dx=self.dx+self.ax
+    self.dx=mid(-self.max.dx,self.dx,self.max.dx)
 
-     local move={ok=true}
+    local move={ok=true}
 
-     if self:collide_object(b) then
-      printh("player collided with block")
-      printh("p.x:"..self.x.." p.dx:"..self.dx.." b.x"..b.x)
-      b.dx=self.dx
-      move=b:ismovable()
-      if not move.ok then
-       self:setstill(self.x-self.x%8)
-       printh("block not movable")
-      end
+    if self:collide_object(b) then
+     printh("player collided with block")
+     printh("p.x:"..self.x.." p.dx:"..self.dx.." b.x"..b.x)
+     b.dx=self.dx
+     move=b:ismovable()
+     if not move.ok then
+      self:setstill(self.x-self.x%8)
+      printh("block not movable")
      end
+    end
 
+    if move.ok then
+
+     move=self:ismovable()
      if move.ok then
-
-      move=self:ismovable()
-      if move.ok then
-       self.x=self.x+round(self.dx)
-       self:checkbounds()
-       if not self.anim.current.transitioning then
-        self.anim.current:set(self.dx==0 and "still" or "walk")
-       end
+      self.x=self.x+round(self.dx)
+      self:checkbounds()
+      if not self.anim.current.transitioning then
+       self.anim.current:set(self.dx==0 and "still" or "walk")
       end
-
-      if not move.ok then
-       self:setstill(move.tx+(self.dx>0 and -8 or 8))
-      end
-
      end
+
+     if not move.ok then
+      self:setstill(move.tx+(self.dx>0 and -8 or 8))
+     end
+
     end
    end
+  end
 
-   -- if we are currently still
-   if self.still then
+  -- if we are currently still
+  if self.still then
 
-    local flagmoving=function()
-     if stage=="still" then self.anim.current:set("walk") end
-     self.still=false
-     self.ox=self.x
-    end
+   local flagmoving=function()
+    if stage=="still" then self.anim.current:set("walk") end
+    self.still=false
+    self.ox=self.x
+   end
 
-    -- left button pressed
-    if btn(pad.left) then
-     self.anim.current.face=dir.left
-     check(self,stage,face)
-     if round(self.dx)==0 then self.dx=-self.ax end
-     printh("moving left")
-     flagmoving()
+   if btn(pad.btn2) and not tile:disabled() then
 
-    -- right button pressed
+    if btn(pad.up) then
+     tile:split(pad.up,self.x<64 and 1 or 2)
+    elseif btn(pad.down) then
+     tile:split(pad.down,self.x<64 and 1 or 2)
+    elseif btn(pad.left) then
+     tile:split(pad.left,self.y<64 and 1 or 2)
     elseif btn(pad.right) then
-     self.anim.current.face=dir.right
-     check(self,stage,face)
-     if round(self.dx)==0 then self.dx=self.ax end
-     printh("moving right")
-     flagmoving()
-
-    -- still and no button pressed
-    else
-     self.dx=self.dx*drag.ground
-     if abs(self.dx)==0.01 then self.dx=0 end
+     tile:split(pad.right,self.y<64 and 1 or 2)
     end
 
    end
+
+   -- left button pressed
+   if btn(pad.left) then
+    self.anim.current.face=dir.left
+    check(self,stage,face)
+    if round(self.dx)==0 then self.dx=-self.ax end
+    printh("moving left")
+    flagmoving()
+
+   -- right button pressed
+   elseif btn(pad.right) then
+    self.anim.current.face=dir.right
+    check(self,stage,face)
+    if round(self.dx)==0 then self.dx=self.ax end
+    printh("moving right")
+    flagmoving()
+
+   -- still and no button pressed
+   else
+    self.dx=self.dx*drag.ground
+    if abs(self.dx)==0.01 then self.dx=0 end
+   end
+
   end
  end,
  draw=function(self)
@@ -697,23 +696,8 @@ local block={
   if self.complete then return end
   movable.update(self)
   if tile.sliding then return end
-  self.dx=0
-  if self:collide_object(p) then
-   printh("block collided with player")
-   printh("block x:"..b.x.." player x:"..p.x)
-   self.dx=p.dx
-   local move=self:ismovable()
-   if move.ok then
-    self.still=false
-    --self.x=p.x+(p.dx>0 and 8 or -8)
-    self.x+=round(p.dx)
-    self:checkbounds()
-   else
-    self:setstill(move.tx+(self.dx>0 and -8 or 8))
-    --p:setstill(move.tx+(p.dx>0 and -16 or 16))
-   end
-  end
 
+  self.dx=0
   if self:collide_object(p) then
    printh("block collided with player")
    printh("block x:"..b.x.." player x:"..p.x)
@@ -766,11 +750,12 @@ local door={
  draw=function(self)
   if self.complete then return end
   movable.draw(self,5)
-  local x2,y2,t=self.x+7,self.y+7,flr(self.t/2)
-  line(self.x,self.y,self.x+t,self.y,6)
-  line(x2,y2,x2-t,y2,6)
-  line(self.x,self.y,self.x,self.y+t,6)
-  line(x2,y2,x2,y2-t,6)
+  local x,y,x2,y2,t=self.x,self.y,self.x+7,self.y+7,flr(self.t/2)
+  pset(x+t,y,7)
+  pset(x2,y+t,7)
+  pset(x2-t,y2,7)
+  pset(x,y2-t,7)
+  --for i=1,10 do pset(x+rnd(8),y+rnd(8),6) end
  end
 } setmetatable(door,{__index=movable})
 
@@ -781,7 +766,6 @@ local portal={
   o.sy=y
   o.t=0
   o.odx={p=0,b=0}
-  o.destination=false
   o:reset()
   o.max.health=o.health
   return o
@@ -949,6 +933,7 @@ function placeholders()
     portals:add(r)
     add(entities,r)
     mset(tx,ty,0)
+    mset(tx,ty+1,6)
    end
   end
  end
@@ -1038,7 +1023,7 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000700000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0101010600000000010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0101010100000000010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000010300000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1046,7 +1031,7 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000050000000007000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000001010101000006010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000001010101000001010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000010000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
