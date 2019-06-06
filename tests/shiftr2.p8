@@ -8,6 +8,11 @@ local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 local dir={left=1,right=2}
 local drag={air=1,ground=0.25,gravity=0.75,wall=0.1}
 
+function extend(t1,t2)
+ for k,v in pairs(t2) do t1[k]=v end
+ return t1
+end
+
 local mapdata={
  data={},
  decompress=function(self)
@@ -37,6 +42,250 @@ local mapdata={
   end
  end
 }
+
+particle={
+ create=function(self,params)
+  params=params or {}
+  params.dx=params.dx or {0,0}
+  params.dy=params.dy or params.dx
+  params.life=params.life or {10,30}
+  params.col=params.col or {1,15}
+  local o=params
+  o.dx=mrnd(params.dx)
+  o.dy=mrnd(params.dy)
+  o.x=params.x+o.dx
+  o.y=params.y+o.dy
+  o.life=mrnd(params.life)
+  o.ttl=o.life
+  if #params.col==2 then
+   o.col=mrnd(params.col)
+  else
+    o.col=params.col[mrnd({1,#params.col})]
+  end
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end
+}
+
+spark={
+ create=function(self,params)
+  local o=particle.create(self,params)
+  return o
+ end,
+ draw=function(self)
+  if self.life==0 then return true end
+  pset(self.x,self.y,self.col)
+  self.life=self.life-1
+  return self.life==0
+ end
+} setmetatable(spark,{__index=particle})
+
+emmiter={
+ create=function(self,params)
+  local o=params or {}
+  o.angle=o.angle or {1,360}
+  o.force=o.force or {1,3}
+  --o.update=function(self,ps)
+   -- do nothing
+  --end
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end,
+ init_particle=function(self,ps,p)
+  p.angle=mrnd(self.angle)/360
+  p.force=mrnd(self.force,false)
+ end
+}
+
+stationary={
+ create=function(self,params)
+  local o=emmiter.create(self,params)
+  return o
+ end
+} setmetatable(stationary,{__index=emmiter})
+
+beamer={
+ create=function(self,params)
+  local o=emmiter.create(self,params)
+  return o
+ end,
+ init_particle=function(self,ps,p)
+  emmiter.init_particle(self,ps,p)
+  if p.force<5 then p.life+=mrnd({20,50}) end
+ end
+} setmetatable(stationary,{__index=emmiter})
+
+affector={
+ create=function(self,params)
+  local o=params or {}
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end,
+ update=function(self,ps)
+  -- do nothing
+ end
+}
+
+bounds={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    if p.x<0 or p.x>127
+     or p.y<0 or p.y>127 then
+     p.life=0
+    end
+   end
+  end
+  return o
+ end
+} setmetatable(bounds,{__index=affector})
+
+slower={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    if p.force<5 and p.life%2==0 then p.life+=1 end
+   end
+  end
+  return o
+ end
+} setmetatable(bounds,{__index=affector})
+
+bounds={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    if p.x<0 or p.x>127
+     or p.y<0 or p.y>127 then
+     p.life=0
+    end
+   end
+  end
+  return o
+ end
+} setmetatable(bounds,{__index=affector})
+
+randomise={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.angle=o.angle or {1,360}
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    p.angle=(p.angle+(mrnd(self.angle)/360)) % 1
+   end
+  end
+  return o
+ end
+} setmetatable(randomise,{__index=affector})
+
+gravity={
+ create=function(self,params)
+  local o=affector.create(self,params)
+  o.force=o.force or 0.25
+  o.update=function(self,ps)
+   for _,p in pairs(ps.particles) do
+    local dx=cos(p.angle)*p.force
+    local dy=-sin(p.angle)*p.force
+    dy=dy+self.force
+    p.angle=atan2(dx,-dy)
+    p.force=sqrt(dx^2+dy^2)
+   end
+  end
+  return o
+ end
+} setmetatable(gravity,{__index=affector})
+
+particle_system={
+ create=function(self)
+  local s={
+   particles={},
+   emitters={},
+   affectors={},
+   complete=false,
+   count=0,
+   tick=0
+  }
+  setmetatable(s,self)
+  self.__index=self
+  return s
+ end,
+ update=function(self)
+  if self.complete then return end
+  for _,a in pairs(self.affectors) do a:update(self) end
+  self.tick=self.tick+1
+ end,
+ draw=function(self)
+  if self.complete then return end
+  local done=true
+  for i,p in pairs(self.particles) do
+   p.dx=cos(p.angle)*p.force
+   p.dy=-sin(p.angle)*p.force
+   p.x=p.x+p.dx
+   p.y=p.y+p.dy
+   local dead=p:draw()
+   done=done and dead
+   if dead then
+    del(self.particles,p)
+    self.count=self.count-1
+   end
+  end
+  if done then self.complete=true end
+ end,
+ add_particle=function(self,p)
+  add(self.particles,p)
+  for _,e in pairs(self.emitters) do e:init_particle(self,p) end
+  self.count=self.count+1
+  self.complete=false
+ end
+}
+
+beam={
+ create=function(self,x,y,cols,count)
+  cols=cols or {7,8,9,10}
+  count=count or 10
+  local ps=particle_system.create(self)
+  add(ps.emitters,beamer:create({force={1,20},angle={270,270}}))
+  add(ps.affectors,bounds:create())
+  --add(ps.affectors,slower:create())
+  --add(ps.affectors,gravity:create({force=0.1}))
+  ps.add_particle=function(self)
+   particle_system.add_particle(
+    self,
+    spark:create({x=mrnd({x,x+7}),y=y+7,col=cols,life={5,30}})
+   )
+  end
+  for i=1,count do
+   ps:add_particle()
+  end
+  return ps
+ end
+} setmetatable(beam,{__index=particle_system})
+
+pixels={
+ create=function(self,x,y,cols,count)
+  cols=cols or {7,8,9,10}
+  count=count or 10
+  local ps=particle_system.create(self)
+  add(ps.emitters,stationary:create({force={2,4},angle={1,360}}))
+  add(ps.affectors,gravity:create({force=0.2}))
+  ps.add_particle=function(self)
+   particle_system.add_particle(
+    self,
+    spark:create({x=x,y=y,col=cols,life={30,80}})
+   )
+  end
+  for i=1,count do
+   ps:add_particle()
+  end
+  return ps
+ end
+} setmetatable(pixels,{__index=particle_system})
 
 local pane={
  create=function(self,tx,ty,mx,my,sx,sy)
@@ -184,21 +433,24 @@ local object={
 local movable={
  create=function(self,x,y,ax,ay,dx,dy)
   local o=object.create(self,x,y)
-  o.ax=ax
-  o.ay=ay
-  o.dx=0
-  o.dy=0
-  o.ox=0
-  o.sx=x
-  o.sy=y
-  o.min={dx=0.05,dy=0.05}
-  o.max={dx=dx,dy=dy}
-  o.complete=false
-  o.sliding=false
-  o.paused=false
-  o.tick=0
-  o.type=0
-  o.health=0
+  o=extend(
+   o,
+   {
+    ax=ax,
+    ay=ay,
+    dx=0,dy=0,
+    ox=0,sx=x,
+    sy=y,
+    min={dx=0.05,dy=0.05},
+    max={dx=dx,dy=dy},
+    complete=false,
+    sliding=false,
+    paused=false,
+    tick=0,
+    type=0,
+    health=0
+   }
+  )
   return o
  end,
  distance=function(self,target)
@@ -279,14 +531,12 @@ local movable={
   return self:fits_cell() and self.x~=self.ox
  end,
  is=function(self,types)
-  --for t in all(types) do
   for _,t in pairs(types) do
    if self.type==t then return true end
   end
   return false
  end,
  isnt=function(self,types)
-  --for t in all(types) do
   for _,t in pairs(types) do
    if self.type==t then return false end
   end
@@ -431,9 +681,6 @@ local animatable={
   end
   return face.frames[current.frame]
  end,
- --update=function(self)
-  --movable.update(self)
- --end,
  draw=function(self)
   local sprite=self.animate(self)
   movable.draw(self,sprite)
@@ -443,17 +690,18 @@ local animatable={
 local player={
  create=function(self,x,y)
   local o=animatable.create(self,x,y,0.25,0,1,0)
-  o.anim:add_stage("still",1,false,{20},{17})
-  o.anim:add_stage("walk",5,true,{20,21,22,21},{17,18,19,18})
-  o.anim:add_stage("walk_turn",3,false,{32,33,34},{34,33,32},"still")
-  o.anim:init("still",dir.right)
+  local animation=o.anim
+  animation:add_stage("still",1,false,{20},{17})
+  animation:add_stage("walk",5,true,{20,21,22,21},{17,18,19,18})
+  animation:add_stage("walk_turn",3,false,{32,33,34},{34,33,32},"still")
+  animation:init("still",dir.right)
   o:reset()
   o.max.health=o.health
   o.type=1
+  o.cols={7,3,11,11}
   return o
  end,
  reset=function(self)
-
   self.complete=false
   self.still=true
   self.score=0
@@ -538,8 +786,8 @@ local player={
     self.ox=self.x
    end
 
+   -- shifting
    if btn(pad.btn2) and not tile:disabled() then
-
     if btn(pad.up) then
      tile:split(pad.up,self.x<64 and 1 or 2)
     elseif btn(pad.down) then
@@ -549,7 +797,6 @@ local player={
     elseif btn(pad.right) then
      tile:split(pad.right,self.y<64 and 1 or 2)
     end
-
    end
 
    -- left button pressed
@@ -592,6 +839,7 @@ local enemy={
   o:reset()
   o.max.health=o.health
   o.type=2
+  o.cols={2,7,8,8}
   return o
  end,
  reset=function(self)
@@ -625,31 +873,38 @@ local enemy={
   end
 
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
+  --printh("enemy dx:"..self.dx)
 
-  local move=self:ismovable()
-  if move.ok then
-   self.x=self.x+round(self.dx)
-   self:checkbounds()
+  local move={ok=true,tx=flr(self.x/8)*8}
+
+  if self:collide_object(b) then
+   printh("enemy collided with block")
+   printh("e.tx:"..move.tx.." e.x:"..self.x.." e.dx:"..self.dx.." b.x:"..b.x)
+   b.dx=self.dx
+   move=b:ismovable()
+   if not move.ok then
+    printh("block not movable "..self.x.." vs "..(self.x%8))
+    self:setstill(self.x-self.x%8)
+    printh(b.x)
+    printh(move.tx)
+   end
   end
 
-  --[[
-  move=self:can_move_x()
   if move.ok then
-   move=self:can_move_y()
-    if move.ok then
-     self.x=self.x+round(self.dx)
-     self:checkbounds()
-    end
+   move=self:ismovable()
+   if move.ok then
+    self.x=self.x+round(self.dx)
+    self:checkbounds()
+   end
   end
-  ]]
 
   if not move.ok then
-   self.x=move.tx+(self.dx>0 and -8 or 8)
    self.anim.current.face=face==dir.left and dir.right or dir.left
    self.dx=0
+   --self.x=move.tx+(self.dx>0 and -8 or 8)
    --if not self.anim.current.transitioning then
-    self.anim.current:set(stage.."_turn")
-    self.anim.current.transitioning=true
+   self.anim.current:set(stage.."_turn")
+   self.anim.current.transitioning=true
    --end
   end
 
@@ -671,6 +926,7 @@ local block={
   o:reset()
   o.max.health=o.health
   o.type=3
+  o.cols={4,4,8,9}
   return o
  end,
  reset=function(self)
@@ -813,7 +1069,7 @@ local portal={
   for i,entity in pairs(entities) do
    --if entity~=self and self:collide_object(entity) then
    --if entity.type~=5 and self:collide_object(entity) then
-   if entity:isnt({self.type}) and self:collide_object(entity) then
+   if entity:isnt({self.type}) and self:collide_object(entity) and entity:fits_cell() then
     if self.odx[i]==nil then
      printh("transporting type "..entity.type.." with dx "..entity.dx)
      for _,portal in pairs(portals.items) do
@@ -821,6 +1077,7 @@ local portal={
        portal.odx[i]=entity.dx
        entity.y=portal.y
        entity:setstill(portal.x)
+       explosions:add(beam:create(self.x,self.y,entity.cols,20)) -- 7,3,11
        break
       end
      end
@@ -828,6 +1085,7 @@ local portal={
      printh("receiving type "..entity.type.." with dx "..self.odx[i])
      entity.dx=self.odx[i]
      entity.still=false
+     explosions:add(beam:create(self.x,self.y,entity.cols,20))
     end
    else
     self.odx[i]=nil
@@ -896,6 +1154,14 @@ local portal={
   pset(self.x+1+rnd(6),self.y+6,c)
   pset(self.x+1+rnd(6),self.y+6,c)
   pset(self.x+1+rnd(6),self.y+5,c)
+
+  if self.odx[i]~=nil then
+   for i=1,20 do
+    pset(mrnd({self.x,self.x+7}),mrnd({self.y,self.y+7}),15)
+   end
+   printh("transporting")
+  end
+
  end
 } setmetatable(portal,{__index=movable})
 
@@ -958,6 +1224,7 @@ enemy_collection={
 } setmetatable(enemy_collection,{__index=collection})
 
 portals,enemies,entities,p,b=collection:create(),collection:create(),{}
+explosions=collection:create()
 
 -- turn placeholders into objects
 function placeholders()
@@ -1007,9 +1274,10 @@ function _update60()
  tile:update()
  portals:update()
  p:update()
+ enemies:update()
  b:update()
  d:update()
- enemies:update()
+ explosions:update()
 end
 
 function _draw()
@@ -1018,10 +1286,11 @@ function _draw()
  rectfill(64,64,127,127,1)
  tile:draw()
  d:draw()
- enemies:draw()
- portals:draw()
- p:draw()
  b:draw()
+ portals:draw()
+ enemies:draw()
+ p:draw()
+ explosions:draw()
 
  --[[
  for pane in all(tile.panes) do
@@ -1029,12 +1298,21 @@ function _draw()
  end
  ]]
 
- -- draw beam flickr!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- --local y=8+rnd(24)
- --line(32,y,39,y,1)
-
 end
 
+-- shared functions
+
+-- e.g.> x=mrnd({5,10}) -- returns an integer between 5 and 10 inclusive
+-- x|table|the minimum and maximum values
+-- f|boolean|whether to return the floor of the value. default is true
+function mrnd(x,f)
+ if f==nil then f=true end
+ local v=(rnd()*(x[2]-x[1]+(f and 1 or 0.0001)))+x[1]
+ return f and flr(v) or flr(v*1000)/1000
+end
+
+-- e.g.> x=round(1.23) -- rounds 1.23 to the nearest integer
+-- x|float|the number to round
 function round(x) return flr(x+0.5) end
 
 __gfx__
