@@ -25,8 +25,7 @@ local player={
  hit=function(self)
  end,
  update=function(self)
-  if self.complete then return end
-  animatable.update(self)
+  if not animatable.update(self) then return end
   if tile.sliding then return end
 
   local face=self.anim.current.face
@@ -129,30 +128,26 @@ local player={
    -- still and no button pressed
    else
     self.dx=self.dx*drag.ground
-    if abs(self.dx)==0.01 then self.dx=0 end
+    if abs(self.dx)<self.min.dx then self.dx=0 end
    end
 
   end
- end,
- draw=function(self)
-  if self.complete then return end
-  animatable.draw(self)
  end
 } setmetatable(player,{__index=animatable})
 
 local enemy={
  create=function(self,x,y)
-  local o=animatable.create(self,x,y,0.1,0,1,0)
-  --o.anim:add_stage("still",1,false,{26},{23})
+  local o=animatable.create(self,x,y,0.06,0,1,0)
   o.anim:add_stage("walk",5,true,{26,27,28,27},{23,24,25,24})
   o.anim:add_stage("walk_turn",5,false,{29,30,31},{31,30,29},"walk")
   o.anim:init("walk",dir.right)
-  o:reset()
-  o.max.health=o.health
+  --o:reset()
+  --o.max.health=o.health
   o.type=2
   o.cols={2,7,8,8}
   return o
  end,
+ --[[
  reset=function(self)
   self.complete=false
   self.health=1500
@@ -160,47 +155,36 @@ local enemy={
   self.y=self.sy
   self.tick=0
  end,
- destroy=function(self)
- end,
  hit=function(self)
  end,
+ ]]
+ destroy=function(self)
+  self.complete=true
+ end,
  update=function(self)
-  if self.complete then return end
-
-  local current=self.anim.current
-
-  animatable.update(self)
-
+  if not animatable.update(self) then return end
   if tile.sliding then return end
+  local current=self.anim.current
   if current.transitioning then return end -- don't move while turning
-
   local face=current.face
   local stage=current.stage
-
   if face==dir.left then
    self.dx=self.dx-self.ax
   else
    self.dx=self.dx+self.ax
   end
-
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
-  --printh("enemy dx:"..self.dx)
-
-  local move={ok=true,tx=flr(self.x/8)*8}
-
+  local move={ok=true} -- ,tx=flr(self.x/8)*8}
   if self:collide_object(b) then
-   printh("enemy collided with block")
-   printh("e.tx:"..move.tx.." e.x:"..self.x.." e.dx:"..self.dx.." b.x:"..b.x)
+   --printh("enemy collided with block")
+   --printh("e.tx:"..move.tx.." e.x:"..self.x.." e.dx:"..self.dx.." b.x:"..b.x)
    b.dx=self.dx
    move=b:ismovable()
    if not move.ok then
-    printh("block not movable "..self.x.." vs "..(self.x%8))
+    --printh("block not movable "..self.x.." vs "..(self.x%8))
     self:setstill(self.x-self.x%8)
-    printh(b.x)
-    printh(move.tx)
    end
   end
-
   if move.ok then
    move=self:ismovable()
    if move.ok then
@@ -208,26 +192,19 @@ local enemy={
     self:checkbounds()
    end
   end
-
   if not move.ok then
-   self.anim.current.face=face==dir.left and dir.right or dir.left
+   current.face=face==dir.left and dir.right or dir.left
    self.dx=0
    --self.x=move.tx+(self.dx>0 and -8 or 8)
    --if not self.anim.current.transitioning then
-   self.anim.current:set(stage.."_turn")
-   self.anim.current.transitioning=true
+   current:set(stage.."_turn")
+   current.transitioning=true
    --end
   end
-
   if self:collide_object(p) then
    printh("collided with player")
    p:destroy()
   end
-
- end,
- draw=function(self)
-  if self.complete then return end
-  animatable.draw(self)
  end
 } setmetatable(enemy,{__index=animatable})
 
@@ -251,8 +228,7 @@ local block={
  hit=function(self)
  end,
  update=function(self)
-  if self.complete then return end
-  movable.update(self)
+  if not movable.update(self) then return end
   if tile.sliding then return end
 
   if not self.still then
@@ -286,30 +262,8 @@ local block={
    self:checkbounds()
   end
 
-
-
- --[[
-  self.dx=0
-  if self:collide_object(p) then
-   printh("block collided with player")
-   printh("block x:"..b.x.." player x:"..p.x)
-   self.dx=p.dx
-   local move=self:ismovable()
-   if move.ok then
-    self.still=false
-    --self.x=p.x+(p.dx>0 and 8 or -8)
-    self.x+=round(p.dx)
-    self:checkbounds()
-   else
-    self:setstill(move.tx+(self.dx>0 and -8 or 8))
-    --p:setstill(move.tx+(p.dx>0 and -16 or 16))
-   end
-  end
-  ]]
-
  end,
  draw=function(self)
-  if self.complete then return end
   movable.draw(self,4)
  end
 } setmetatable(block,{__index=movable})
@@ -317,12 +271,12 @@ local block={
 local door={
  create=function(self,x,y)
   local o=movable.create(self,x,y,1,1,1,1)
-  o.t=0
-  o:reset()
+  --o:reset()
   o.max.health=o.health
   o.type=4
   return o
  end,
+ --[[
  reset=function(self)
   self.complete=false
   self.health=2500
@@ -333,21 +287,23 @@ local door={
  end,
  hit=function(self)
  end,
+ ]]
  update=function(self)
-  if self.complete then return end
-  movable.update(self)
+  if not movable.update(self) then return end
   if tile.sliding then return end
-  self.t=(self.t+1)%16
+  self.tick=(self.tick+1)%16
+  if self:collide_object(b) and b:fits_cell() then
+   printh("BLOCK HIT DOOR!!!!!")
+  end
  end,
  draw=function(self)
   if self.complete then return end
-  movable.draw(self,5)
-  local x,y,x2,y2,t=self.x,self.y,self.x+7,self.y+7,flr(self.t/2)
+  if not movable.draw(self,5) then return end
+  local x,y,x2,y2,t=self.x,self.y,self.x+7,self.y+7,flr(self.tick/2)
   pset(x+t,y,7)
   pset(x2,y+t,7)
   pset(x2-t,y2,7)
   pset(x,y2-t,7)
-  --for i=1,10 do pset(x+rnd(8),y+rnd(8),6) end
  end
 } setmetatable(door,{__index=movable})
 
@@ -355,11 +311,12 @@ local portal={
  create=function(self,x,y)
   local o=movable.create(self,x,y)
   o.odx={}
-  o:reset()
-  o.max.health=o.health
+  --o:reset()
+  --o.max.health=o.health
   o.type=5
   return o
  end,
+ --[[
  reset=function(self)
   self.complete=false
   self.health=2500
@@ -370,14 +327,15 @@ local portal={
  end,
  hit=function(self)
  end,
+ ]]
  update=function(self)
-  if self.complete then return end
-  movable.update(self)
+  if not movable.update(self) then return end
   if tile.sliding then return end
+
   for i,entity in pairs(entities) do
    if entity:isnt({self.type}) and self:collide_object(entity) and entity:fits_cell() then
     if self.odx[i]==nil then
-     printh("transporting type "..entity.type.." with dx "..entity.dx)
+     printh("transporting type "..entity.type.." with dx "..entity.dx) -- ##############################
      for _,portal in pairs(portals.items) do
       if portal.x~=self.x or portal.y~=self.y then
        portal.odx[i]=entity.dx
@@ -388,7 +346,7 @@ local portal={
       end
      end
     else
-     printh("receiving type "..entity.type.." with dx "..self.odx[i])
+     printh("receiving type "..entity.type.." with dx "..self.odx[i]) -- ##############################
      entity.dx=self.odx[i]
      entity.still=false
      beam:create(self.x,self.y,entity.cols,20)
@@ -400,15 +358,10 @@ local portal={
  end,
  draw=function(self)
   if self.complete then return end
+  if not movable.draw(self,7) then return end
   movable.draw(self,7)
-  local c=t()%2==0 and 3 or 11
-  pset(self.x+1+rnd(6),self.y+6,c)
-  pset(self.x+1+rnd(6),self.y+6,c)
-  pset(self.x+1+rnd(6),self.y+5,c)
+  pset(self.x+1+rnd(6),self.y+6,11)
+  pset(self.x+1+rnd(6),self.y+6,11)
+  pset(self.x+1+rnd(6),self.y+5,11)
  end
 } setmetatable(portal,{__index=movable})
-
---------------------------------------------------
-
-
---------------------------------------------------

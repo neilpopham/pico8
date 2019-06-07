@@ -172,6 +172,7 @@ local movable={
   -- do nothing
  end,
  update=function(self)
+  if self.complete then return false end
   if tile.queued and self:fits_cell() then
    self.paused=true
    self.dx=0
@@ -182,8 +183,10 @@ local movable={
     self.paused=false
   end
   self:checkbounds()
+  return true
  end,
  draw=function(self,sprite)
+  if self.complete then return false end
   spr(sprite,self.x,self.y)
   if self.x<0 then
    spr(sprite,self.x+128,self.y)
@@ -195,6 +198,7 @@ local movable={
   elseif self.y>120 then
    spr(sprite,self.x,self.y-128)
   end
+  return true
  end
 } setmetatable(movable,{__index=object})
 
