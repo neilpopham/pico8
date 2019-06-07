@@ -8,11 +8,6 @@ local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 local dir={left=1,right=2}
 local drag={air=1,ground=0.25,gravity=0.75,wall=0.1}
 
-function extend(t1,t2)
- for k,v in pairs(t2) do t1[k]=v end
- return t1
-end
-
 local mapdata={
  data={},
  decompress=function(self)
@@ -56,7 +51,6 @@ particle={
   o.x=params.x+o.dx
   o.y=params.y+o.dy
   o.life=mrnd(params.life)
-  o.ttl=o.life
   if #params.col==2 then
    o.col=mrnd(params.col)
   else
@@ -65,6 +59,12 @@ particle={
   setmetatable(o,self)
   self.__index=self
   return o
+ end,
+ draw=function(self)
+  if self.life==0 then return true end
+  self:_draw()
+  self.life=self.life-1
+  return self.life==0
  end
 }
 
@@ -73,11 +73,8 @@ spark={
   local o=particle.create(self,params)
   return o
  end,
- draw=function(self)
-  if self.life==0 then return true end
+ _draw=function(self)
   pset(self.x,self.y,self.col)
-  self.life=self.life-1
-  return self.life==0
  end
 } setmetatable(spark,{__index=particle})
 
@@ -113,7 +110,7 @@ beamer={
  end,
  init_particle=function(self,ps,p)
   emmiter.init_particle(self,ps,p)
-  if p.force<5 then p.life+=mrnd({20,50}) end
+  if p.force<10 then p.life+=100/p.force end
  end
 } setmetatable(stationary,{__index=emmiter})
 
@@ -128,33 +125,6 @@ affector={
   -- do nothing
  end
 }
-
-bounds={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    if p.x<0 or p.x>127
-     or p.y<0 or p.y>127 then
-     p.life=0
-    end
-   end
-  end
-  return o
- end
-} setmetatable(bounds,{__index=affector})
-
-slower={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    if p.force<5 and p.life%2==0 then p.life+=1 end
-   end
-  end
-  return o
- end
-} setmetatable(bounds,{__index=affector})
 
 bounds={
  create=function(self,params)
@@ -252,8 +222,6 @@ beam={
   local ps=particle_system.create(self)
   add(ps.emitters,beamer:create({force={1,20},angle={270,270}}))
   add(ps.affectors,bounds:create())
-  --add(ps.affectors,slower:create())
-  --add(ps.affectors,gravity:create({force=0.1}))
   ps.add_particle=function(self)
    particle_system.add_particle(
     self,
@@ -266,26 +234,6 @@ beam={
   return ps
  end
 } setmetatable(beam,{__index=particle_system})
-
-pixels={
- create=function(self,x,y,cols,count)
-  cols=cols or {7,8,9,10}
-  count=count or 10
-  local ps=particle_system.create(self)
-  add(ps.emitters,stationary:create({force={2,4},angle={1,360}}))
-  add(ps.affectors,gravity:create({force=0.2}))
-  ps.add_particle=function(self)
-   particle_system.add_particle(
-    self,
-    spark:create({x=x,y=y,col=cols,life={30,80}})
-   )
-  end
-  for i=1,count do
-   ps:add_particle()
-  end
-  return ps
- end
-} setmetatable(pixels,{__index=particle_system})
 
 local pane={
  create=function(self,tx,ty,mx,my,sx,sy)
@@ -1077,7 +1025,7 @@ local portal={
        portal.odx[i]=entity.dx
        entity.y=portal.y
        entity:setstill(portal.x)
-       explosions:add(beam:create(self.x,self.y,entity.cols,20)) -- 7,3,11
+       particles:add(beam:create(self.x,self.y,entity.cols,20)) -- 7,3,11
        break
       end
      end
@@ -1085,7 +1033,7 @@ local portal={
      printh("receiving type "..entity.type.." with dx "..self.odx[i])
      entity.dx=self.odx[i]
      entity.still=false
-     explosions:add(beam:create(self.x,self.y,entity.cols,20))
+     particles:add(beam:create(self.x,self.y,entity.cols,20))
     end
    else
     self.odx[i]=nil
@@ -1224,7 +1172,7 @@ enemy_collection={
 } setmetatable(enemy_collection,{__index=collection})
 
 portals,enemies,entities,p,b=collection:create(),collection:create(),{}
-explosions=collection:create()
+particles=collection:create()
 
 -- turn placeholders into objects
 function placeholders()
@@ -1277,7 +1225,7 @@ function _update60()
  enemies:update()
  b:update()
  d:update()
- explosions:update()
+ particles:update()
 end
 
 function _draw()
@@ -1290,7 +1238,7 @@ function _draw()
  portals:draw()
  enemies:draw()
  p:draw()
- explosions:draw()
+ particles:draw()
 
  --[[
  for pane in all(tile.panes) do
@@ -1302,18 +1250,20 @@ end
 
 -- shared functions
 
--- e.g.> x=mrnd({5,10}) -- returns an integer between 5 and 10 inclusive
--- x|table|the minimum and maximum values
--- f|boolean|whether to return the floor of the value. default is true
 function mrnd(x,f)
  if f==nil then f=true end
  local v=(rnd()*(x[2]-x[1]+(f and 1 or 0.0001)))+x[1]
  return f and flr(v) or flr(v*1000)/1000
 end
 
--- e.g.> x=round(1.23) -- rounds 1.23 to the nearest integer
--- x|float|the number to round
-function round(x) return flr(x+0.5) end
+function round(x)
+ return flr(x+0.5)
+end
+
+function extend(t1,t2)
+ for k,v in pairs(t2) do t1[k]=v end
+ return t1
+end
 
 __gfx__
 0000000077777776000000000000000099999999ccccccccaaaaaaa9000000001000000100000000000000001cc77cc1cccccccc00000000aaaaaaa900000000
