@@ -41,199 +41,59 @@ local mapdata={
 particle={
  create=function(self,params)
   params=params or {}
-  params.dx=params.dx or {0,0}
-  params.dy=params.dy or params.dx
-  params.life=params.life or {10,30}
-  params.col=params.col or {1,15}
+  params.life=params.life or {60,120}
   local o=params
-  o.dx=mrnd(params.dx)
-  o.dy=mrnd(params.dy)
-  o.x=params.x+o.dx
-  o.y=params.y+o.dy
+  o.x=params.x
+  o.y=params.y
   o.life=mrnd(params.life)
-  if #params.col==2 then
-   o.col=mrnd(params.col)
-  else
-    o.col=params.col[mrnd({1,#params.col})]
-  end
+  o.complete=false
+  --o=extend(o,{x=params.x,y=params.y,life=mrnd(params.life),complete=false}) 2 tokens more
   setmetatable(o,self)
   self.__index=self
   return o
  end,
- draw=function(self)
+ draw=function(self,fn)
   if self.life==0 then return true end
   self:_draw()
   self.life=self.life-1
-  return self.life==0
+  if self.life==0 then self.complete=true end
  end
 }
 
 spark={
- create=function(self,params)
-  local o=particle.create(self,params)
-  return o
- end,
  _draw=function(self)
-  pset(self.x,self.y,self.col)
+  pset(self.x,round(self.y),self.col)
  end
 } setmetatable(spark,{__index=particle})
 
-emmiter={
- create=function(self,params)
-  local o=params or {}
-  o.angle=o.angle or {1,360}
-  o.force=o.force or {1,3}
-  --o.update=function(self,ps)
-   -- do nothing
-  --end
-  setmetatable(o,self)
-  self.__index=self
-  return o
- end,
- init_particle=function(self,ps,p)
-  p.angle=mrnd(self.angle)/360
-  p.force=mrnd(self.force,false)
- end
-}
-
-stationary={
- create=function(self,params)
-  local o=emmiter.create(self,params)
-  return o
- end
-} setmetatable(stationary,{__index=emmiter})
-
-beamer={
- create=function(self,params)
-  local o=emmiter.create(self,params)
-  return o
- end,
- init_particle=function(self,ps,p)
-  emmiter.init_particle(self,ps,p)
-  if p.force<10 then p.life+=100/p.force end
- end
-} setmetatable(stationary,{__index=emmiter})
-
 affector={
- create=function(self,params)
-  local o=params or {}
-  setmetatable(o,self)
-  self.__index=self
-  return o
- end,
- update=function(self,ps)
-  -- do nothing
+ beamer=function(self)
+  self.y-=self.dy
+  if self.y<0 then
+   self.complete=true
+  elseif self.dy>1 then
+   self.dy*=0.98
+  end
  end
 }
 
-bounds={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    if p.x<0 or p.x>127
-     or p.y<0 or p.y>127 then
-     p.life=0
-    end
-   end
-  end
-  return o
- end
-} setmetatable(bounds,{__index=affector})
-
-randomise={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.angle=o.angle or {1,360}
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    p.angle=(p.angle+(mrnd(self.angle)/360)) % 1
-   end
-  end
-  return o
- end
-} setmetatable(randomise,{__index=affector})
-
-gravity={
- create=function(self,params)
-  local o=affector.create(self,params)
-  o.force=o.force or 0.25
-  o.update=function(self,ps)
-   for _,p in pairs(ps.particles) do
-    local dx=cos(p.angle)*p.force
-    local dy=-sin(p.angle)*p.force
-    dy=dy+self.force
-    p.angle=atan2(dx,-dy)
-    p.force=sqrt(dx^2+dy^2)
-   end
-  end
-  return o
- end
-} setmetatable(gravity,{__index=affector})
-
-particle_system={
- create=function(self)
-  local s={
-   particles={},
-   emitters={},
-   affectors={},
-   complete=false,
-   count=0,
-   tick=0
-  }
-  setmetatable(s,self)
-  self.__index=self
-  return s
- end,
- update=function(self)
-  if self.complete then return end
-  for _,a in pairs(self.affectors) do a:update(self) end
-  self.tick=self.tick+1
- end,
- draw=function(self)
-  if self.complete then return end
-  local done=true
-  for i,p in pairs(self.particles) do
-   p.dx=cos(p.angle)*p.force
-   p.dy=-sin(p.angle)*p.force
-   p.x=p.x+p.dx
-   p.y=p.y+p.dy
-   local dead=p:draw()
-   done=done and dead
-   if dead then
-    del(self.particles,p)
-    self.count=self.count-1
-   end
-  end
-  if done then self.complete=true end
- end,
- add_particle=function(self,p)
-  add(self.particles,p)
-  for _,e in pairs(self.emitters) do e:init_particle(self,p) end
-  self.count=self.count+1
-  self.complete=false
- end
-}
-
-beam={
+local beam={
  create=function(self,x,y,cols,count)
-  cols=cols or {7,8,9,10}
-  count=count or 10
-  local ps=particle_system.create(self)
-  add(ps.emitters,beamer:create({force={1,20},angle={270,270}}))
-  add(ps.affectors,bounds:create())
-  ps.add_particle=function(self)
-   particle_system.add_particle(
-    self,
-    spark:create({x=mrnd({x,x+7}),y=y+7,col=cols,life={5,30}})
-   )
-  end
   for i=1,count do
-   ps:add_particle()
+   local s=spark:create(
+    {
+     x=x+rnd(7),
+     y=y,
+     col=cols[mrnd({1,#cols})],
+     dy=mrnd({1,20},false),
+     life={30,60}
+    }
+   )
+   s.update=affector.beamer
+   particles:add(s)
   end
-  return ps
  end
-} setmetatable(beam,{__index=particle_system})
+}
 
 local pane={
  create=function(self,tx,ty,mx,my,sx,sy)
@@ -1025,7 +885,7 @@ local portal={
        portal.odx[i]=entity.dx
        entity.y=portal.y
        entity:setstill(portal.x)
-       particles:add(beam:create(self.x,self.y,entity.cols,20)) -- 7,3,11
+       beam:create(self.x,self.y,entity.cols,20)
        break
       end
      end
@@ -1033,7 +893,7 @@ local portal={
      printh("receiving type "..entity.type.." with dx "..self.odx[i])
      entity.dx=self.odx[i]
      entity.still=false
-     particles:add(beam:create(self.x,self.y,entity.cols,20))
+     beam:create(self.x,self.y,entity.cols,20)
     end
    else
     self.odx[i]=nil
@@ -1171,8 +1031,12 @@ enemy_collection={
  end
 } setmetatable(enemy_collection,{__index=collection})
 
-portals,enemies,entities,p,b=collection:create(),collection:create(),{}
+-- globals
+--portals,enemies,entities,p,b,particles=collection:create(),collection:create(),{},collection:create()
+portals=collection:create()
+enemies=collection:create()
 particles=collection:create()
+entities={}
 
 -- turn placeholders into objects
 function placeholders()

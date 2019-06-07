@@ -174,15 +174,10 @@ local tile={
 
 local object={
  create=function(self,x,y)
-  local o={x=x,y=y,hitbox={x=0,y=0,w=8,h=8,x2=7,y2=7}}
+  local o={x=x,y=y}
   setmetatable(o,self)
   self.__index=self
   return o
- end,
- add_hitbox=function(self,w,h,x,y)
-  x=x or 0
-  y=y or 0
-  self.hitbox={x=x,y=y,w=w,h=h,x2=x+w-1,y2=y+h-1}
  end
 }
 
@@ -194,13 +189,16 @@ local movable={
   o.dx=0
   o.dy=0
   o.ox=0
+  o.sx=x
+  o.sy=y
   o.min={dx=0.05,dy=0.05}
   o.max={dx=dx,dy=dy}
   o.complete=false
-  o.health=0
   o.sliding=false
   o.paused=false
   o.tick=0
+  o.type=0
+  o.health=0
   return o
  end,
  distance=function(self,target)
@@ -213,6 +211,7 @@ local movable={
  end,
  collide_object=function(self,object)
   if self.complete or object.complete then return false end
+  --if self==object then return false end
   local x=(self.x+round(self.dx))%128
   local y=self.y
   local collided=self:collision(x,y,object.x,object.y)
@@ -257,6 +256,10 @@ local movable={
   return self:can_move({{x,self.y},{x,self.y+7}},1)
  end,
  can_move_y=function(self)
+  local y=(self.y+round(self.dy)+(self.dy>0 and 7 or 0))%128
+  return self:can_move({{self.x,y},{self.x+7,y}})
+ end,
+ wont_fall=function(self)
   local y=(self.y+8)%128
   local x=(self.x+round(self.dx)+(self.dx>0 and 7 or 0))%128
   local move=self:can_move({{x,y}})
@@ -265,12 +268,29 @@ local movable={
  ismovable=function(self)
   local move=self:can_move_x()
   if move.ok then
-   move=self:can_move_y()
+   move=self:wont_fall()
   end
   return move
  end,
  fits_cell=function(self)
   return self.x%8==0 and self.y%8==0
+ end,
+ finished_moving=function(self)
+  return self:fits_cell() and self.x~=self.ox
+ end,
+ is=function(self,types)
+  --for t in all(types) do
+  for _,t in pairs(types) do
+   if self.type==t then return true end
+  end
+  return false
+ end,
+ isnt=function(self,types)
+  --for t in all(types) do
+  for _,t in pairs(types) do
+   if self.type==t then return false end
+  end
+  return true
  end,
  damage=function(self,health)
   self.health=self.health-health
@@ -305,30 +325,6 @@ local movable={
   return self.sliding
  end,
  checkbounds=function(self)
-  --[[
-  if (self.x<=-8) self.x+=128
-  if (self.x>=128) self.x-=128
-  if (self.y<=-8) self.y+=128
-  if (self.y>=128) self.y-=128
-  --]]
-  --[[
-  if self.x<=-8 then
-   self.x+=128
-  elseif self.x>=128 then
-   self.x-=128
-  end
-  if self.y<=-8 then
-   self.y+=128
-  elseif self.y>=128 then
-   self.y1-=128
-  end
-  --]]
-  --[[
-  if (self.x<0) self.x+=128
-  if (self.x>127) self.x-=128
-  if (self.y<0) self.y+=128
-  if (self.y>127) self.y-=128
-  --]]
   self.x=self.x%128
   self.y=self.y%128
  end,
@@ -336,8 +332,9 @@ local movable={
   self.x=x
   self.dx=0
   self.still=true
+  self.ox=x
   printh("resetting to "..self.x)
-  self.anim.current:set("still")
+  --if (self.anim) self.anim.current:set("still")
  end,
  hit=function(self)
   -- do nothing
@@ -353,11 +350,7 @@ local movable={
    self.x=self.pane.x+self.px
    self.y=self.pane.y+self.py
   elseif self.paused then
-   --if self.tick==2 then
     self.paused=false
-    --self.tick=0
-   --end
-   --self.tick+=1
   end
   self:checkbounds()
  end,
@@ -454,13 +447,13 @@ local player={
   o.anim:add_stage("walk",5,true,{20,21,22,21},{17,18,19,18})
   o.anim:add_stage("walk_turn",3,false,{32,33,34},{34,33,32},"still")
   o.anim:init("still",dir.right)
-  o.sx=x
-  o.sy=y
   o:reset()
   o.max.health=o.health
+  o.type=1
   return o
  end,
  reset=function(self)
+
   self.complete=false
   self.still=true
   self.score=0
@@ -493,7 +486,7 @@ local player={
 
   if not self.still then
 
-   if self:fits_cell() and self.x~=self.ox then
+   if self:finished_moving() then
     --printh(self.x.." "..self.ox.." "..self.dx.." (done)")
     printh("moved from "..self.ox.." to "..self.x.." dx:"..self.dx.." (done) b.x:"..b.x)
     self.still=true
@@ -596,10 +589,9 @@ local enemy={
   o.anim:add_stage("walk",5,true,{26,27,28,27},{23,24,25,24})
   o.anim:add_stage("walk_turn",5,false,{29,30,31},{31,30,29},"walk")
   o.anim:init("walk",dir.right)
-  o.sx=x
-  o.sy=y
   o:reset()
   o.max.health=o.health
+  o.type=2
   return o
  end,
  reset=function(self)
@@ -676,10 +668,9 @@ local enemy={
 local block={
  create=function(self,x,y)
   local o=movable.create(self,x,y,1,1,1,1)
-  o.sx=x
-  o.sy=y
   o:reset()
   o.max.health=o.health
+  o.type=3
   return o
  end,
  reset=function(self)
@@ -697,6 +688,40 @@ local block={
   movable.update(self)
   if tile.sliding then return end
 
+  if not self.still then
+   if self:finished_moving() then
+    self.still=true
+   else
+    self.dx=mid(-self.max.dx,self.dx*1.25,self.max.dx)
+   end
+  end
+
+  for i,entity in pairs(entities) do
+   if entity:is({1,2}) and self:collide_object(entity) then
+    printh("block collided with type "..entity.type)
+    self.dx=entity.dx
+    local move=self:ismovable()
+    if move.ok then
+     self.still=false
+     self.dx=entity.dx
+     self.ox=self.x
+    else
+     self:setstill(move.tx+(self.dx>0 and -8 or 8))
+    end
+   end
+  end
+
+  if self.still then
+   --self:controller() -- make movement
+   --check movement possible
+  else
+   self.x+=round(self.dx)
+   self:checkbounds()
+  end
+
+
+
+ --[[
   self.dx=0
   if self:collide_object(p) then
    printh("block collided with player")
@@ -713,6 +738,7 @@ local block={
     --p:setstill(move.tx+(p.dx>0 and -16 or 16))
    end
   end
+  ]]
 
  end,
  draw=function(self)
@@ -724,11 +750,10 @@ local block={
 local door={
  create=function(self,x,y)
   local o=movable.create(self,x,y,1,1,1,1)
-  o.sx=x
-  o.sy=y
   o.t=0
   o:reset()
   o.max.health=o.health
+  o.type=4
   return o
  end,
  reset=function(self)
@@ -762,12 +787,11 @@ local door={
 local portal={
  create=function(self,x,y)
   local o=movable.create(self,x,y,1,1,1,1)
-  o.sx=x
-  o.sy=y
   o.t=0
-  o.odx={p=0,b=0}
+  o.odx={}
   o:reset()
   o.max.health=o.health
+  o.type=5
   return o
  end,
  reset=function(self)
@@ -786,6 +810,31 @@ local portal={
   if tile.sliding then return end
   self.t=(self.t+1)%8
 
+  for i,entity in pairs(entities) do
+   --if entity~=self and self:collide_object(entity) then
+   --if entity.type~=5 and self:collide_object(entity) then
+   if entity:isnt({self.type}) and self:collide_object(entity) then
+    if self.odx[i]==nil then
+     printh("transporting type "..entity.type.." with dx "..entity.dx)
+     for _,portal in pairs(portals.items) do
+      if portal.x~=self.x or portal.y~=self.y then
+       portal.odx[i]=entity.dx
+       entity.y=portal.y
+       entity:setstill(portal.x)
+       break
+      end
+     end
+    else
+     printh("receiving type "..entity.type.." with dx "..self.odx[i])
+     entity.dx=self.odx[i]
+     entity.still=false
+    end
+   else
+    self.odx[i]=nil
+   end
+  end
+
+--[[
   if self:collide_object(b) then
    printh("colliding with block "..self.x..","..self.y.." "..b.x..","..b.y)
    if self.odx.b~=0 then
@@ -793,6 +842,7 @@ local portal={
     b.dx=self.odx.b
     b.still=false
     b.x=b.x+round(self.odx.b)
+    if b.y<self.y then b.y+=1 end
     if b.x%8==0 then
      self.odx.b=0
      b.dx=0
@@ -804,13 +854,16 @@ local portal={
     for _,portal in pairs(portals.items) do
      if portal.x~=self.x or portal.y~=self.y then
       b.x=portal.x
-      b.y=portal.y
+      b.y=portal.y-4
+      --b.y=portal.y
       portal.odx.b=b.dx
      end
     end
    end
   end
+]]
 
+--[[
   if self:collide_object(p) then
    printh("colliding with player "..self.x..","..self.y.." "..p.x..","..p.y)
    if self.odx.p~=0 then
@@ -833,6 +886,7 @@ local portal={
   else
    self.odx.p=0
   end
+]]
 
  end,
  draw=function(self)
@@ -951,11 +1005,11 @@ end
 
 function _update60()
  tile:update()
+ portals:update()
  p:update()
  b:update()
  d:update()
  enemies:update()
- portals:update()
 end
 
 function _draw()
@@ -1030,7 +1084,7 @@ __map__
 0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000050000000007000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000050003000007000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000001010101000001010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
