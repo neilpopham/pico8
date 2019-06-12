@@ -6,11 +6,23 @@ __lua__
 
 d=nil
 
+--[[
 function extend(...)
  local arg={...}
  local o={}
  for _,a in pairs(arg) do
   for k,v in pairs(a) do o[k]=v end
+ end
+ return o
+end
+]]
+function extend(...)
+ local arg={...}
+ local o=del(arg,arg[1])
+ for a in all(arg) do
+  for k,v in pairs(a) do
+   o[k]=v
+  end
  end
  return o
 end
