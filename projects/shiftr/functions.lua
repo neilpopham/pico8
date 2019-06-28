@@ -8,7 +8,22 @@ function round(x)
  return flr(x+0.5)
 end
 
+--[[
 function extend(t1,t2)
  for k,v in pairs(t2) do t1[k]=v end
  return t1
 end
+--]]
+
+---[[
+function extend(...)
+ local arg={...}
+ local o=del(arg,arg[1])
+ for a in all(arg) do
+  for k,v in pairs(a) do
+   o[k]=v
+  end
+ end
+ return o
+end
+--]]

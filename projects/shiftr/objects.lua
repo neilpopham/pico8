@@ -37,6 +37,15 @@ local movable={
   local dy=self.target.y/1000-self.y/1000
   return sqrt(dx^2+dy^2)*1000
  end,
+ colliding_with=function(self,types)
+  local matches={}
+  for i,entity in pairs(entities) do
+   if entity:is(types) and self:collide_object(entity) then
+    add(matches,entity)
+   end
+  end
+  return matches
+ end,
  collision=function(self,x1,y1,x2,y2)
   return x1<x2+8 and x2<x1+8 and y1<y2+8 and y2<y1+8
  end,
@@ -203,8 +212,8 @@ local movable={
 } setmetatable(movable,{__index=object})
 
 local animatable={
- create=function(self,x,y,ax,ay,dx,dy)
-  local o=movable.create(self,x,y,ax,ay,dx,dy)
+ create=function(self,...)
+  local o=movable.create(self,...)
   o.anim={
    init=function(self,stage,face)
     -- record frame count for each stage face

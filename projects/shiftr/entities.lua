@@ -233,12 +233,41 @@ local block={
 
   if not self.still then
    if self:finished_moving() then
-    self.still=true
-   else
-    self.dx=mid(-self.max.dx,self.dx*1.25,self.max.dx)
+    self:setstill(self.x)
+  -- else
+    --self.dx=mid(-self.max.dx,self.dx*1.25,self.max.dx) -- rely on move contact until dx==1?
    end
   end
 
+  local matches=self:colliding_with({1,2})
+  for _,entity in pairs(matches) do
+   printh("block colliding with  type:"..entity.type)
+  end
+  if #matches>0 then
+   local dx=self.dx
+   for _,entity in pairs(matches) do
+    if entity.type==1 then
+     dx=entity.dx
+     break
+    elseif dx==0 and self.dx~=0 and sgn(entity.dx)==sgn(self.dx) then
+     dx=entity.dx
+     break
+    elseif dx==0 then
+     dx=entity.dx
+    end
+   end
+   printh("dx:"..dx)
+   local move=self:ismovable()
+   if move.ok then
+    self.still=false
+    self.dx=dx
+    self.ox=self.x
+   else
+    self:setstill(move.tx+(self.dx>0 and -8 or 8))
+   end
+  end
+
+--[[
   for i,entity in pairs(entities) do
    if entity:is({1,2}) and self:collide_object(entity) then
     printh("block collided with type "..entity.type)
@@ -253,11 +282,9 @@ local block={
     end
    end
   end
+]]
 
-  if self.still then
-   --self:controller() -- make movement
-   --check movement possible
-  else
+  if not self.still then
    self.x+=round(self.dx)
    self:checkbounds()
   end

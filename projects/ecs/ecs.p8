@@ -5,51 +5,98 @@ __lua__
 -- by neil popham
 
 #include ecs.lua
+#include components.lua
 
-w=world:create()
+dir={left=1,right=2}
+drag={ground=0.9}
 
-position=component:create(
- function(self,x,y)
-  self.x=x self.y=y
- end
-)
-movement=component:create(
- function(self,dx,dy,ax,ay)
-  self.dx=dx
-  self.dy=dy
-  self.ax=ax
-  self.ay=ay
- end
-)
+local stages={
+ still={
+  ticks=1,
+  loop=false,
+  next=nil,
+  dir={frames={1},frames={4}}
+ },
+ walking={
+  ticks=5,
+  loop=true,
+  next=nil,
+  dir={
+   {frames={1,2,3}},
+   {frames={4,5,6}}
+  }
+ }
+}
 
-
+local stages={
+ core={
+  ticks=10,
+  loop=true,
+  next=nil,
+  dir={
+   {frames={3,4}},
+   {frames={3,4}}
+  }
+ }
+}
 
 e=entity:create()
---e:add(c1,10,10)
---e:add(c2,20,20,1,2)
 e
  :add(position,10,10)
- :add(movement,20,20,1,2)
- --:add(c1,100,100)
-w:add_entity(e)
+ :add(movement,3,3,0.2,0.2)
+ :add(controlled)
+ :add(animation,stages,"core",dir.right)
+
+e2=entity:create()
+e2
+ :add(position,10,20)
+ :add(movement,1,1,0.1,0.2)
+ :add(automove)
+ :add(sprite,1)
+
+intro=world:create()
+
+game=world:create()
+game
+ :add_entity(e)
+ :add_entity(e2)
+
+stage=game
 
 function _init()
-
+ stage:init()
 end
 
 function _update60()
-
+ stage:update()
 end
 
 function _draw()
  cls()
+ stage:draw()
+
+
  local c1a=e:get(position)
  local c2a=e:get(movement)
+ local c3a=e:get(animation)
+ --c3a:animate()
+
  print(c1a.x)
  print(c1a.y)
  print(c2a.dx)
  print(c2a.dy)
  print(c2a.ax)
  print(c2a.ay)
- print(w.entities.count)
+ print(game.entities.count)
+ print("sprite:"..c3a.current.sprite)
 end
+
+__gfx__
+00000000111111112222222233333333333333330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333333330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333333330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333bb3330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333bb3330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333333330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333333330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111111112222222233333333333333330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -108,7 +108,7 @@ animatable={
    init=function(self,stage,dir)
     -- record frame count for each stage dir
     for s in pairs(self.stage) do
-     for d=1,2 do
+     for d=1,#self.stage[s].dir do
       self.stage[s].dir[d].fcount=#self.stage[s].dir[d].frames
      end
     end
@@ -134,7 +134,7 @@ animatable={
     self.stage[name]={
      ticks=ticks,
      loop=loop,
-     dir={{frames=left},{frames=right},{frames=neutral}},
+     dir={{frames=left},{frames=right}},
      next=next
     }
    end

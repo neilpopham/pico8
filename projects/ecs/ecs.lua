@@ -32,11 +32,12 @@ component={
    self
   )
   self.__index=self
+  o.__mt={__index=o}
   return o
  end,
- init=function(self,...)
+ populate=function(self,...)
   local c=setmetatable({},self.__mt)
-  self._populate(c,...)
+  if self._populate then self._populate(c,...) end
   return c
  end
 }
@@ -53,7 +54,7 @@ entity={
   return o
  end,
  add=function(self,component,...)
-  local c=component:init(...)
+  local c=component:populate(...)
   self.components[component]=c
   return self
  end,
@@ -94,5 +95,27 @@ world={
  add_system=function(self,system)
   self.systems:add(system)
   return self
+ end,
+ init=function(self)
+  for _,entity in pairs(self.entities.items) do
+   for _,component in pairs(entity.components) do
+    if component.init then component:init(entity) end
+   end
+  end
+ end,
+ update=function(self)
+  for _,entity in pairs(self.entities.items) do
+   for _,component in pairs(entity.components) do
+    if component.update then component:update(entity) end
+   end
+  end
+ end,
+ draw=function(self)
+  for _,entity in pairs(self.entities.items) do
+   for _,component in pairs(entity.components) do
+    printh(component)
+    if component.draw then component:draw(entity) printh("bar") end
+   end
+  end
  end,
 }
