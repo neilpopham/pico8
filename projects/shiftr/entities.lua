@@ -215,6 +215,7 @@ local block={
   o.max.health=o.health
   o.type=3
   o.cols={4,4,8,9}
+  o.moving=false
   return o
  end,
  reset=function(self)
