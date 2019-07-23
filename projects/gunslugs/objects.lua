@@ -1,5 +1,3 @@
-dir={left=1,right=2}
-
 object={
  create=function(self,x,y)
   local o=setmetatable(
