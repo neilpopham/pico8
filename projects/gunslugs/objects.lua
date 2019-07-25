@@ -1,3 +1,65 @@
+counter={
+ create=function(self,min,max)
+  local o={tick=0,min=min,max=max}
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end,
+ increment=function(self)
+  self.tick=self.tick+1
+  if self.tick>self.max then
+   self:reset()
+   if type(self.on_max)=="function" then
+    self:on_max()
+   end
+  end
+ end,
+ reset=function(self,value)
+  value=value or 0
+  self.tick=value
+ end,
+ valid=function(self)
+  return self.tick>=self.min and self.tick<=self.max
+ end
+}
+
+collection={
+ create=function(self)
+  local o={
+   items={},
+   count=0,
+  }
+  setmetatable(o,self)
+  self.__index=self
+  return o
+ end,
+ update=function(self)
+  if self.count==0 then return end
+  for _,i in pairs(self.items) do
+   i:update()
+  end
+ end,
+ draw=function(self)
+  if self.count==0 then return end
+  for _,i in pairs(self.items) do
+   i:draw()
+   if i.complete then self:del(i) end
+  end
+ end,
+ add=function(self,object)
+  add(self.items,object)
+  self.count=self.count+1
+ end,
+ del=function(self,object)
+  del(self.items,object)
+  self.count=self.count-1
+ end,
+ reset=function(self)
+  self.items={}
+  self.count=0
+ end
+}
+
 object={
  create=function(self,x,y)
   local o=setmetatable(
@@ -123,6 +185,7 @@ animatable={
     end,
     set=function(self,stage,dir)
      if self.stage==stage then return end
+     printh("stage:"..stage) -- ###########################
      self.reset(self)
      self.stage=stage
      self.dir=dir or self.dir
@@ -168,17 +231,3 @@ animatable={
  end
 } setmetatable(animatable,{__index=movable})
 
-function round(x)
- return flr(x+0.5)
-end
-
-function extend(...)
- local arg={...}
- local o=del(arg,arg[1])
- for a in all(arg) do
-  for k,v in pairs(a) do
-   o[k]=v
-  end
- end
- return o
-end
