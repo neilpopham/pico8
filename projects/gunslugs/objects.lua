@@ -81,14 +81,14 @@ object={
   self.hitbox={x=x,y=y,w=w,h=h,x2=x+w-1,y2=y+h-1}
  end,
  distance=function(self,target)
-  local dx=self.target.x/1000-self.x/1000
-  local dy=self.target.y/1000-self.y/1000
+  local dx=(target.x+4)/1000-(self.x+4)/1000
+  local dy=(target.y+4)/1000-(self.y+4)/1000
   return sqrt(dx^2+dy^2)*1000
  end,
- collide_object=function(self,object)
+ collide_object=function(self,object,x,y)
   if self.complete or object.complete then return false end
-  local x=self.x
-  local y=self.y
+  local x=x or self.x
+  local y=y or self.y
   local hitbox=self.hitbox
   return (x+hitbox.x<=object.x+object.hitbox.x2) and
    (object.x+object.hitbox.x<x+hitbox.w) and
@@ -98,16 +98,16 @@ object={
  damage=function(self,health)
   self.health=self.health-health
   if self.health>0 then
-   self:hit()
+   self:hit(health)
   else
-   self:destroy()
+   self:destroy(health)
   end
  end,
- hit=function(self)
-  printh("hit")
+ hit=function(self,health)
+  printh("hit with "..health)
  end,
- destroy=function(self)
-  printh("destroyed")
+ destroy=function(self,health)
+  printh("destroyed with "..health)
   self.complete=true
  end,
  draw=function(self,sprite)
@@ -154,10 +154,10 @@ movable={
   if self.dx>0 then x=x+7 end
   return self:can_move({{x,self.y},{x,self.y+7}},1)
  end,
- can_move_y=function(self)
+ can_move_y=function(self,flag)
   local y=self.y+round(self.dy)
   if self.dy>0 then y=y+7 end
-  return self:can_move({{self.x,y},{self.x+7,y}})
+  return self:can_move({{self.x,y},{self.x+7,y}},flag)
  end
 } setmetatable(movable,{__index=object})
 
@@ -228,6 +228,7 @@ animatable={
  end,
  draw=function(self)
   object.draw(self,self.animate(self))
+  --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,2) -- ####################
  end
 } setmetatable(animatable,{__index=movable})
 

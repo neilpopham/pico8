@@ -2,6 +2,7 @@ particle={
  create=function(self,params)
   params=params or {}
   params.life=params.life or {60,120}
+  params.angle=mrnd(params.angle,false)
   local o=params
   o=extend(o,{x=params.x,y=params.y,life=mrnd(params.life),complete=false})
   setmetatable(o,self)
@@ -70,44 +71,54 @@ affector={
   self.dy=-sin(self.angle)*self.force
  end,
 
+ size=function(self)
+  self.size=self.size*self.shrink
+  if self.size<0.5 then self.complete=true end
+ end,
+
+ delay=function(self)
+  if self.delay==0 then return true end
+  self.delay=self.delay-1
+  return false
+ end,
+
  shells=function(self)
   affector.gravity(self)
   affector.bounce(self)
   affector.update(self)
  end,
 
- size=function(self)
-  self.size=self.size*self.shrink
-  if self.size<0.5 then self.complete=true end
- end,
-
  smoke=function(self)
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force
-  affector.size(self)
+  if affector.delay(self) then
+   affector.size(self)
+  end
   affector.update(self)
  end,
 
  update=function(self)
-  self.x=self.x+round(self.dx)
-  self.y=self.y+round(self.dy)
+  self.x=self.x+self.dx
+  self.y=self.y+self.dy
  end
 }
 
 shells={
- create=function(self,x,y,col,count)
+ create=function(self,x,y,count,params)
   for i=1,count do
    local s=spark:create(
-    {
-     x=x,
-     y=y,
-     col=col,
-     life={30,60},
-     force=mrnd({1,2},false),
-     g=0.2,
-     b=0.7,
-     angle=mrnd({0.6,0.9},false)
-    }
+    extend(
+     {
+      x=x,
+      y=y,
+      life={30,60},
+      force=mrnd({1,2},false),
+      g=0.2,
+      b=0.7,
+      angle={0.6,0.9}
+     },
+     params
+    )
    )
    s.update=affector.shells
    particles:add(s)
@@ -116,20 +127,25 @@ shells={
 }
 
 smoke={
- create=function(self,x,y,col,count)
+ create=function(self,x,y,count,params)
   for i=1,count do
    local s=circle:create(
-    {
-     x=x,
-     y=y,
-     col=col,
-     life={10,20},
-     force=mrnd({0.2,1},false),
-     angle=mrnd({0,1},false),
-     size=mrnd({3,6}),
-     shrink=0.8
-    }
+    extend(
+     {
+      x=x,
+      y=y,
+      delay=0,
+      col=7,
+      life={10,20},
+      force=mrnd({0.2,1},false),
+      angle={0,1},
+      size=5,
+      shrink=0.8
+     },
+     params
+    )
    )
+   if params.size then s.size=mrnd(params.size) end
    s.update=affector.smoke
    particles:add(s)
   end

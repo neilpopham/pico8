@@ -15,7 +15,7 @@ p.is={
  falling=false,
  invisible=false
 }
-p.b=6
+p.b=12
 p.bullet_type=1
 p.camera=cam:create(p,1024,128)
 p.btn1=button:create(pad.btn1)
@@ -23,7 +23,6 @@ p.cayote=counter:create(1,3)
 p.cayote.on_max=function(self)
  printh("cayote timeout") -- #####################################################
  -- we can use p here, like p.is.grounded
- printh(p.x) -- #####################################################
 end
 p.set_state=function(self,state)
  for s in pairs(self.is) do
@@ -90,6 +89,16 @@ p.update=function(self)
 
   move=self:can_move_x()
 
+  if move.ok then
+   for _,d in pairs(destructables.items) do
+    if self:collide_object(d,self.x+round(self.dx),self.y) then
+     move.ok=false
+     move.tx=d.x
+     break
+    end
+   end
+  end
+
   -- can move horizontally
   if move.ok then
    self.x=self.x+round(self.dx)
@@ -98,13 +107,14 @@ p.update=function(self)
 
    if abs(self.dx)>0 and self.is.grounded then
     particles:add(
-     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,7,1)
+     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,1,{size={1,3}})
     )
    end
 
   -- cannot move horizontally
   else
    self.x=move.tx+(self.dx>0 and -8 or 8)
+   self.dx=0
   end
 
   -- jump
@@ -121,6 +131,16 @@ p.update=function(self)
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
 
   move=self:can_move_y()
+
+  if move.ok then
+   for _,d in pairs(destructables.items) do
+    if self:collide_object(d,self.x,self.y+round(self.dy)) then
+     move.ok=false
+     move.ty=flr(d.y/8)*8
+     break
+    end
+   end
+  end
 
   -- can move vertically
   if move.ok then
@@ -147,7 +167,7 @@ p.update=function(self)
     if not self.is.jumping then
      self.anim.current:set("jump")
      particles:add(
-      smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,12,20)
+      smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,20,{col=7,size={4,8}})
      )
     end
     self:set_state("jumping")
@@ -183,9 +203,9 @@ p.update=function(self)
     )
    )
    particles:add(
-    shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,9,1)
+    shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=9})
    )
-   self.b=8
+   self.b=12
   else
    self.b=0
   end
