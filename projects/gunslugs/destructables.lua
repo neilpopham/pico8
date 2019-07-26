@@ -1,7 +1,8 @@
 destructable_types={
  nil,
  {sprite=2,health=50,col=9,range=1,size={6,12}},
- {sprite=3,health=50,col=8,range=15,size={8,16}}
+ {sprite=3,health=50,col=8,range=15,size={10,16}},
+ {sprite=4,health=50,col=11,range=20,size={10,16}}
 }
 
 destructable={
@@ -25,16 +26,26 @@ destructable={
   printh("size1:"..size[1].." size2:"..size[2])
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=self.type.col,size=size})
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=7,size=size})
+  shells:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,5,{col=self.type.col,life={20,30}})
   for _,d in pairs(destructables.items) do
    if d.visible and self~=d then
     local distance=self:distance(d)
     if distance<self.type.range then
-     --local strength=distance/self.type.range
+     --local strength=self.type.range/distance
      --printh("collateral:"..strength.." "..(self.type.health*strength))
      --d:damage(self.type.health*strength)
      d:damage(abs(self.health))
     end
    end
+  end
+  distance=self:distance(p)
+  if distance<self.type.range then
+   p:damage(abs(self.health))
+   local strength=self.type.range/distance
+   local dx=6*strength
+   p.dx=p.dx+(p.x<self.x and -dx or dx)
+   p.dy=-dx
+   p.max.dy=6
   end
  end,
  update=function(self)

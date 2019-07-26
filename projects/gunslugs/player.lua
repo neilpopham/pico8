@@ -17,6 +17,7 @@ p.is={
 }
 p.b=12
 p.bullet_type=1
+p.health=500
 p.camera=cam:create(p,1024,128)
 p.btn1=button:create(pad.btn1)
 p.cayote=counter:create(1,3)
@@ -48,6 +49,13 @@ p.can_jump=function(self)
   return true
  end
  return false
+end
+p.hit=function(self,health)
+ smoke:create(self.x+4,self.y+4,20,{col=12,size={12,20}})
+ shells:create(self.x+4,self.y+4,5,{col=8,life={20,30}})
+end
+p.destroy=function(self,health)
+ self.complete=true
 end
 p.update=function(self)
 
@@ -91,7 +99,7 @@ p.update=function(self)
 
   if move.ok then
    for _,d in pairs(destructables.items) do
-    if self:collide_object(d,self.x+round(self.dx),self.y) then
+    if d.visible and self:collide_object(d,self.x+round(self.dx),self.y) then
      move.ok=false
      move.tx=d.x
      break
@@ -120,6 +128,7 @@ p.update=function(self)
   -- jump
   if self.btn1:pressed() and self:can_jump() then
    self.dy=self.dy+self.ay
+   self.max.dy=3
   else
    if self.is.jumping then
     self.btn1.disabled=true
@@ -134,9 +143,9 @@ p.update=function(self)
 
   if move.ok then
    for _,d in pairs(destructables.items) do
-    if self:collide_object(d,self.x,self.y+round(self.dy)) then
+    if d.visible and self:collide_object(d,self.x,self.y+round(self.dy)) then
      move.ok=false
-     move.ty=flr(d.y/8)*8
+     move.ty=d.y --flr(d.y/8)*8
      break
     end
    end
