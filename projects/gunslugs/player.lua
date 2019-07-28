@@ -1,4 +1,4 @@
-p=animatable:create(8,112,0.25,-2,2,3)
+p=animatable:create(8,112,0.15,-2,2,3)
 p.anim:add_stage("still",1,false,{16},{19})
 p.anim:add_stage("run",5,true,{16,17,16,18},{19,20,19,21})
 p.anim:add_stage("jump",1,false,{18},{21})
@@ -16,6 +16,7 @@ p.is={
  invisible=false
 }
 p.b=12
+p.f=0
 p.bullet_type=1
 p.health=500
 p.camera=cam:create(p,1024,128)
@@ -170,6 +171,7 @@ p.update=function(self)
      end
      self:set_state("falling")
     end
+    self.f+=1
 
    -- moving up the screen
    else
@@ -191,14 +193,32 @@ p.update=function(self)
     if not self.anim.current.transitioning then
      self.anim.current:set(round(self.dx)==0 and "still" or "run")
     end
+    if self.is.falling then 
+     printh("f:"..self.f)
+     particles:add(
+      smoke:create(
+       self.x+(face==dir.left and 3 or 4),
+       self.y+7,
+       2*self.f,
+       {col=self.f>10 and 10 or 7,size={self.f/3,self.f}}
+      )
+     )
+     -- if we've fallen far then do a little bounce
+     if self.f>10 then
+      self.dy=min(-3,-(round(self.f/6)))
+      self.max.dy=6
+      printh("dy:"..self.dy)
+     end
+    end
     self:set_state("grounded")
-    self.cayote:reset()
+    self.cayote:reset()    
    else -- we are jumping and have hit a roof
     self.btn1:reset()
     self.dy=0
     self.anim.current:set("jump_fall")
     self:set_state("falling")
    end
+   self.f=0
   end
 
   -- fire

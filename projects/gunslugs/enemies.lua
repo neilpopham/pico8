@@ -1,5 +1,5 @@
 enemy_types={
- {health=200,col=13,range=1,size={8,12}}
+ {health=100,col=13,range=1,size={8,12}}
 }
 
 enemy={
@@ -64,6 +64,7 @@ enemy={
   move=self:can_move_y()
 
   if move.ok then
+   self.max.dy=2
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x,self.y+round(self.dy)) then
      move.ok=false

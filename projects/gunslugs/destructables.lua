@@ -38,6 +38,7 @@ destructable={
     end
    end
   end
+  --[[
   distance=self:distance(p)
   if distance<self.type.range then
    p:damage(abs(self.health))
@@ -46,6 +47,24 @@ destructable={
    p.dx=p.dx+(p.x<self.x and -dx or dx)
    p.dy=-dx
    p.max.dy=6
+  end
+  ]]
+  self:foobar(p)
+  for _,e in pairs(enemies.items) do
+    if e.visible then
+     self:foobar(e)
+    end
+  end
+ end,
+ foobar=function(self,o)
+  distance=self:distance(o)
+  if distance<self.type.range then
+   o.damage(o,abs(self.health))
+   local strength=self.type.range/distance
+   local dx=6*strength
+   o.dx=o.dx+(o.x<self.x and -dx or dx)
+   o.dy=-dx
+   o.max.dy=6
   end
  end,
  update=function(self)
