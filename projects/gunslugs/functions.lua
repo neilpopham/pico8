@@ -18,3 +18,15 @@ function extend(...)
  end
  return o
 end
+
+function zget(tx,ty)
+ local tile=mget(tx,ty)
+ if fget(tx,ty,0) then return true end
+ for _,d in pairs(destructables.items) do
+  if d.visible then
+   local dx,dy=flr(d.x/8),flr(d.y/8)
+   if dx==tx and dy==ty then return true end
+  end
+ end
+ return false
+end

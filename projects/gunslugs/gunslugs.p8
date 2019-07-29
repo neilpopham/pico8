@@ -149,7 +149,9 @@ function _init()
    elseif data[x][y]==48 then
     --mset(x,y,0)
     --mset(x,y,data[x][y])
-    enemies:add(enemy:create(x*8,y*8,1))
+    local r=rnd()
+    local type=r<0.25 and 2 or 1
+    enemies:add(enemy:create(x*8,y*8,type))
    else
     mset(x,y,data[x][y])
    end

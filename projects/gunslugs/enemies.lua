@@ -12,18 +12,6 @@ enemy_has_shot_dumb=function(self,target)
  return true
 end
 
-function zget(tx,ty)
- local tile=mget(tx,ty)
- if fget(tx,ty,0) then return true end
- for _,d in pairs(destructables.items) do
-  if d.visible then
-   local dx,dy=flr(d.x/8),flr(d.y/8)
-   if dx==tx and dy==ty then return true end
-  end
- end
- return false
-end
-
 enemy_has_shot_cautious=function(self,target)
  if p.complete then return false end
  if target.y~=self.y then return false end
@@ -43,10 +31,22 @@ enemy_types={
   range=1,
   size={8,12},
   b=60,
+  itchy=0.5,
   bullet_type=2,
   has_shot=enemy_has_shot_dumb,
   shoot=enemy_shoot_dumb
- }
+ },
+ {
+  health=100,
+  col=13,
+  range=1,
+  size={8,12},
+  b=60,
+  itchy=0.25,
+  bullet_type=2,
+  has_shot=enemy_has_shot_cautious,
+  shoot=enemy_shoot_dumb
+ },
 }
 
 enemy={
@@ -140,7 +140,10 @@ enemy={
   if self.b>0 then
    self.b=self.b-1
   elseif self.type.has_shot(self,p) then
-   self.type.shoot(self)
+   local r=rnd()
+   if r<self.type.itchy then
+    self.type.shoot(self)
+   end
    self.b=self.type.b
   else
    self.b=0
