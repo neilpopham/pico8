@@ -5,7 +5,7 @@ enemy_shoot_dumb=function(self)
    self.x+(face==dir.left and 0 or 6),self.y+4,face,self.type.bullet_type
   )
  )
- shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=14})
+ shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=3})
 end
 
 enemy_has_shot_dumb=function(self,target)
