@@ -1,23 +1,52 @@
 enemy_shoot_dumb=function(self)
- if self.b>0 then
-  self.b=self.b-1
- elseif self:has_shot(p) then
-  --sfx(0)
-  local face=self.anim.current.dir
-  bullets:add(
-   bullet:create(
-    self.x+(face==dir.left and 0 or 6),self.y+4,face,self.type.bullet_type
-   )
+ local face=self.anim.current.dir
+ bullets:add(
+  bullet:create(
+   self.x+(face==dir.left and 0 or 6),self.y+4,face,self.type.bullet_type
   )
-  shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=14})
-  self.b=self.type.b
- else
-  self.b=0
+ )
+ shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=14})
+end
+
+enemy_has_shot_dumb=function(self,target)
+ return true
+end
+
+function zget(tx,ty)
+ local tile=mget(tx,ty)
+ if fget(tx,ty,0) then return true end
+ for _,d in pairs(destructables.items) do
+  if d.visible then
+   local dx,dy=flr(d.x/8),flr(d.y/8)
+   if dx==tx and dy==ty then return true end
+  end
  end
+ return false
+end
+
+enemy_has_shot_cautious=function(self,target)
+ if p.complete then return false end
+ if target.y~=self.y then return false end
+ local tx,ty=flr(self.x/8),flr(self.y/8)
+ local px=flr(target.x/8)
+ local step=target.x>self.x and 1 or -1
+ for x=tx,px,step do
+  if zget(x,ty) then return false end
+ end
+ return true
 end
 
 enemy_types={
- {health=100,col=13,range=1,size={8,12},b=60,bullet_type=2,shoot=enemy_shoot_dumb}
+ {
+  health=100,
+  col=13,
+  range=1,
+  size={8,12},
+  b=60,
+  bullet_type=2,
+  has_shot=enemy_has_shot_dumb,
+  shoot=enemy_shoot_dumb
+ }
 }
 
 enemy={
@@ -38,20 +67,6 @@ enemy={
   o.health=ttype.health
   o.b=0
   return o
- end,
- has_shot=function(target)
-  if p.complete then return false end
-  return true
-  --[[
-  if target.y~=self.y then return false end
-  return true
-  local sx,sy=flr(self.x/8),flr(self.x/8)
-  local tx,ty=flr(target.x/8),flr(target.x/8)
-  local step=target.x>self.x and 1 or -1
-  for i=sx,tx,step do
-   if
-  end
-  ]]
  end,
  hit=function(self)
   smoke:create(self.x+4,self.y+4,10,{col=7,size={self.type.size}})
@@ -122,7 +137,15 @@ enemy={
   self.anim.current:set(round(self.dx)==0 and "still" or "run")
 
   -- shoot
-  self.type.shoot(self)
+  if self.b>0 then
+   self.b=self.b-1
+  elseif self.type.has_shot(self,p) then
+   self.type.shoot(self)
+   self.b=self.type.b
+  else
+   self.b=0
+  end
+
  end,
  draw=function(self)
   if not self.visible then return false end
