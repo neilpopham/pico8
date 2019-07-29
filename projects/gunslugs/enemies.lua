@@ -1,26 +1,61 @@
+enemy_shoot_dumb=function(self)
+ if self.b>0 then
+  self.b=self.b-1
+ elseif self:has_shot(p) then
+  --sfx(0)
+  local face=self.anim.current.dir
+  bullets:add(
+   bullet:create(
+    self.x+(face==dir.left and 0 or 6),self.y+4,face,self.type.bullet_type
+   )
+  )
+  shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=14})
+  self.b=self.type.b
+ else
+  self.b=0
+ end
+end
+
 enemy_types={
- {health=100,col=13,range=1,size={8,12}}
+ {health=100,col=13,range=1,size={8,12},b=60,bullet_type=2,shoot=enemy_shoot_dumb}
 }
 
 enemy={
  create=function(self,x,y,type)
   local ttype=enemy_types[type]
   local o=animatable.create(self,x,y,0.1,-2,1,2)
-  o.anim:add_stage("still",1,false,{48},{51})
-  o.anim:add_stage("run",5,true,{48,49,48,50},{51,52,51,53})
-  o.anim:add_stage("jump",1,false,{50},{53})
-  o.anim:add_stage("fall",1,false,{49},{52})
-  o.anim:add_stage("run_turn",5,false,{48},{51},"still")
-  o.anim:add_stage("jump_turn",1,false,{48},{51},"jump")
-  o.anim:add_stage("fall_turn",1,false,{48},{51},"fall")
-  o.anim:add_stage("jump_fall",1,false,{48},{51},"fall")
-  o.anim:init("run",dir.left)  
+  local add_stage=function(...) o.anim:add_stage(...) end
+  add_stage("still",1,false,{48},{51})
+  add_stage("run",5,true,{48,49,48,50},{51,52,51,53})
+  add_stage("jump",1,false,{50},{53})
+  add_stage("fall",1,false,{49},{52})
+  add_stage("run_turn",5,false,{48,55,51},{51,55,48},"still")
+  add_stage("jump_turn",1,false,{48},{51},"jump")
+  add_stage("fall_turn",1,false,{48},{51},"fall")
+  add_stage("jump_fall",1,false,{48},{51},"fall")
+  o.anim:init("run",dir.left)
   o.type=ttype
   o.health=ttype.health
+  o.b=0
   return o
  end,
+ has_shot=function(target)
+  if p.complete then return false end
+  return true
+  --[[
+  if target.y~=self.y then return false end
+  return true
+  local sx,sy=flr(self.x/8),flr(self.x/8)
+  local tx,ty=flr(target.x/8),flr(target.x/8)
+  local step=target.x>self.x and 1 or -1
+  for i=sx,tx,step do
+   if
+  end
+  ]]
+ end,
  hit=function(self)
-  --smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,5,{col=self.type.col,size={6,12}})
+  smoke:create(self.x+4,self.y+4,10,{col=7,size={self.type.size}})
+  shells:create(self.x+4,self.y+4,5,{col=8,life={20,40}})
  end,
  destroy=function(self)
   self.complete=true
@@ -31,13 +66,17 @@ enemy={
  end,
  update=function(self)
   if not self.visible then return end
-  if p.x<self.x then
-    self.anim.current.dir=dir.left
-    self.dx=self.dx-self.ax
-  else
-    self.anim.current.dir=dir.right
-    self.dx=self.dx+self.ax
+
+  if not p.complete then
+   if p.x<self.x then
+     self.anim.current.dir=dir.left
+     self.dx=self.dx-self.ax
+   else
+     self.anim.current.dir=dir.right
+     self.dx=self.dx+self.ax
+   end
   end
+
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
 
   move=self:can_move_x()
@@ -78,12 +117,12 @@ enemy={
    self.y=self.y+round(self.dy)
   else
    self.dy=0
-  end  
+  end
 
-  --if self.dx==0 and self.dy==0 then
-   self.anim.current:set(round(self.dx)==0 and "still" or "run")
-  --end
+  self.anim.current:set(round(self.dx)==0 and "still" or "run")
 
+  -- shoot
+  self.type.shoot(self)
  end,
  draw=function(self)
   if not self.visible then return false end

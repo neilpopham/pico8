@@ -44,7 +44,7 @@ affector={
  bounce=function(self)
   local h,tile=false
   local x,y=self.x+self.dx,self.y
-  local cx,cy=p.camera:position()
+  local cx=p.camera:position()
   if x<cx or x>(cx+screen.width) then
    h=true
   else

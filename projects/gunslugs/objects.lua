@@ -138,9 +138,8 @@ movable={
  end,
  can_move=function(self,points,flag)
   for _,p in pairs(points) do
-   local tx=flr(p[1]/8)
-   local ty=flr(p[2]/8)
-   tile=mget(tx,ty)
+   local tx,ty=flr(p[1]/8),flr(p[2]/8)
+   local tile=mget(tx,ty)
    if flag and fget(tile,flag) then
     return {ok=false,flag=flag,tile=tile,tx=tx*8,ty=ty*8}
    elseif fget(tile,0) then
@@ -231,4 +230,3 @@ animatable={
   --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,2) -- ####################
  end
 } setmetatable(animatable,{__index=movable})
-

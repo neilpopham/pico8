@@ -20,9 +20,7 @@ destructable={
   self.complete=true
   self.visible=false
   printh("destructable destroy at "..self.x..","..self.y.." with "..health)
-  local size1=self.type.size[1]*(health/200)
-  local size2=self.type.size[2]*(health/200)
-  local size={size1,size2}
+  local size={self.type.size[1]*(health/200),self.type.size[2]*(health/200)}
   printh("size1:"..size[1].." size2:"..size[2])
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=self.type.col,size=size})
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=7,size=size})
@@ -38,17 +36,6 @@ destructable={
     end
    end
   end
-  --[[
-  distance=self:distance(p)
-  if distance<self.type.range then
-   p:damage(abs(self.health))
-   local strength=self.type.range/distance
-   local dx=6*strength
-   p.dx=p.dx+(p.x<self.x and -dx or dx)
-   p.dy=-dx
-   p.max.dy=6
-  end
-  ]]
   self:foobar(p)
   for _,e in pairs(enemies.items) do
     if e.visible then

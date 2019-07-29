@@ -29,7 +29,7 @@ bullet_collection={
 
 bullet_update_linear=function(self,face)
  self.x=self.x+(face==dir.left and -self.ax or self.ax)
- local cx,cy=p.camera:position()
+ local cx=p.camera:position()
  if self.x<(cx-self.type.w) or self.x>(cx+screen.width) then
    printh("bullet complete:"..self.x)
    self.complete=true
@@ -37,7 +37,8 @@ bullet_update_linear=function(self,face)
 end
 
 bullet_types={
- {sprite=32,ax=3,ay=3,w=2,h=2,player=true,health=200,update=bullet_update_linear}
+ {sprite=32,ax=3,ay=3,w=2,h=2,player=true,health=200,update=bullet_update_linear},
+ {sprite=33,ax=3,ay=3,w=2,h=2,player=false,health=200,update=bullet_update_linear}
 }
 
 bullet={

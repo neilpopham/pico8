@@ -1,21 +1,21 @@
 p=animatable:create(8,112,0.15,-2,2,3)
-p.anim:add_stage("still",1,false,{16},{19})
-p.anim:add_stage("run",5,true,{16,17,16,18},{19,20,19,21})
-p.anim:add_stage("jump",1,false,{18},{21})
-p.anim:add_stage("fall",1,false,{17},{20})
-p.anim:add_stage("run_turn",5,false,{16},{19},"still")
-p.anim:add_stage("jump_turn",1,false,{16},{19},"jump")
-p.anim:add_stage("fall_turn",1,false,{16},{19},"fall")
-p.anim:add_stage("jump_fall",1,false,{16},{19},"fall")
+local add_stage=function(...) p.anim:add_stage(...) end
+add_stage("still",1,false,{16},{19})
+add_stage("run",5,true,{16,17,16,18},{19,20,19,21})
+add_stage("jump",1,false,{18},{21})
+add_stage("fall",1,false,{17},{20})
+add_stage("run_turn",3,false,{23},{23},"still")
+add_stage("jump_turn",1,false,{16},{19},"jump")
+add_stage("fall_turn",1,false,{16},{19},"fall")
+add_stage("jump_fall",1,false,{16},{19},"fall")
 p.anim:init("still",dir.right)
 p.max.prejump=8 -- ticks allowed before hitting ground to jump
 p.is={
  grounded=false,
  jumping=false,
- falling=false,
- invisible=false
+ falling=false
 }
-p.b=12
+p.b=0
 p.f=0
 p.bullet_type=1
 p.health=500
@@ -57,11 +57,13 @@ p.hit=function(self,health)
 end
 p.destroy=function(self,health)
  self.complete=true
+ smoke:create(self.x+4,self.y+4,20,{col=12,size={12,30}})
+ shells:create(self.x+4,self.y+4,20,{col=8,life={40,80}})
 end
 p.update=function(self)
 
   if self.complete then return end
-  --animatable.update(self)
+
   local face=self.anim.current.dir
   local stage=self.anim.current.stage
   local move
@@ -146,7 +148,7 @@ p.update=function(self)
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x,self.y+round(self.dy)) then
      move.ok=false
-     move.ty=d.y --flr(d.y/8)*8
+     move.ty=d.y
      break
     end
    end
@@ -177,9 +179,7 @@ p.update=function(self)
    else
     if not self.is.jumping then
      self.anim.current:set("jump")
-     particles:add(
-      smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,20,{col=7,size={4,8}})
-     )
+     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,20,{col=7,size={4,8}})
     end
     self:set_state("jumping")
    end
@@ -193,15 +193,13 @@ p.update=function(self)
     if not self.anim.current.transitioning then
      self.anim.current:set(round(self.dx)==0 and "still" or "run")
     end
-    if self.is.falling then 
+    if self.is.falling then
      printh("f:"..self.f)
-     particles:add(
-      smoke:create(
-       self.x+(face==dir.left and 3 or 4),
-       self.y+7,
-       2*self.f,
-       {col=self.f>10 and 10 or 7,size={self.f/3,self.f}}
-      )
+     smoke:create(
+      self.x+(face==dir.left and 3 or 4),
+      self.y+7,
+      2*self.f,
+      {col=self.f>10 and 10 or 7,size={self.f/3,self.f}}
      )
      -- if we've fallen far then do a little bounce
      if self.f>10 then
@@ -209,9 +207,10 @@ p.update=function(self)
       self.max.dy=6
       printh("dy:"..self.dy)
      end
+
     end
     self:set_state("grounded")
-    self.cayote:reset()    
+    self.cayote:reset()
    else -- we are jumping and have hit a roof
     self.btn1:reset()
     self.dy=0
@@ -231,10 +230,8 @@ p.update=function(self)
      self.x+(face==dir.left and 0 or 6),self.y+4,face,self.bullet_type
     )
    )
-   particles:add(
-    shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=9})
-   )
-   self.b=12
+   shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=9})
+   self.b=20
   else
    self.b=0
   end
