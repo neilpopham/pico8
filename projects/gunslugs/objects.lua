@@ -37,13 +37,14 @@ collection={
   if self.count==0 then return end
   for _,i in pairs(self.items) do
    i:update()
+   if i.complete then self:del(i) end
   end
  end,
  draw=function(self)
   if self.count==0 then return end
   for _,i in pairs(self.items) do
    i:draw()
-   if i.complete then self:del(i) end
+   --if i.complete then self:del(i) end
   end
  end,
  add=function(self,object)

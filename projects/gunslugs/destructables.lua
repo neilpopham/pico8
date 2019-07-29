@@ -21,7 +21,7 @@ destructable={
   self.visible=false
   printh("destructable destroy at "..self.x..","..self.y.." with "..health)
   local size={self.type.size[1]*(health/200),self.type.size[2]*(health/200)}
-  printh("size1:"..size[1].." size2:"..size[2])
+  printh("size1:"..size[1].." size2:"..size[2]) -- ########################
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=self.type.col,size=size})
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=7,size=size})
   shells:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,5,{col=self.type.col,life={20,30}})
@@ -64,16 +64,16 @@ destructable={
     if d.visible and self~=d then
      if self:collide_object(d) then
       move.ok=false
+      move.ty=d.y
       break
      end
     end
    end
-  else
-   self.y=move.ty-8
   end
   if move.ok then
    self.y=self.y+round(self.dy)
   else
+   --self.y=move.ty-8
    if self.dy>1 then
     particles:add(
      smoke:create(self.x+4,self.y+7,10,{size={4,8}})
@@ -83,9 +83,7 @@ destructable={
   end
  end,
  draw=function(self)
-  if not self.visible then return false end
-  if self.complete then return true end
+  if not self.visible then return end
   spr(self.type.sprite,self.x,self.y)
-  return false
  end
 } setmetatable(destructable,{__index=movable})

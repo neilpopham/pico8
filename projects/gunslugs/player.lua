@@ -10,6 +10,7 @@ add_stage("fall_turn",1,false,{16},{19},"fall")
 add_stage("jump_fall",1,false,{16},{19},"fall")
 p.anim:init("still",dir.right)
 p.max.prejump=8 -- ticks allowed before hitting ground to jump
+p.max.health=500
 p.is={
  grounded=false,
  jumping=false,
@@ -231,7 +232,7 @@ p.update=function(self)
     )
    )
    shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=9})
-   self.b=20
+   self.b=16
   else
    self.b=0
   end

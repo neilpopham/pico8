@@ -139,7 +139,7 @@ smoke={
       life={10,20},
       force=mrnd({0.2,1},false),
       angle={0,1},
-      size=5,
+      size={4,6},
       shrink=0.8
      },
      params

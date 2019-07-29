@@ -27,7 +27,7 @@ end
 enemy_types={
  {
   health=100,
-  col=13,
+  col=6,
   range=1,
   size={8,12},
   b=60,
@@ -38,7 +38,7 @@ enemy_types={
  },
  {
   health=100,
-  col=13,
+  col=10,
   range=1,
   size={8,12},
   b=60,
@@ -69,11 +69,12 @@ enemy={
   return o
  end,
  hit=function(self)
-  smoke:create(self.x+4,self.y+4,10,{col=7,size={self.type.size}})
+  smoke:create(self.x+4,self.y+4,10,{col=7,size=self.type.size})
   shells:create(self.x+4,self.y+4,5,{col=8,life={20,40}})
  end,
  destroy=function(self)
   self.complete=true
+  self.visible=false
   printh("enemy destroy at "..self.x..","..self.y)
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,20,{col=self.type.col,size=self.type.size})
   smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=7,size=self.type.size})
@@ -151,9 +152,9 @@ enemy={
 
  end,
  draw=function(self)
-  if not self.visible then return false end
-  if self.complete then return true end
+  if not self.visible then return end
+  -- set helmet colour according to enemy type
+  pal(15,self.type.col)
   animatable.draw(self)
-  return false
  end
 } setmetatable(enemy,{__index=animatable})
