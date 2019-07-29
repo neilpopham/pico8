@@ -53,11 +53,13 @@ p.can_jump=function(self)
  return false
 end
 p.hit=function(self,health)
+ p.camera:shake(2,0.8)
  smoke:create(self.x+4,self.y+4,20,{col=12,size={12,20}})
  shells:create(self.x+4,self.y+4,5,{col=8,life={20,30}})
 end
 p.destroy=function(self,health)
  self.complete=true
+ p.camera:shake(3,0.9)
  smoke:create(self.x+4,self.y+4,20,{col=12,size={12,30}})
  shells:create(self.x+4,self.y+4,20,{col=8,life={40,80}})
 end
@@ -204,6 +206,8 @@ p.update=function(self)
      )
      -- if we've fallen far then do a little bounce
      if self.f>10 then
+      sfx(2)
+      p.camera:shake(2,0.8)
       self.dy=min(-3,-(round(self.f/6)))
       self.max.dy=6
       printh("dy:"..self.dy)
@@ -225,7 +229,7 @@ p.update=function(self)
   if self.b>0 then
    self.b=self.b-1
   elseif btn(pad.btn2) then
-   --sfx(0)
+   sfx(4)
    bullets:add(
     bullet:create(
      self.x+(face==dir.left and 0 or 6),self.y+4,face,self.bullet_type

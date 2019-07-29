@@ -6,6 +6,7 @@ enemy_shoot_dumb=function(self)
   )
  )
  shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=3})
+ sfx(4)
 end
 
 enemy_has_shot_dumb=function(self,target)
