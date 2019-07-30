@@ -24,21 +24,30 @@ p.reset=function(self)
  self.complete=false
  self.b=0
  self.f=0
- self.bullet_type=1
- self.health=self.max.health
  self.x=8
  self.y=112
  self.dx=0
  self.dy=0
  self.camera=cam:create(p,1024,128)
 end
-p:reset()
+
+p.init=function(self)
+ self:reset()
+ self.bullet_type=1
+ self.health=self.max.health
+end
+
+p:init()
 
 p.btn1=button:create(pad.btn1)
 p.cayote=counter:create(1,3)
 p.cayote.on_max=function(self)
  printh("cayote timeout") -- #####################################################
  -- we can use p here, like p.is.grounded
+end
+
+p.add_health=function(self,health)
+ self.health=min(self.health+health,self.max.health)
 end
 
 p.set_state=function(self,state)
@@ -66,6 +75,12 @@ p.can_jump=function(self)
   return true
  end
  return false
+end
+
+p.can_move_x=function(self)
+ local x=self.x+round(self.dx)
+ if x<0 then return {ok=false,tx=-8} end
+ return movable.can_move_x(self)
 end
 
 p.hit=function(self,health)
@@ -145,6 +160,12 @@ p.update=function(self)
 
    if abs(self.dx)>0 and self.is.grounded then
     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,1,{size={1,3}})
+   end
+
+   -- have we run off the screen?
+   if self.x>1023 then
+    self:add_health(250)
+    stage_main:next()
    end
 
   -- cannot move horizontally

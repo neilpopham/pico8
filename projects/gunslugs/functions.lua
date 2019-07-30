@@ -30,3 +30,17 @@ function zget(tx,ty)
  end
  return false
 end
+
+function oprint(text,x,y,col)
+ for dx=-1,1 do
+  for dy=-1,1 do
+   print(text,x+dx,y+dy,0)
+  end
+ end
+ print(text,x,y,col)
+end
+
+function lpad(x,n)
+ n=n or 2
+ return sub("0000000"..x,-n)
+end

@@ -29,6 +29,10 @@ stage_over={
 
  draw=function(self)
   stage_main.draw(self)
-  print("press \142 or \151 to start",18,110,7)
+  if self.t>120 then
+   oprint("game over",46,61,8)
+   oprint("press \142 to restart",28,90,7)
+   oprint("or \151 to return to the menu",12,100,7)
+  end
  end
 }

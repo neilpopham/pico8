@@ -1,12 +1,19 @@
 stage_main={
 
  init=function(self)
+  level=0
+  self:next()
+ end,
+
+ next=function(self)
+  level+=1
   enemies:reset()
   bullets:reset()
   destructables:reset()
   pickups:reset()
+  particles:reset()
   p:reset()
-  fillmap(1)
+  fillmap(level)
  end,
 
  update=function(self)
@@ -44,9 +51,13 @@ stage_main={
 
   -- draw hud
   camera(0,0)
+
+  print("level",1,1,6)
+  print(lpad(level),24,1,9)
+
   -- health
   for i=1,p.max.health/100 do
-   spr(p.health>=i*100 and 47 or 46,88+(8*(i-1)),1)
+   spr(p.health>=i*100 and 47 or 46,87+(8*(i-1)),0)
   end
 
  --[[
@@ -64,7 +75,7 @@ stage_main={
 
  ---[[
   local cx=p.camera:position()
-  print("\142:"..cx.." \152:"..(flr(stat(0))).." \150:"..(flr(stat(1)*100)),0,0,3)
+  --print("\142:"..cx.." \152:"..(flr(stat(0))).." \150:"..(flr(stat(1)*100)),0,12,3)
  --]]
  end
 }

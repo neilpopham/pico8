@@ -10,7 +10,7 @@ cam={
    sx=0,
    sy=0
   }
-  o.max=width-80
+  o.max=width-88
   setmetatable(o,self)
   self.__index=self
   return o

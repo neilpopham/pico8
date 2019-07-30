@@ -23,7 +23,7 @@ medikit={
   if not self.visible then return end
  	if self:collide_object(p) then
    sfx(5)
-   p.health=min(p.health+200,p.max.health)
+   p:add_health(250)
    smoke:create(self.x+4,self.y+4,10,{col=8,size={8,16}})
    self:destroy()
   end
