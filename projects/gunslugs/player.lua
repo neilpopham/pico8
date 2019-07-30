@@ -12,7 +12,7 @@ add_stage("jump_fall",1,false,{16},{19},"fall")
 
 p.anim:init("still",dir.right)
 
-p.reset=function(self)
+p.reset=function(self,full)
  -- ticks allowed before hitting ground to jump
  self.max.prejump=8
  self.max.health=500
@@ -29,15 +29,13 @@ p.reset=function(self)
  self.dx=0
  self.dy=0
  self.camera=cam:create(p,1024,128)
+ if full then
+  self.bullet_type=1
+  self.health=self.max.health
+ end
 end
 
-p.init=function(self)
- self:reset()
- self.bullet_type=1
- self.health=self.max.health
-end
-
-p:init()
+p:reset(true)
 
 p.btn1=button:create(pad.btn1)
 p.cayote=counter:create(1,3)

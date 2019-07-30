@@ -2,17 +2,17 @@ stage_main={
 
  init=function(self)
   level=0
-  self:next()
+  self:next(true)
  end,
 
- next=function(self)
+ next=function(self,full)
   level+=1
   enemies:reset()
   bullets:reset()
   destructables:reset()
   pickups:reset()
   particles:reset()
-  p:reset()
+  p:reset(full)
   fillmap(level)
  end,
 

@@ -10,7 +10,7 @@ stage_over={
   destructables:reset()
   pickups:reset()
   particles:reset()
-  p:reset()
+  p:reset(true)
  end,
 
  update=function(self)
@@ -31,8 +31,8 @@ stage_over={
   stage_main.draw(self)
   if self.t>120 then
    oprint("game over",46,61,8)
-   oprint("press \142 to restart",28,90,7)
-   oprint("or \151 to return to the menu",12,100,7)
+   oprint("press \142 to restart",28,90,6)
+   oprint("or \151 to return to the menu",12,100,6)
   end
  end
 }
