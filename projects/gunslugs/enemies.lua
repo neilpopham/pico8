@@ -25,28 +25,56 @@ enemy_has_shot_cautious=function(self,target)
  return true
 end
 
+enemy_add_stages=function(o,stage,count,loop,left,right,next)
+ o.anim:add_stage(stage,count,loop,left,right,next)
+end
+
+enemy_stages_goon=function(o)
+ enemy_add_stages(o,"still",1,false,{48},{51})
+ enemy_add_stages(o,"run",5,true,{48,49,48,50},{51,52,51,53})
+ enemy_add_stages(o,"jump",1,false,{50},{53})
+ enemy_add_stages(o,"fall",1,false,{49},{52})
+ enemy_add_stages(o,"run_turn",5,false,{48,55,51},{51,55,48},"still")
+ enemy_add_stages(o,"jump_turn",1,false,{48},{51},"jump")
+ enemy_add_stages(o,"fall_turn",1,false,{48},{51},"fall")
+ enemy_add_stages(o,"jump_fall",1,false,{48},{51},"fall")
+end
+
+enemy_stages_spider=function(o)
+ enemy_add_stages(o,"still",1,false,{48},{51})
+ enemy_add_stages(o,"run",5,true,{48,49,48,50},{51,52,51,53})
+end
+
 enemy_types={
- {
+ { -- goon 1
   health=100,
   col=6,
-  range=1,
   size={8,12},
   b=60,
   itchy=0.75,
   bullet_type=2,
   has_shot=enemy_has_shot_dumb,
-  shoot=enemy_shoot_dumb
+  shoot=enemy_shoot_dumb,
+  add_stages=enemy_stages_goon
  },
- {
+ { -- goon 2
   health=100,
   col=10,
-  range=1,
   size={8,12},
   b=60,
   itchy=0.5,
   bullet_type=2,
   has_shot=enemy_has_shot_cautious,
-  shoot=enemy_shoot_dumb
+  shoot=enemy_shoot_dumb,
+  add_stages=enemy_stages_goon
+ },
+ { -- spider
+  health=50,
+  col=1,
+  size={8,12},
+  b=60,
+  itchy=0,
+  add_stages=enemy_stages_spider
  },
 }
 
@@ -54,6 +82,8 @@ enemy={
  create=function(self,x,y,type)
   local ttype=enemy_types[type]
   local o=animatable.create(self,x,y,0.1,-2,1,2)
+  ttype.add_stages(o)
+  --[[
   local add_stage=function(...) o.anim:add_stage(...) end
   add_stage("still",1,false,{48},{51})
   add_stage("run",5,true,{48,49,48,50},{51,52,51,53})
@@ -63,6 +93,7 @@ enemy={
   add_stage("jump_turn",1,false,{48},{51},"jump")
   add_stage("fall_turn",1,false,{48},{51},"fall")
   add_stage("jump_fall",1,false,{48},{51},"fall")
+  ]]
   o.anim:init("run",dir.left)
   o.type=ttype
   o.health=ttype.health
@@ -76,7 +107,7 @@ enemy={
  destroy=function(self)
   self.complete=true
   self.visible=false
-  printh("enemy destroy at "..self.x..","..self.y)
+  printh("enemy destroyed at "..self.x..","..self.y)
   doublesmoke(
    (flr(self.x/8)*8)+3,
    (flr(self.y/8)*8)+3,
@@ -146,6 +177,7 @@ enemy={
   self.anim.current:set(round(self.dx)==0 and "still" or "run")
 
   -- shoot
+  --[[
   if self.b>0 then
    self.b=self.b-1
   elseif self.type.has_shot(self,p) then
@@ -156,6 +188,18 @@ enemy={
    self.b=self.type.b
   else
    self.b=0
+  end
+  ]]
+
+  -- shoot
+  if self.b>0 then
+   self.b=self.b-1
+  else
+   local r=rnd()
+   if r<self.type.itchy and self.type.has_shot(self,p) then
+    self.type.shoot(self)
+   end
+   self.b=self.type.b
   end
 
  end,

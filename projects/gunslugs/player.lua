@@ -1,4 +1,5 @@
 p=animatable:create(8,112,0.15,-2,2,3)
+
 local add_stage=function(...) p.anim:add_stage(...) end
 add_stage("still",1,false,{16},{19})
 add_stage("run",5,true,{16,17,16,18},{19,20,19,21})
@@ -8,18 +9,29 @@ add_stage("run_turn",3,false,{23},{23},"still")
 add_stage("jump_turn",1,false,{16},{19},"jump")
 add_stage("fall_turn",1,false,{16},{19},"fall")
 add_stage("jump_fall",1,false,{16},{19},"fall")
+
 p.anim:init("still",dir.right)
-p.max.prejump=8 -- ticks allowed before hitting ground to jump
-p.max.health=500
-p.is={
- grounded=false,
- jumping=false,
- falling=false
-}
-p.b=0
-p.f=0
-p.bullet_type=1
-p.health=500
+
+p.reset=function(self)
+ -- ticks allowed before hitting ground to jump
+ self.max.prejump=8
+ self.max.health=500
+ self.is={
+  grounded=false,
+  jumping=false,
+  falling=false
+ }
+ self.b=0
+ self.f=0
+ self.bullet_type=1
+ self.health=self.max.health
+ self.x=8
+ self.y=112
+ self.dx=0
+ self.dy=0
+end
+p:reset()
+
 p.camera=cam:create(p,1024,128)
 p.btn1=button:create(pad.btn1)
 p.cayote=counter:create(1,3)
@@ -27,12 +39,14 @@ p.cayote.on_max=function(self)
  printh("cayote timeout") -- #####################################################
  -- we can use p here, like p.is.grounded
 end
+
 p.set_state=function(self,state)
  for s in pairs(self.is) do
   self.is[s]=false
  end
  self.is[state]=true
 end
+
 p.can_jump=function(self)
  if self.is.jumping
   and self.btn1:valid() then
@@ -52,11 +66,13 @@ p.can_jump=function(self)
  end
  return false
 end
+
 p.hit=function(self,health)
  p.camera:shake(2)
  smoke:create(self.x+4,self.y+4,20,{col=12,size={12,20}})
  shells:create(self.x+4,self.y+4,5,{col=8,life={20,30}})
 end
+
 p.destroy=function(self,health)
  self.complete=true
  p.camera:shake(3)
@@ -67,6 +83,7 @@ p.destroy=function(self,health)
   {{col=12,size={12,30}},{col=7,size={12,30}},{col=8,life={40,80}}}
  )
 end
+
 p.update=function(self)
 
   if self.complete then return end
