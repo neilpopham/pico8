@@ -21,6 +21,7 @@ p.reset=function(self)
   jumping=false,
   falling=false
  }
+ self.complete=false
  self.b=0
  self.f=0
  self.bullet_type=1
@@ -29,10 +30,10 @@ p.reset=function(self)
  self.y=112
  self.dx=0
  self.dy=0
+ self.camera=cam:create(p,1024,128)
 end
 p:reset()
 
-p.camera=cam:create(p,1024,128)
 p.btn1=button:create(pad.btn1)
 p.cayote=counter:create(1,3)
 p.cayote.on_max=function(self)
@@ -82,6 +83,8 @@ p.destroy=function(self,health)
   {20,10,10},
   {{col=12,size={12,30}},{col=7,size={12,30}},{col=8,life={40,80}}}
  )
+ stage=stage_over
+ stage:init()
 end
 
 p.update=function(self)

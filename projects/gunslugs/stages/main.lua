@@ -1,6 +1,6 @@
 stage_main={
- 
- init=function()
+
+ init=function(self)
   enemies:reset()
   bullets:reset()
   destructables:reset()
@@ -9,7 +9,7 @@ stage_main={
   fillmap(1)
  end,
 
- update=function()
+ update=function(self)
   p:update()
   p.camera:update()
   bullets:update()
@@ -32,7 +32,7 @@ stage_main={
   particles:update()
  end,
 
- draw=function()
+ draw=function(self)
   p.camera:map()
   enemies:draw()
   pal()
