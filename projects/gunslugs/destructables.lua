@@ -1,8 +1,8 @@
 destructable_types={
  nil,
  {sprite=2,health=50,col=9,range=1,size={6,12},shake=nil},
- {sprite=3,health=50,col=8,range=15,size={10,16},shake={2,0.8}},
- {sprite=4,health=50,col=11,range=20,size={16,24},shake={3,0.8}}
+ {sprite=3,health=50,col=8,range=15,size={10,16},shake=2},
+ {sprite=4,health=50,col=11,range=20,size={16,24},shake=3}
 }
 
 destructable={
@@ -13,20 +13,24 @@ destructable={
   o.health=ttype.health
   return o
  end,
- hit=function(self,health)
-  --smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,5,{col=self.type.col,size={6,12}})
- end,
  destroy=function(self,health)
   self.complete=true
   self.visible=false
   printh("destructable destroy at "..self.x..","..self.y.." with "..health)
   local size={self.type.size[1]*(health/200),self.type.size[2]*(health/200)}
   printh("size1:"..size[1].." size2:"..size[2]) -- ########################
-  smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=self.type.col,size=size})
-  smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=7,size=size})
-  shells:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,5,{col=self.type.col,life={20,30}})
+  doublesmoke(
+   (flr(self.x/8)*8)+3,
+   (flr(self.y/8)*8)+3,
+   {10,5,5},
+   {
+    {col=self.type.col,size=size},
+    {col=7,size=size},
+    {col=self.type.col,life={20,30}}
+   }
+  )
   if self.type.shake then
-   p.camera:shake(self.type.shake[1],self.type.shake[2])
+   p.camera:shake(self.type.shake)
   end
   for _,d in pairs(destructables.items) do
    if d.visible and self~=d then

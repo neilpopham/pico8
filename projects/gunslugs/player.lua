@@ -53,15 +53,19 @@ p.can_jump=function(self)
  return false
 end
 p.hit=function(self,health)
- p.camera:shake(2,0.8)
+ p.camera:shake(2)
  smoke:create(self.x+4,self.y+4,20,{col=12,size={12,20}})
  shells:create(self.x+4,self.y+4,5,{col=8,life={20,30}})
 end
 p.destroy=function(self,health)
  self.complete=true
- p.camera:shake(3,0.9)
- smoke:create(self.x+4,self.y+4,20,{col=12,size={12,30}})
- shells:create(self.x+4,self.y+4,20,{col=8,life={40,80}})
+ p.camera:shake(3)
+ doublesmoke(
+  self.x+3,
+  self.y+3,
+  {20,10,10},
+  {{col=12,size={12,30}},{col=7,size={12,30}},{col=8,life={40,80}}}
+ )
 end
 p.update=function(self)
 
@@ -120,9 +124,7 @@ p.update=function(self)
    if abs(self.dx)<0.1 then self.dx=0 end
 
    if abs(self.dx)>0 and self.is.grounded then
-    particles:add(
-     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,1,{size={1,3}})
-    )
+    smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,1,{size={1,3}})
    end
 
   -- cannot move horizontally
@@ -207,7 +209,7 @@ p.update=function(self)
      -- if we've fallen far then do a little bounce
      if self.f>10 then
       sfx(2)
-      p.camera:shake(2,0.8)
+      p.camera:shake(self.f/16)
       self.dy=min(-3,-(round(self.f/6)))
       self.max.dy=6
       printh("dy:"..self.dy)

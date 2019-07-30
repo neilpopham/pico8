@@ -32,7 +32,7 @@ enemy_types={
   range=1,
   size={8,12},
   b=60,
-  itchy=0.5,
+  itchy=0.75,
   bullet_type=2,
   has_shot=enemy_has_shot_dumb,
   shoot=enemy_shoot_dumb
@@ -43,7 +43,7 @@ enemy_types={
   range=1,
   size={8,12},
   b=60,
-  itchy=0.25,
+  itchy=0.5,
   bullet_type=2,
   has_shot=enemy_has_shot_cautious,
   shoot=enemy_shoot_dumb
@@ -77,9 +77,16 @@ enemy={
   self.complete=true
   self.visible=false
   printh("enemy destroy at "..self.x..","..self.y)
-  smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,20,{col=self.type.col,size=self.type.size})
-  smoke:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=7,size=self.type.size})
-  shells:create((flr(self.x/8)*8)+4,(flr(self.y/8)*8)+4,10,{col=8,life={20,40}})
+  doublesmoke(
+   (flr(self.x/8)*8)+3,
+   (flr(self.y/8)*8)+3,
+   {20,10,10},
+   {
+    {col=self.type.col,size=self.type.size},
+    {col=7,size=self.type.size},
+    {col=8,life={20,40}}
+   }
+  )
  end,
  update=function(self)
   if not self.visible then return end

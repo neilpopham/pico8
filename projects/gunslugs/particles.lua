@@ -91,9 +91,7 @@ affector={
  smoke=function(self)
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force
-  if affector.delay(self) then
-   affector.size(self)
-  end
+  affector.size(self)
   affector.update(self)
  end,
 
@@ -151,3 +149,9 @@ smoke={
   end
  end
 }
+
+function doublesmoke(x,y,count,params)
+ smoke:create(x,y,count[1],params[1])
+ smoke:create(x+1,y-1,count[2],params[2])
+ shells:create(x,y,count[3],params[3])
+end

@@ -4,14 +4,13 @@ cam={
    target=item,
    x=item.x,
    y=item.y,
-   buffer=16,
-   min=8*flr(screen.width/16),
+   buffer=12,
+   min=40,
    force=0,
-   decay=0,
    sx=0,
    sy=0
   }
-  o.max=width-o.min
+  o.max=width-80
   setmetatable(o,self)
   self.__index=self
   return o
@@ -31,14 +30,16 @@ cam={
   elseif self.x>self.max then
    self.x=self.max
   end
-  --shake
+  --calculate shake
   if self.force>0 then
-   self.angle=self.angle and self.angle+0.34 or 0  
-   self.sx+=cos(self.angle)*self.force
-   self.sy+=sin(self.angle)*self.force
-   self.force=self.force*self.decay
+   printh("shake force:"..self.force)
+   self.sx=4-rnd(8)
+   self.sy=4-rnd(8)
+   self.sx*=self.force
+   self.sy*=self.force
+   self.force*=0.9
    if self.force<0.1 then
-    self.force,self.decay,self.sx,self.sy=0,0,0,0
+    self.force,self.sx,self.sy=0,0,0
    end
   end
  end,
@@ -49,8 +50,7 @@ cam={
   camera(self:position()+self.sx,self.sy)
   map(0,0)
  end,
- shake=function(self,force,decay)
-  self.force=min(self.force+force,5)
-  self.decay=min(self.decay+decay,0.9)
+ shake=function(self,force)
+  self.force=min(self.force+force,6)
  end,
 }

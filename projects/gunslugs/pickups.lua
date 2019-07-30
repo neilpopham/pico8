@@ -9,7 +9,7 @@ pickup={
  draw=function(self)
   if not self.visible then return end
   animatable.draw(self)
- end 
+ end
 } setmetatable(pickup,{__index=animatable})
 
 medikit={

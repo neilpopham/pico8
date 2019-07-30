@@ -128,7 +128,7 @@ function _init()
       m=0.25
       if r<m then
        data[x][l-3]=40
-       break      
+       break
       end
      end
     end
@@ -235,6 +235,10 @@ function _draw()
 
  -- draw hud
  camera(0,0)
+ -- health
+ for i=1,p.max.health/100 do
+  spr(p.health>=i*100 and 47 or 46,88+(8*(i-1)),1)
+ end
 
 --[[
  for x=0,127 do
@@ -247,19 +251,14 @@ function _draw()
    end
   end
  end
-]]
+--]]
 
 ---[[
  local cx=p.camera:position()
- print(cx)
- print(flr(stat(0)))
- print(flr(stat(1)*100))
-
- for i=1,p.max.health/100 do
-  spr(p.health>=i*100 and 47 or 46,88+(8*(i-1)),1)
- end
-
+ print("\142:"..cx.." \152:"..(flr(stat(0))).." \150:"..(flr(stat(1)*100)),0,0,3)
 --]]
+
+
 
 end
 
