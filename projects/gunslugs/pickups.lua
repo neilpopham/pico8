@@ -16,8 +16,7 @@ pickup={
 medikit={
  create=function(self,x,y)
   local o=animatable.create(self,x,y,0,0,0,0)
-  --o.anim:add_stage("still",4,true,{40,41,42,43,44,45},{})
-  o.anim:add_stage("still",4,true,{24,25,26,27,28,29},{})
+  o.anim:add_stage("still",4,true,{26,27,28,29,30,31},{})
   o.anim:init("still",dir.left)
   return o
  end,

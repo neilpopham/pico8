@@ -5,15 +5,15 @@ add_stage("still",1,false,{16},{19})
 add_stage("run",5,true,{16,17,16,18},{19,20,19,21})
 add_stage("jump",1,false,{18},{21})
 add_stage("fall",1,false,{17},{20})
-add_stage("run_turn",3,false,{23},{23},"still")
-add_stage("jump_turn",1,false,{16},{19},"jump")
-add_stage("fall_turn",1,false,{16},{19},"fall")
-add_stage("jump_fall",1,false,{16},{19},"fall")
+add_stage("run_turn",3,false,{22},{22},"still")
+add_stage("jump_turn",3,false,{22},{22},"jump")
+add_stage("fall_turn",3,false,{22},{22},"fall")
+add_stage("jump_fall",3,false,{22},{22},"fall")
 
 p.anim:init("still",dir.right)
 
 p.reset=function(self,full)
- self.max.prejump=8 -- ticks allowed before hitting ground to jump
+ self.max.prejump=8    -- ticks allowed before hitting ground to jump
  self.max.health=500
  self.is={
   grounded=false,
@@ -21,7 +21,8 @@ p.reset=function(self,full)
   falling=false
  }
  self.complete=false
- self.b=32760 -- force user to release button from intro screen
+ self.b=32760          -- force user to release button from intro screen
+ p.btn1.released=false -- force user to release button from intro screen
  self.f=0
  self.x=8
  self.y=112
@@ -34,15 +35,15 @@ p.reset=function(self,full)
  end
 end
 
-p:reset(true)
-
 p.btn1=button:create(pad.btn1)
-p.btn1.released=false -- force user to release button from intro screen
+p:reset(true)
 p.cayote=counter:create(1,3)
+--[[
 p.cayote.on_max=function(self)
  printh("cayote timeout") -- #####################################################
  -- we can use p here, like p.is.grounded
 end
+]]
 
 p.add_health=function(self,health)
  self.health=min(self.health+health,self.max.health)
@@ -58,18 +59,18 @@ end
 p.can_jump=function(self)
  if self.is.jumping
   and self.btn1:valid() then
-  printh("can jump: jumping") -- ###########################
+  --printh("can jump: jumping") -- ###########################
   return true
  end
  if self.is.grounded
   and self.btn1.tick<self.max.prejump then
-  printh("can jump: grounded: tick:"..(self.btn1.tick)) -- ###########################
+  --printh("can jump: grounded: tick:"..(self.btn1.tick)) -- ###########################
   self.btn1.tick=self.btn1.min
   return true
  end
  if self.is.grounded
   and self.cayote:valid() then
-  printh("can jump: cayote") -- ###########################
+  -- printh("can jump: cayote") -- ###########################
   return true
  end
  return false
