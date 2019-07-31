@@ -135,6 +135,8 @@ enemy={
   move=self:can_move_x()
 
   if move.ok then
+   move=self:collide_destructable(self.x+round(self.dx),self.y)
+   --[[
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x+round(self.dx),self.y) then
      move.ok=false
@@ -142,6 +144,7 @@ enemy={
      break
     end
    end
+   ]]
   end
 
   if move.ok then
@@ -158,6 +161,8 @@ enemy={
 
   if move.ok then
    if self.dy>0 then self.max.dy=3 end
+   move=self:collide_destructable(self.x,self.y+round(self.dy))
+   --[[
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x,self.y+round(self.dy)) then
      move.ok=false
@@ -165,6 +170,7 @@ enemy={
      break
     end
    end
+   ]]
   end
 
   if move.ok then

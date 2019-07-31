@@ -46,6 +46,8 @@ destructable={
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   move=self:can_move_y()
   if move.ok then
+   move=self:collide_destructable()
+   --[[
    for _,d in pairs(destructables.items) do
     if d.visible and self~=d then
      if self:collide_object(d) then
@@ -55,6 +57,7 @@ destructable={
      end
     end
    end
+   ]]
   end
   if move.ok then
    self.y=self.y+round(self.dy)

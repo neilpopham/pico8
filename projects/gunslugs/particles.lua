@@ -11,7 +11,6 @@ particle={
   return o
  end,
  draw=function(self,fn)
-  if self.life==0 then return true end
   self:_draw()
   self.life=self.life-1
   if self.life==0 then self.complete=true end
@@ -43,28 +42,15 @@ affector={
  end,
 
  bounce=function(self)
-  local h,tile=false
   local x,y=self.x+self.dx,self.y
-  local cx=p.camera:position()
-  if x<cx or x>(cx+screen.width) then
-   h=true
-  else
-   tile=mget(flr(x/8),flr(y/8))
-   if fget(tile,0) then h=true end
-  end
-  if h then
+  local tile=mget(flr(x/8),flr(y/8))
+  if fget(tile,0) then
    self.force=self.force*self.b
    self.angle=(0.5-self.angle) % 1
   end
-  local v=false
-  local x,y=self.x,self.y+self.dy
-  if y<0 or y>screen.height then
-   v=true
-  else
-   tile=mget(flr(x/8),flr(y/8))
-   if fget(tile,0) then v=true end
-  end
-  if v then
+  x,y=self.x,self.y+self.dy
+  tile=mget(flr(x/8),flr(y/8))
+  if fget(tile,0) then
    self.force=self.force*self.b
    self.angle=(1-self.angle) % 1
   end
@@ -75,12 +61,6 @@ affector={
  size=function(self)
   self.size=self.size*self.shrink
   if self.size<0.5 then self.complete=true end
- end,
-
- delay=function(self)
-  if self.delay==0 then return true end
-  self.delay=self.delay-1
-  return false
  end,
 
  shells=function(self)

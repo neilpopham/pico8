@@ -37,6 +37,7 @@ end
 p:reset(true)
 
 p.btn1=button:create(pad.btn1)
+p.btn1.released=false -- force user to release button from intro screen
 p.cayote=counter:create(1,3)
 p.cayote.on_max=function(self)
  printh("cayote timeout") -- #####################################################
@@ -140,6 +141,8 @@ p.update=function(self)
   move=self:can_move_x()
 
   if move.ok then
+   move=self:collide_destructable(self.x+round(self.dx),self.y)
+   --[[
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x+round(self.dx),self.y) then
      move.ok=false
@@ -147,15 +150,18 @@ p.update=function(self)
      break
     end
    end
+   ]]
   end
 
   -- can move horizontally
   if move.ok then
    self.x=self.x+round(self.dx)
 
-   if abs(self.dx)<0.1 then self.dx=0 end
+   local adx=abs(self.dx)
 
-   if abs(self.dx)>0 and self.is.grounded then
+   if adx<0.05 then self.dx=0 end
+
+   if adx>0.5 and self.is.grounded then
     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,1,{size={1,3}})
    end
 
@@ -188,6 +194,8 @@ p.update=function(self)
   move=self:can_move_y()
 
   if move.ok then
+   move=self:collide_destructable(self.x,self.y+round(self.dy))
+   --[[
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x,self.y+round(self.dy)) then
      move.ok=false
@@ -195,6 +203,7 @@ p.update=function(self)
      break
     end
    end
+   ]]
   end
 
   -- can move vertically

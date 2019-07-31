@@ -112,9 +112,9 @@ bullet={
   if not self.complete then
    -- if we are a player bullet
    if self.type.player then
-    -- have we hit an anemeny?
+    -- have we hit an an enemy?
     for _,e in pairs(enemies.items) do
-     if self:collide_object(e) then
+     if e.visible and self:collide_object(e) then
       self:destroy()
       e:damage(self.type.health)
       break
@@ -128,12 +128,19 @@ bullet={
    -- if we hit something then end now
    if self.complete then return end
    --have we hit a visible destructabe?
+   local move=self:collide_destructable()
+   if not move.ok then
+    self:destroy()
+    move.d:damage(self.type.health)
+   end
+   --[[
    for _,d in pairs(destructables.items) do
     if self:collide_object(d) then
      self:destroy()
      d:damage(self.type.health)
     end
    end
+   ]]
   end
  end,
  draw=function(self)

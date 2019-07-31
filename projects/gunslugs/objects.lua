@@ -44,7 +44,6 @@ collection={
   if self.count==0 then return end
   for _,i in pairs(self.items) do
    i:draw()
-   --if i.complete then self:del(i) end
   end
  end,
  add=function(self,object)
@@ -189,6 +188,14 @@ movable={
   local y=self.y+round(self.dy)
   if self.dy>0 then y=y+7 end
   return self:can_move({{self.x,y},{self.x+7,y}},flag)
+ end,
+ collide_destructable=function(self,x,y)
+  for _,d in pairs(destructables.items) do
+   if d.visible and self~=d and self:collide_object(d,x,y) then
+    return {ok=false,ty=d.y,tx=d.x,d=d}
+   end
+  end
+  return {ok=true}
  end
 } setmetatable(movable,{__index=object})
 
