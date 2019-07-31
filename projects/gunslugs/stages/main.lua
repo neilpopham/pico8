@@ -20,19 +20,9 @@ stage_main={
   p:update()
   p.camera:update()
   bullets:update()
-
-  local cx=p.camera:position()
-  local cx2=cx+screen.width
-  for _,o in pairs(destructables.items) do
-   o.visible=(o.complete==false and o.x>=cx and o.x<=cx2)
-  end
-  for _,o in pairs(enemies.items) do
-   o.visible=(o.complete==false and o.x>=cx and o.x<=cx2)
-  end
-  for _,o in pairs(pickups.items) do
-   o.visible=(o.complete==false and o.x>=cx and o.x<=cx2)
-  end
-
+  set_visible(destructables)
+  set_visible(enemies)
+  set_visible(pickups)
   enemies:update()
   destructables:update()
   pickups:update()

@@ -27,6 +27,14 @@ function clone(o)
  return c
 end
 
+function set_visible(collection)
+ local cx=p.camera:position()
+ local cx2=cx+screen.width
+ for _,o in pairs(collection.items) do
+  o.visible=(o.complete==false and o.x>=cx and o.x<=cx2)
+ end
+end
+
 function zget(tx,ty)
  local tile=mget(tx,ty)
  if fget(tx,ty,0) then return true end

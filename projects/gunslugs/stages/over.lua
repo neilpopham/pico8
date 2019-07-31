@@ -3,7 +3,7 @@ stage_over={
  init=function(self)
   self.t=0
  end,
-
+ --[[
  reset=function()
   enemies:reset()
   bullets:reset()
@@ -12,16 +12,23 @@ stage_over={
   particles:reset()
   p:reset(true)
  end,
+ ]]
 
  update=function(self)
   stage_main.update(self)
   if self.t>120 then
    if btn(pad.btn1) then
-    self:reset()
+    --self:reset()
     stage=stage_main
     stage:init()
    elseif btn(pad.btn2) or self.t>1800 then
-    self:reset()
+    --self:reset()
+    enemies:reset()
+    bullets:reset()
+    destructables:reset()
+    pickups:reset()
+    particles:reset()
+    p:reset(true)
     stage=stage_intro
     stage:init()
    end

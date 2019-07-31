@@ -9,10 +9,10 @@ add_stage("run_turn",3,false,{22},{22},"still")
 add_stage("jump_turn",3,false,{22},{22},"jump")
 add_stage("fall_turn",3,false,{22},{22},"fall")
 add_stage("jump_fall",3,false,{22},{22},"fall")
-
 p.anim:init("still",dir.right)
 
 p.reset=function(self,full)
+ self.anim.current.dir=dir.right
  self.max.prejump=8    -- ticks allowed before hitting ground to jump
  self.max.health=500
  self.is={
