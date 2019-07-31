@@ -1,9 +1,7 @@
 enemy_shoot_dumb=function(self)
  local face=self.anim.current.dir
- bullets:add(
-  bullet:create(
-   self.x+(face==dir.left and 0 or 6),self.y+4,face,self.type.bullet_type
-  )
+ bullet:create(
+  self.x+(face==dir.left and 0 or 8),self.y+5,face,self.type.bullet_type
  )
  shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=3})
  sfx(4)
@@ -109,8 +107,8 @@ enemy={
   self.visible=false
   printh("enemy destroyed at "..self.x..","..self.y)
   doublesmoke(
-   (flr(self.x/8)*8)+3,
-   (flr(self.y/8)*8)+3,
+   (flr(self.x/8)*8)+4,
+   (flr(self.y/8)*8)+4,
    {20,10,10},
    {
     {col=self.type.col,size=self.type.size},
@@ -151,9 +149,6 @@ enemy={
   else
    self.dy-=3
    self.max.dy=p.y<self.y-24 and 6 or 2
-   printh("max dy "..self.max.dy)
-   printh(self.y.." -> "..p.y)
-   --self.dx=0
   end
 
   self.dy=self.dy+drag.gravity

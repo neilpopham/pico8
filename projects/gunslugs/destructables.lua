@@ -1,8 +1,8 @@
 destructable_types={
  nil,
- {sprite=2,health=50,col=9,range=1,size={6,12},shake=nil},
- {sprite=3,health=50,col=8,range=15,size={10,16},shake=2},
- {sprite=4,health=50,col=11,range=20,size={16,24},shake=3}
+ {sprite=2,health=50,col=9,size={6,12}},
+ {sprite=3,health=50,col=8,size={10,16},range=15,shake=2},
+ {sprite=4,health=50,col=11,size={16,24},range=20,shake=3}
 }
 
 destructable={
@@ -20,8 +20,8 @@ destructable={
   local size={self.type.size[1]*(health/200),self.type.size[2]*(health/200)}
   printh("size1:"..size[1].." size2:"..size[2]) -- ########################
   doublesmoke(
-   (flr(self.x/8)*8)+3,
-   (flr(self.y/8)*8)+3,
+   (flr(self.x/8)*8)+4,
+   (flr(self.y/8)*8)+4,
    {10,5,5},
    {
     {col=self.type.col,size=size},
@@ -29,38 +29,17 @@ destructable={
     {col=self.type.col,life={20,30}}
    }
   )
-  if self.type.shake then
+  -- if we are explosive then cause some collateral damage
+  if self.type.range then
    p.camera:shake(self.type.shake)
-  end
-  for _,d in pairs(destructables.items) do
-   if d.visible and self~=d then
-    local distance=self:distance(d)
-    if distance<self.type.range then
-     --local strength=self.type.range/distance
-     --printh("collateral:"..strength.." "..(self.type.health*strength))
-     --d:damage(self.type.health*strength)
-     d:damage(abs(self.health))
-    end
-   end
-  end
-  self:foobar(p)
-  for _,e in pairs(enemies.items) do
-    if e.visible then
-     self:foobar(e)
-    end
+   self:collateral(self.type.range,abs(self.health))
   end
  end,
- foobar=function(self,o)
-  distance=self:distance(o)
-  if distance<self.type.range then
-   o.damage(o,abs(self.health))
-   local strength=self.type.range/distance
-   local dx=6*strength
-   o.dx=o.dx+(o.x<self.x and -dx or dx)
-   o.dy=-dx
-   o.max.dy=6
-  end
+ --[[
+ foobar=function(self,strength,health,dir)
+  self:damage(health)
  end,
+ ]]
  update=function(self)
   if not self.visible then return end
   self.dy=self.dy+0.25

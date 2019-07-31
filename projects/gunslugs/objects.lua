@@ -111,6 +111,37 @@ object={
   printh("destroyed with "..health)
   self.complete=true
  end,
+ collateral=function(self,range,health)
+  if range==0 then return end
+  local foo={}
+  for _,d in pairs(destructables.items) do
+   if d.visible and d~=self then
+    add(foo,d)
+   end
+  end
+  for _,e in pairs(enemies.items) do
+   if e.visible and e~=self then
+    add(foo,e)
+   end
+  end
+  add(foo,p)
+  for _,o in pairs(foo) do
+   distance=self:distance(o)
+   if distance<range then
+    o:foobar(range/distance,health,o.x<self.x and -1 or 1)
+   end
+  end
+ end,
+ foobar=function(self,strength,health,dir)
+  printh("foobar "..strength.." "..health.." "..dir)
+  self:damage(health)
+  if not self.complete then
+   local dx=6*strength
+   self.dx+=dx*dir
+   self.dy=-dx
+   self.max.dy=6
+  end
+ end,
  draw=function(self,sprite)
   if not self.complete then
    spr(sprite,self.x,self.y)

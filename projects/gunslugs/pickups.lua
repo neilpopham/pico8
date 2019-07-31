@@ -2,6 +2,7 @@ pickup={
  destroy=function(self)
   self.visible=false
   self.complete=true
+  sfx(5)
  end,
  update=function(self)
   if not self.visible then return end
@@ -22,7 +23,6 @@ medikit={
  update=function(self)
   if not self.visible then return end
  	if self:collide_object(p) then
-   sfx(5)
    p:add_health(250)
    smoke:create(self.x+4,self.y+4,10,{col=8,size={8,16}})
    self:destroy()

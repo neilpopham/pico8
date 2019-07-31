@@ -30,7 +30,7 @@ p.reset=function(self,full)
  self.dy=0
  self.camera=cam:create(p,1024,128)
  if full then
-  self.bullet_type=1
+  self.bullet_type=3
   self.health=self.max.health
  end
 end
@@ -91,8 +91,8 @@ p.destroy=function(self,health)
  self.complete=true
  p.camera:shake(3)
  doublesmoke(
-  self.x+3,
-  self.y+3,
+  self.x+4,
+  self.y+4,
   {20,10,10},
   {{col=12,size={12,30}},{col=7,size={12,30}},{col=8,life={40,80}}}
  )
@@ -247,11 +247,10 @@ p.update=function(self)
      )
      -- if we've fallen far then do a little bounce
      if self.f>10 then
-      sfx(2)
       p.camera:shake(self.f/16)
       self.dy=min(-3,-(round(self.f/6)))
       self.max.dy=6
-      printh("dy:"..self.dy)
+      sfx(2)
      end
 
     end
@@ -270,14 +269,12 @@ p.update=function(self)
   if self.b>0 then
    self.b=self.b-1
   elseif btn(pad.btn2) then
-   sfx(4)
-   bullets:add(
-    bullet:create(
-     self.x+(face==dir.left and 0 or 6),self.y+4,face,self.bullet_type
-    )
+   bullet:create(
+    self.x+(face==dir.left and 0 or 8),self.y+5,face,self.bullet_type
    )
-   shells:create(self.x+(face==dir.left and 2 or 4),self.y+3,1,{col=9})
+   shells:create(self.x+(face==dir.left and 2 or 4),self.y+4,1,{col=9})
    self.b=16
+   sfx(4)
   else
    self.b=0
   end
