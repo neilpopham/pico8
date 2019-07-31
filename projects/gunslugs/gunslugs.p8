@@ -7,12 +7,24 @@ screen={width=128,height=128,x2=127,y2=127}
 dir={left=1,right=2}
 drag={air=0.95,ground=0.65,gravity=0.7}
 
+--[[ TODO
+get spiders working
+show current gun in hud (2x1 sprites)
+place new guns in map
+try a grenade launch bullet type (angled and bouncing)
+- can be used by an enemy and player gun
+maybe take multiplier off camera and up values currently passed through
+change medikit to white case?
+check how many sprites we actually can use!
+]]
+
 #include functions.lua
 #include particles.lua
 #include camera.lua
 #include objects.lua
 #include button.lua
 #include destructables.lua
+#include weapons.lua
 #include enemies.lua
 #include player.lua
 #include bullets.lua

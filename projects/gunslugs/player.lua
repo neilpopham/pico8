@@ -13,8 +13,7 @@ add_stage("jump_fall",1,false,{16},{19},"fall")
 p.anim:init("still",dir.right)
 
 p.reset=function(self,full)
- -- ticks allowed before hitting ground to jump
- self.max.prejump=8
+ self.max.prejump=8 -- ticks allowed before hitting ground to jump
  self.max.health=500
  self.is={
   grounded=false,
@@ -22,7 +21,7 @@ p.reset=function(self,full)
   falling=false
  }
  self.complete=false
- self.b=0
+ self.b=32760 -- force user to release button from intro screen
  self.f=0
  self.x=8
  self.y=112
@@ -30,7 +29,7 @@ p.reset=function(self,full)
  self.dy=0
  self.camera=cam:create(p,1024,128)
  if full then
-  self.bullet_type=3
+  self.weapon=weapon_types[3]
   self.health=self.max.health
  end
 end
@@ -266,15 +265,25 @@ p.update=function(self)
   end
 
   -- fire
-  if self.b>0 then
-   self.b=self.b-1
-  elseif btn(pad.btn2) then
-   bullet:create(
-    self.x+(face==dir.left and 0 or 8),self.y+5,face,self.bullet_type
-   )
-   shells:create(self.x+(face==dir.left and 2 or 4),self.y+4,1,{col=9})
-   self.b=16
-   sfx(4)
+  if btn(pad.btn2) then
+   if self.b>0 then
+    self.b=self.b-1
+   else
+    bullet:create(
+     self.x+(face==dir.left and 0 or 8),
+     self.y+5,
+     face,
+     self.weapon.bullet_type
+    )
+    shells:create(
+     self.x+(face==dir.left and 2 or 4),
+     self.y+4,
+     1,
+     {col=9}
+    )
+    self.b=self.weapon.rate
+    sfx(self.weapon.sfx)
+   end
   else
    self.b=0
   end

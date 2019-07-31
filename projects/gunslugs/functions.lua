@@ -19,6 +19,14 @@ function extend(...)
  return o
 end
 
+function clone(o)
+ local c={}
+ for k,v in pairs(o) do
+  c[k]=v
+ end
+ return c
+end
+
 function zget(tx,ty)
  local tile=mget(tx,ty)
  if fget(tx,ty,0) then return true end

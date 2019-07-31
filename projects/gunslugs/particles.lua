@@ -3,6 +3,7 @@ particle={
   params=params or {}
   params.life=params.life or {60,120}
   params.angle=mrnd(params.angle,false)
+  params.force=mrnd(params.force,false)
   local o=params
   o=extend(o,{x=params.x,y=params.y,life=mrnd(params.life),complete=false})
   setmetatable(o,self)
@@ -110,7 +111,7 @@ shells={
       x=x,
       y=y,
       life={30,60},
-      force=mrnd({1,2},false),
+      force={1,2},
       g=0.2,
       b=0.7,
       angle={0.6,0.9}
@@ -135,7 +136,7 @@ smoke={
       delay=0,
       col=7,
       life={10,20},
-      force=mrnd({0.2,1},false),
+      force={0.2,1},
       angle={0,1},
       size={4,6},
       shrink=0.8

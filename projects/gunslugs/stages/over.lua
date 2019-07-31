@@ -15,14 +15,16 @@ stage_over={
 
  update=function(self)
   stage_main.update(self)
-  if btn(pad.btn1) and self.t>120 then
-   self:reset()
-   stage=stage_main
-   stage:init()
-  elseif btn(pad.btn2) or self.t>1800 then
-   self:reset()
-   stage=stage_intro
-   stage:init()
+  if self.t>120 then
+   if btn(pad.btn1) then
+    self:reset()
+    stage=stage_main
+    stage:init()
+   elseif btn(pad.btn2) or self.t>1800 then
+    self:reset()
+    stage=stage_intro
+    stage:init()
+   end
   end
   self.t=self.t+1
  end,

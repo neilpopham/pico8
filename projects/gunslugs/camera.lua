@@ -32,8 +32,8 @@ cam={
   end
   --calculate shake
   if self.force>0 then
-   self.sx=4-rnd(8)
-   self.sy=4-rnd(8)
+   self.sx=1-rnd(2)
+   self.sy=1-rnd(2)
    self.sx*=self.force
    self.sy*=self.force
    self.force*=0.9

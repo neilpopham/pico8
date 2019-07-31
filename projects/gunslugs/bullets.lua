@@ -90,14 +90,12 @@ bullet={
  destroy=function(self)
   self.complete=true
   -- draw some smoke exploding from the thing we just hit
-  local x=self.x+self.type.w/2
-  local y=self.y+self.type.h/2
   local angle=self.dir==dir.left and {0.75,1.25} or {0.25,0.75}
   smoke:create(
-   x,
-   y,
+   self.x+self.type.w/2,
+   self.y+self.type.h/2,
    5,
-   {col=12,angle=angle,force=mrnd({2,3},false),size={1,3}}
+   {col=12,angle=angle,force={2,3},size={1,3}}
   )
   -- if we are explosive then cause some collateral damage
   if self.type.range then
