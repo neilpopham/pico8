@@ -81,7 +81,7 @@ enemy_types={
 enemy={
  create=function(self,x,y,type)
   local ttype=enemy_types[type]
-  local o=animatable.create(self,x,y,0.1,-2,1,2)
+  local o=animatable.create(self,x,y,0.1,-2,1,3)
   ttype.add_stages(o)
   --[[
   local add_stage=function(...) o.anim:add_stage(...) end
@@ -149,7 +149,11 @@ enemy={
   if move.ok then
    self.x=self.x+round(self.dx)
   else
-   self.dx=0
+   self.dy-=3
+   self.max.dy=p.y<self.y-24 and 6 or 2
+   printh("max dy "..self.max.dy)
+   printh(self.y.." -> "..p.y)
+   --self.dx=0
   end
 
   self.dy=self.dy+drag.gravity
@@ -158,7 +162,7 @@ enemy={
   move=self:can_move_y()
 
   if move.ok then
-   self.max.dy=2
+   if self.dy>0 then self.max.dy=3 end
    for _,d in pairs(destructables.items) do
     if d.visible and self:collide_object(d,self.x,self.y+round(self.dy)) then
      move.ok=false
@@ -171,6 +175,7 @@ enemy={
   if move.ok then
    self.y=self.y+round(self.dy)
   else
+   self.y=move.ty+(self.dy>0 and -8 or 8)
    self.dy=0
   end
 
@@ -197,7 +202,7 @@ enemy={
   else
    local r=rnd()
    if r<self.type.itchy and self.type.has_shot(self,p) then
-    self.type.shoot(self)
+    --self.type.shoot(self)
    end
    self.b=self.type.b
   end
