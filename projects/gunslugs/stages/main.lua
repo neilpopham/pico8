@@ -55,6 +55,9 @@ stage_main={
   print("level",1,1,6)
   print(lpad(level),24,1,9)
 
+  spr(62,48,1)
+  spr(63,56,1)
+
   -- health
   for i=1,p.max.health/100 do
    spr(p.health>=i*100 and 47 or 46,87+(8*(i-1)),0)

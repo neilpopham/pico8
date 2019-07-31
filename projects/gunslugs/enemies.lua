@@ -197,7 +197,7 @@ enemy={
   else
    local r=rnd()
    if r<self.type.itchy and self.type.has_shot(self,p) then
-    --self.type.shoot(self)
+    self.type.shoot(self)
    end
    self.b=self.type.b
   end
