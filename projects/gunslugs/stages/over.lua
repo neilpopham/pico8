@@ -26,7 +26,7 @@ stage_over={
     stage:init()
    end
   end
-  self.t=self.t+1
+  self.t+=1
  end,
 
  draw=function(self)
