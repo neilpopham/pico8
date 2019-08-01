@@ -31,7 +31,7 @@ bullet_collection={
 bullet_update_linear=function(self,face)
  self.x=self.x+(face==dir.left and -self.ax or self.ax)
  local cx=p.camera:position()
- if self.x<(cx-self.type.w) or self.x>(cx+screen.width) then
+ if self.x<(cx-self.type.w-8) or self.x>(cx+screen.width+8) then
    self.complete=true
  end
 end
@@ -53,7 +53,7 @@ bullet_update_arc=function(self,face)
  affector.bounce(self)
  self.x+=self.dx
  local cx=p.camera:position()
- if self.x<(cx-self.type.w) or self.x>(cx+screen.width) then
+ if self.x<(cx-self.type.w-8) or self.x>(cx+screen.width+8) then
    self.complete=true
  end
  self.y+=self.dy

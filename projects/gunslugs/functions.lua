@@ -31,7 +31,7 @@ function set_visible(collection)
  local cx=p.camera:position()
  local cx2=cx+screen.width
  for _,o in pairs(collection.items) do
-  o.visible=(o.complete==false and o.x>=cx and o.x<=cx2)
+  o.visible=(o.complete==false and o.x>=cx-32 and o.x<=cx2+32)
  end
 end
 
