@@ -7,7 +7,7 @@ screen={width=128,height=128,x2=127,y2=127}
 dir={left=1,right=2}
 drag={air=0.95,ground=0.65,gravity=0.7}
 
---[[ TODO
+--[[ todo
 get spiders working
 show current gun in hud (2x1 sprites)
 place new guns in map
@@ -21,6 +21,8 @@ way to pick enemies:
 - create pool from all picked starting with most difficult
 - limit pool so that easier ones slowly get missed out
 - use that pool when setting map
+use a counter to make enemies jump
+- as counter ticks down simulate button press
 create scene transition
 {{7},nil,nil,{15,10},nil,{6},nil,nil,{9},{14},{11,12},nil,{13},nil,{4},{8},{3,5},nil,{2},nil,nil,{1}}
 ]]
