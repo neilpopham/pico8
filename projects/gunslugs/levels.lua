@@ -36,13 +36,13 @@ function fillmap(level)
 
  -- destructables
  local pool={}
- local red_barrels=12+2*level
- for i=1,red_barrels do
-  add(pool,3)
- end
  local green_barrels=4+2*level
  for i=1,green_barrels do
   add(pool,4)
+ end
+ local red_barrels=12+2*level
+ for i=1,red_barrels do
+  add(pool,3)
  end
  local count=#pool+1
  local max=70+level*2
