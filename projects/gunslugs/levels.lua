@@ -1,21 +1,24 @@
 function fillmap(level)
 
- local data,levels,m={},{15,11,7}
+ local data,levels,floors,m={},{15,11,7},120
 
+ -- init
  for x=0,127 do
-
-  if not data[x] then data[x]={} end
+  data[x]={}
   data[x][15]=1
+ end
+ -- init
 
-  if x>7 then
-
-   -- levels [1]
+ -- floors
+ for x=0,127 do
+  if x>7 and x<120 then
    if x%4==0 then
     if rnd()<0.5 then
      for i=x,x+3 do
       if not data[i] then data[i]={} end
       data[i][levels[2]]=1
      end
+     floors+=4
     end
     if data[x-3][levels[2]]==1 then
      if rnd()<0.5 then
@@ -23,51 +26,80 @@ function fillmap(level)
        if not data[i] then data[i]={} end
        data[i][levels[3]]=1
       end
+      floors+=4
      end
     end
    end
-   -- levels
+  end
+ end
+ -- floors
 
-   -- crates [2]
-   for i,l in pairs(levels) do
-    if data[x][l] and data[x][l]==1 then
-     m=data[x][l-1]==2 and 0.75/i or 0.25/i
-     if rnd()<m then
-      data[x][l-1]=2
-      m=data[x][l-2]==2 and 0.6/i or 0.2/i
-      if rnd()<m then
-       data[x][l-2]=2
-      end
+ -- destructables
+ local pool={}
+ local red_barrels=12+2*level
+ for i=1,red_barrels do
+  add(pool,3)
+ end
+ local green_barrels=4+2*level
+ for i=1,green_barrels do
+  add(pool,4)
+ end
+ local count=#pool+1
+ local max=70+level*2
+ if count<max then -- fill up with crates
+  for i=count,max do
+   add(pool,2)
+  end
+ end
+ for x=7,124 do
+  local pcount=#pool
+  local l1=2/3*pcount/floors
+  local l2=1/3*pcount/floors
+  printh("x "..x.." floors "..floors.." pool "..pcount.. " l1 "..l1.. " l2 "..l2) -- #######################
+  for i,l in pairs(levels) do
+   if data[x][l]==1 then
+    local m=l1
+    if data[x-1][l-1] then m*=1.5 end
+    if rnd()<m and #pool>0 then
+     local d=del(pool,pool[mrnd{1,#pool}])
+     data[x][l-1]=d
+     if rnd()<l2 and #pool>0 then
+      d=del(pool,pool[mrnd{1,#pool}])
+      data[x][l-2]=d
      end
     end
+    floors-=1
    end
-   -- crates
+  end
+ end
+ -- destructables
 
-   -- barrels
-   local k={
-    nil,
-    {0.6,0.2,0.4,0.1},
-    {0.4,0.1,0.2,0.05},
-    {0.2,0.05,0.1,0.02}
-   }
-   for i,l in pairs(levels) do
-    if data[x][l]==1 then
-     for n=0,1 do
-      for j=2,4 do
-       if not data[x][l-1-n] and data[x][l-n] then
-        m=data[x][l-1-n]==j and k[j][1+n*2]/i or k[j][2+n*2]/i
-        if rnd()<m then
-         data[x][l-1-n]=j
-        end
-       end
-      end
-     end
-    end
-   end
-   -- barrels
+ -- enemies
+ local pool={}
+ local cautious=1+level
+ for i=1,cautious do
+  add(pool,2)
+ end
+ local spider=1+level
+ for i=1,spider do
+  add(pool,3)
+ end
+ local count=#pool+1
+ local max=5+level
+ if count<max then -- fill up with grunts
+  for i=count,max do
+   add(pool,1)
+  end
+ end
+ -- enemies
+
+local e=0
+ for x=0,127 do
 
    --enemies [48]
    if x>31 and x%8==0 then
+
+    --enemies [48]
     for i,l in pairs(levels) do
      if data[x] and data[x][l]==1 then
       if rnd()<0.9/i then
@@ -79,23 +111,22 @@ function fillmap(level)
       end
      end
     end
-   end
-   --enemies
+    --enemies [48]
 
-   --medikit [40]
-   if x>31 and x%16==0 then
-    for i,l in pairs(levels) do
-     if data[x] and data[x][l]==1 then
-      if rnd()<0.25 then
-       data[x][l-3]=40
-       break
+    --medikit [40]
+    if x%16==0 then
+     for i,l in pairs(levels) do
+      if data[x] and data[x][l]==1 then
+       if rnd()<0.25 then
+        data[x][l-3]=40
+        break
+       end
       end
      end
     end
-   end
-   --medikit
+    --medikit
 
-  end
+   end
 
   -- bricks
   if x>0 then
@@ -128,14 +159,13 @@ function fillmap(level)
  for x=0,127 do
   for y=0,15 do
    if not data[x][y] then data[x][y]=0 end
-   if data[x][y]==2 then
-    destructables:add(destructable:create(x*8,y*8,2))
-   elseif data[x][y]==3 then
-    destructables:add(destructable:create(x*8,y*8,3))
-   elseif data[x][y]==4 then
-    destructables:add(destructable:create(x*8,y*8,4))
+   if data[x][y]>=2 and data[x][y]<=4 then
+    destructables:add(destructable:create(x*8,y*8,data[x][y]))
    elseif data[x][y]==48 then
-    local type=rnd()<0.25 and 2 or 1
+    -- this will need changing
+    -- types used should depend on level
+    -- see TODO for methodology
+    local type=mrnd({1,3})
     enemies:add(enemy:create(x*8,y*8,type))
    elseif data[x][y]==40 then
     pickups:add(medikit:create(x*8,y*8))

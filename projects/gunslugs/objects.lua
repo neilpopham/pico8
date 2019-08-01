@@ -223,7 +223,7 @@ animatable={
     end,
     set=function(self,stage,dir)
      if self.stage==stage then return end
-     printh("stage:"..stage) -- ###########################
+     --printh("stage:"..stage) -- ###########################
      self.reset(self)
      self.stage=stage
      self.dir=dir or self.dir

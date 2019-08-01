@@ -39,8 +39,8 @@ enemy_stages_goon=function(o)
 end
 
 enemy_stages_spider=function(o)
- enemy_add_stages(o,"still",1,false,{48},{51})
- enemy_add_stages(o,"run",5,true,{48,49,48,50},{51,52,51,53})
+ enemy_add_stages(o,"still",1,false,{55},{56})
+ enemy_add_stages(o,"run",5,true,{55,57},{56,58})
 end
 
 enemy_types={
@@ -51,6 +51,7 @@ enemy_types={
   b=60,
   itchy=0.75,
   bullet_type=2,
+  dx=1,
   has_shot=enemy_has_shot_dumb,
   shoot=enemy_shoot_dumb,
   add_stages=enemy_stages_goon
@@ -62,6 +63,7 @@ enemy_types={
   b=60,
   itchy=0.5,
   bullet_type=2,
+  dx=1,
   has_shot=enemy_has_shot_cautious,
   shoot=enemy_shoot_dumb,
   add_stages=enemy_stages_goon
@@ -72,6 +74,7 @@ enemy_types={
   size={8,12},
   b=60,
   itchy=0,
+  dx=2,
   add_stages=enemy_stages_spider
  },
 }
@@ -79,7 +82,7 @@ enemy_types={
 enemy={
  create=function(self,x,y,type)
   local ttype=enemy_types[type]
-  local o=animatable.create(self,x,y,0.1,-2,1,3)
+  local o=animatable.create(self,x,y,0.15,-2,ttype.dx,3)
   ttype.add_stages(o)
   --[[
   local add_stage=function(...) o.anim:add_stage(...) end
@@ -96,6 +99,7 @@ enemy={
   o.type=ttype
   o.health=ttype.health
   o.b=0
+  o.button=counter:create(1,12)
   return o
  end,
  hit=function(self)
@@ -150,8 +154,16 @@ enemy={
   if move.ok then
    self.x=self.x+round(self.dx)
   else
-   self.dy-=3
-   self.max.dy=p.y<self.y-24 and 6 or 2
+   -- do faux button press jump
+   if self.dy==0 then self.button:increment() end
+   if self.button:valid() then
+    self.dy=self.dy+self.ay
+    self.max.dy=3
+    if self.dy<0 then self.button:increment() end
+   end
+   --self.dy-=3
+   --self.max.dy=p.y<self.y-24 and 6 or 2
+
   end
 
   self.dy=self.dy+drag.gravity
@@ -178,9 +190,14 @@ enemy={
   else
    self.y=move.ty+(self.dy>0 and -8 or 8)
    self.dy=0
+   self.button:reset()
   end
 
   self.anim.current:set(round(self.dx)==0 and "still" or "run")
+
+  if self:collide_object(p) then
+   printh("enemy is colliding with the player!!!")
+  end
 
   -- shoot
   --[[
@@ -203,7 +220,7 @@ enemy={
   else
    local r=rnd()
    if r<self.type.itchy and self.type.has_shot(self,p) then
-    self.type.shoot(self)
+    --self.type.shoot(self)
    end
    self.b=self.type.b
   end

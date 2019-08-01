@@ -8,7 +8,7 @@ destructable_types={
 destructable={
  create=function(self,x,y,type)
   local ttype=destructable_types[type]
-  local o=movable.create(self,x,y,0,0,0,4)
+  local o=movable.create(self,x,y,0,0,0,3)
   o.type=ttype
   o.health=ttype.health
   return o

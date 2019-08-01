@@ -66,9 +66,8 @@ stage_main={
   end
  --]]
 
- ---[[
   local cx=p.camera:position()
-  --print("\142:"..cx.." \152:"..(flr(stat(0))).." \150:"..(flr(stat(1)*100)),0,12,3)
- --]]
+  print("\142:"..cx.." \152:"..(flr(stat(0))).." \150:"..(flr(stat(1)*100)),0,12,3)
+
  end
 }
