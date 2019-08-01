@@ -99,6 +99,7 @@ enemy={
   o.type=ttype
   o.health=ttype.health
   o.b=0
+  o.p=0
   o.button=counter:create(1,13)
   return o
  end,
@@ -195,24 +196,12 @@ enemy={
 
   self.anim.current:set(round(self.dx)==0 and "still" or "run")
 
-  if self:collide_object(p) then
-   printh("enemy is colliding with the player!!!")
+  if self.p>0 then
+   self.p=max(0,self.p-1)
+  elseif self:collide_object(p) then
+   p:foobar(1,20,sgn(self.dx))
+   self.p=30
   end
-
-  -- shoot
-  --[[
-  if self.b>0 then
-   self.b=self.b-1
-  elseif self.type.has_shot(self,p) then
-   local r=rnd()
-   if r<self.type.itchy then
-    self.type.shoot(self)
-   end
-   self.b=self.type.b
-  else
-   self.b=0
-  end
-  ]]
 
   -- shoot
   if self.b>0 then
