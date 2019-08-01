@@ -36,12 +36,47 @@ bullet_update_linear=function(self,face)
  end
 end
 
+bullet_update_arc=function(self,face)
+ if self.t==0 then
+  self.angle=face==dir.left and 0.7 or 0.8
+  self.angle+=round(p.dx)*0.05
+  self.force=6
+  self.g=0.5--drag.gravity
+  self.b=0.7
+ end
+ local md=6
+ affector.gravity(self)
+ --local dx=self.dx
+ --local dy=self.dy
+ self.dx=mid(-md,self.dx,md)
+ self.dy=mid(-md,self.dy,md)
+ affector.bounce(self)
+ self.x+=self.dx
+ local cx=p.camera:position()
+ if self.x<(cx-self.type.w) or self.x>(cx+screen.width) then
+   self.complete=true
+ end
+ self.y+=self.dy
+ if self.t>60 then
+  self:destroy()
+  doublesmoke(
+   self.x,
+   self.y,
+   {20,10,10},
+   {
+    {col=8,size={8,12}},
+    {col=7,size={8,12}},
+    {col=8,life={20,40}}
+   }
+  )
+ end
+end
+
 -- types of bullet
 bullet_types={
  {
   sprite=32,
   ax=3,
-  ay=3,
   w=2,
   h=2,
   player=true,
@@ -51,7 +86,6 @@ bullet_types={
  {
   sprite=33,
   ax=3,
-  ay=3,
   w=2,
   h=2,
   player=false,
@@ -61,12 +95,21 @@ bullet_types={
  {
   sprite=34,
   ax=3,
-  ay=3,
   w=4,
   h=4,
   player=true,
   health=200,
   update=bullet_update_linear,
+  range=20,
+  shake=3
+ },
+ {
+  sprite=35,
+  w=4,
+  h=5,
+  player=true,
+  health=200,
+  update=bullet_update_arc,
   range=20,
   shake=3
  }
@@ -80,10 +123,13 @@ bullet={
    x-(face==dir.left and ttype.w or 0),
    flr(y-ttype.h/2),
    ttype.ax,
-   ttype.ay
+   ttype.ay,
+   ttype.dx,
+   ttype.dy
   )
   o.type=ttype
   o.dir=face
+  o.t=0
   o:add_hitbox(ttype.w,ttype.h)
   bullets:add(o)
  end,
@@ -142,6 +188,7 @@ bullet={
    end
    ]]
   end
+  self.t+=1
  end,
  draw=function(self)
   spr(self.type.sprite,self.x,self.y)

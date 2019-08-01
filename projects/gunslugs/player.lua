@@ -30,7 +30,7 @@ p.reset=function(self,full)
  self.dy=0
  self.camera=cam:create(p,1024,128)
  if full then
-  self.weapon=weapon_types[3]
+  self.weapon=weapon_types[1]
   self.health=self.max.health
  end
 end
@@ -277,7 +277,7 @@ p.update=function(self)
   -- fire
   if btn(pad.btn2) then
    if self.b>0 then
-    self.b=self.b-1
+    self.b-=1
    else
     bullet:create(
      self.x+(face==dir.left and 0 or 8),
@@ -296,6 +296,15 @@ p.update=function(self)
    end
   else
    self.b=0
+  end
+
+  if btnp(pad.down) then
+   bullet:create(
+    self.x+(face==dir.left and 0 or 8),
+    self.y+8,
+    face,
+    4
+   )
   end
 
 end

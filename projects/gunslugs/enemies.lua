@@ -99,7 +99,7 @@ enemy={
   o.type=ttype
   o.health=ttype.health
   o.b=0
-  o.button=counter:create(1,12)
+  o.button=counter:create(1,13)
   return o
  end,
  hit=function(self)
@@ -159,7 +159,7 @@ enemy={
    if self.button:valid() then
     self.dy=self.dy+self.ay
     self.max.dy=3
-    if self.dy<0 then self.button:increment() end
+    self.button:increment()
    end
    --self.dy-=3
    --self.max.dy=p.y<self.y-24 and 6 or 2
