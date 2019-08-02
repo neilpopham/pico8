@@ -19,7 +19,8 @@ p.reset=function(self,full)
   falling=false
  }
  self.complete=false
- self.b=32760
+ self.shoot=32760
+ self.grenade=32760
  p.btn1.released=false
  self.f=0
  self.x=8
@@ -221,8 +222,8 @@ p.update=function(self)
 
   -- fire
   if btn(pad.btn2) then
-   if self.b>0 then
-    self.b-=1
+   if self.shoot>0 then
+    self.shoot-=1
    else
     bullet:create(
      self.x+(face==dir.left and 0 or 8),
@@ -236,19 +237,26 @@ p.update=function(self)
      1,
      {col=9}
     )
-    self.b=self.weapon.rate
+    self.shoot=self.weapon.rate
     sfx(self.weapon.sfx)
    end
   else
-   self.b=0
+   self.shoot=0
   end
 
-  if btnp(pad.down) then
-   bullet:create(
-    self.x+(face==dir.left and 0 or 8),
-    self.y+8,
-    face,
-    4
-   )
+  if btn(pad.down) then
+   if self.grenade>0 then
+    self.grenade-=1
+   else
+    bullet:create(
+     self.x+(face==dir.left and 0 or 8),
+     self.y+8,
+     face,
+     4
+    )
+    self.grenade=80
+   end
+  else
+   self.grenade=0
   end
 end

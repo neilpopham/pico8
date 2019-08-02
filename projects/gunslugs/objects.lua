@@ -178,13 +178,13 @@ movable={
  end,
  can_move_x=function(self)
   local x=self.x+round(self.dx)
-  if self.dx>0 then x=x+7 end
-  return self:can_move({{x,self.y},{x,self.y+7}},1)
+  if self.dx>0 then x+=self.hitbox.x2 end
+  return self:can_move({{x,self.y},{x,self.y+self.hitbox.y2}},1)
  end,
  can_move_y=function(self,flag)
   local y=self.y+round(self.dy)
-  if self.dy>0 then y=y+7 end
-  return self:can_move({{self.x,y},{self.x+7,y}},flag)
+  if self.dy>0 then y+=self.hitbox.y2 end
+  return self:can_move({{self.x,y},{self.x+self.hitbox.x2,y}},flag)
  end,
  collide_destructable=function(self,x,y)
   for _,d in pairs(destructables.items) do

@@ -37,6 +37,8 @@ end
 
 bullet_update_arc=function(self,face)
  if self.t==0 then
+  self.x+=(face==dir.left and 4 or -4)
+  self.y-=self.type.h/2
   self.angle=face==dir.left and 0.7 or 0.8
   self.angle+=flr(p.dx)*0.05
   self.force=6
@@ -45,9 +47,20 @@ bullet_update_arc=function(self,face)
  end
  local md=6
  affector.gravity(self)
+ local move=self:can_move_x()
+ if not move.ok then
+  self.force=self.force*self.b
+  self.angle=(0.5-self.angle)%1
+ end
+ move=self:can_move_y()
+ if not move.ok then
+  self.force=self.force*self.b
+  self.angle=(1-self.angle)%1
+ end
+ self.dx=cos(self.angle)*self.force
+ self.dy=-sin(self.angle)*self.force
  self.dx=mid(-md,self.dx,md)
  self.dy=mid(-md,self.dy,md)
- affector.bounce(self)
  self.x+=self.dx
  local cx=p.camera:position()
  if self.x<(cx-self.type.w-8) or self.x>(cx+screen.width+8) then

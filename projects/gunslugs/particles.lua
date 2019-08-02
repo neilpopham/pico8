@@ -46,13 +46,13 @@ affector={
   local tile=mget(flr(x/8),flr(y/8))
   if fget(tile,0) then
    self.force=self.force*self.b
-   self.angle=(0.5-self.angle) % 1
+   self.angle=(0.5-self.angle)%1
   end
   x,y=self.x,self.y+self.dy
   tile=mget(flr(x/8),flr(y/8))
   if fget(tile,0) then
    self.force=self.force*self.b
-   self.angle=(1-self.angle) % 1
+   self.angle=(1-self.angle)%1
   end
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force
