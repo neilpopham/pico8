@@ -44,7 +44,7 @@ enemy_stages_spider=function(o)
 end
 
 enemy_types={
- { -- goon 1
+ { -- goon 1 idiot
   health=100,
   col=6,
   size={8,12},
@@ -56,13 +56,25 @@ enemy_types={
   shoot=enemy_shoot_dumb,
   add_stages=enemy_stages_goon
  },
- { -- goon 2
+ { -- goon 2 cautious
   health=100,
-  col=10,
+  col=9,
   size={8,12},
   b=60,
   itchy=0.5,
   bullet_type=2,
+  dx=1,
+  has_shot=enemy_has_shot_cautious,
+  shoot=enemy_shoot_dumb,
+  add_stages=enemy_stages_goon
+ },
+ { -- goon 3 grendader
+  health=100,
+  col=8,
+  size={8,12},
+  b=60,
+  itchy=0.5,
+  bullet_type=3,
   dx=1,
   has_shot=enemy_has_shot_cautious,
   shoot=enemy_shoot_dumb,

@@ -89,7 +89,7 @@ bullet_types={
   w=2,
   h=2,
   player=true,
-  health=200,
+  health=100,
   update=bullet_update_linear
  },
  {
@@ -98,7 +98,7 @@ bullet_types={
   w=2,
   h=2,
   player=false,
-  health=200,
+  health=100,
   update=bullet_update_linear
  },
  {
@@ -106,10 +106,10 @@ bullet_types={
   ax=3,
   w=4,
   h=4,
-  player=true,
+  player=false,
   health=200,
   update=bullet_update_linear,
-  range=20,
+  range=15,
   shake=3
  },
  {
