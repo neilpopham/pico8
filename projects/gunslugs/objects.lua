@@ -104,10 +104,8 @@ object={
   end
  end,
  hit=function(self,health)
-  printh("hit with "..health)
  end,
  destroy=function(self,health)
-  printh("destroyed with "..health)
   self.complete=true
  end,
  collateral=function(self,range,health)
@@ -132,7 +130,6 @@ object={
   end
  end,
  foobar=function(self,strength,health,dir)
-  printh("foobar "..strength.." "..health.." "..dir)
   self:damage(health)
   if not self.complete then
    local dx=6*strength
@@ -204,13 +201,11 @@ animatable={
   local o=movable.create(self,...)
   o.anim={
    init=function(self,stage,dir)
-    -- record frame count for each stage dir
     for s in pairs(self.stage) do
      for d=1,#self.stage[s].dir do
       self.stage[s].dir[d].fcount=#self.stage[s].dir[d].frames
      end
     end
-    -- init current values
     self.current:set(stage,dir)
    end,
    stage={},
@@ -223,7 +218,6 @@ animatable={
     end,
     set=function(self,stage,dir)
      if self.stage==stage then return end
-     --printh("stage:"..stage) -- ###########################
      self.reset(self)
      self.stage=stage
      self.dir=dir or self.dir
@@ -266,6 +260,5 @@ animatable={
  end,
  draw=function(self)
   object.draw(self,self.animate(self))
-  --rect(self.x+self.hitbox.x,self.y+self.hitbox.y,self.x+self.hitbox.x2,self.y+self.hitbox.y2,2) -- ####################
  end
 } setmetatable(animatable,{__index=movable})

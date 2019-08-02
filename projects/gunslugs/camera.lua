@@ -24,13 +24,11 @@ cam={
   if max_x<self.target.x then
    self.x=self.x+min(self.target.x-max_x,2)
   end
-  --restrict to limits
   if self.x<self.min then
    self.x=self.min
   elseif self.x>self.max then
    self.x=self.max
   end
-  --calculate shake
   if self.force>0 then
    self.sx=1-rnd(2)
    self.sy=1-rnd(2)

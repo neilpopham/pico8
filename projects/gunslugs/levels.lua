@@ -1,5 +1,4 @@
 function fillmap(level)
-
  local data,levels,floors,m={},{15,11,7},120
 
  -- init
@@ -55,7 +54,6 @@ function fillmap(level)
   local pcount=#pool
   local l1=2/3*pcount/floors
   local l2=1/3*pcount/floors
-  printh("x "..x.." floors "..floors.." pool "..pcount.. " l1 "..l1.. " l2 "..l2) -- #######################
   for i,l in pairs(levels) do
    if data[x][l]==1 then
     local m=l1
