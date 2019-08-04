@@ -42,9 +42,9 @@ function fillmap(level)
   add(pool,3)
  end
  local count=#pool+1
- local max=70+level*2
- if count<max then
-  for i=count,max do
+ local total=70+level*2
+ if count<total then
+  for i=count,total do
    add(pool,2)
   end
  end
@@ -74,24 +74,14 @@ function fillmap(level)
  -- create enemies pool
  pool={}
  f=floors
- local cautious=1+level
- for i=1,cautious do
-  add(pool,2)
+ local total=8+level
+ local best=min(level+1,8)
+ local lower=flr((level+3)/4)
+ for i=1,total do
+   add(pool,mrnd({lower,best}))
  end
- local grenader=1+level
- for i=1,grenader do
-  add(pool,3)
- end
- local spider=1+level
- for i=1,spider do
-  add(pool,4)
- end
- local count=#pool+1
- local max=5+level
- if count<max then
-  for i=count,max do
-   add(pool,1)
-  end
+ for i=1,lower do
+   add(pool,9)
  end
  local ecount=#pool
  -- create enemies pool

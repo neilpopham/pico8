@@ -27,12 +27,10 @@ bullet_collection={
  end
 } setmetatable(bullet_collection,{__index=collection})
 
+
 bullet_update_linear=function(self,face)
  self.x=self.x+(face==dir.left and -self.ax or self.ax)
- local cx=p.camera:position()
- if self.x<(cx-self.type.w-8) or self.x>(cx+screen.width+8) then
-   self.complete=true
- end
+ self:check_visibility()
 end
 
 bullet_update_arc=function(self,face)
@@ -62,10 +60,6 @@ bullet_update_arc=function(self,face)
  self.dx=mid(-md,self.dx,md)
  self.dy=mid(-md,self.dy,md)
  self.x+=self.dx
- local cx=p.camera:position()
- if self.x<(cx-self.type.w-8) or self.x>(cx+screen.width+8) then
-   self.complete=true
- end
  self.y+=self.dy
  if self.t>60 then
   self:destroy()
@@ -80,6 +74,7 @@ bullet_update_arc=function(self,face)
    }
   )
  end
+ self:check_visibility()
 end
 
 bullet_types={
@@ -141,6 +136,12 @@ bullet={
   o.t=0
   o:add_hitbox(ttype.w,ttype.h)
   bullets:add(o)
+ end,
+ check_visibility=function(self)
+  local cx=p.camera:position()
+  if self.x<(cx-self.type.w-8) or self.x>(cx+screen.width+8) then
+    self.complete=true
+  end
  end,
  destroy=function(self)
   self.complete=true

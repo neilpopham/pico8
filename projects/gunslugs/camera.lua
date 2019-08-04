@@ -48,6 +48,6 @@ cam={
   map(0,0)
  end,
  shake=function(self,force)
-  self.force=min(self.force+force,6)
+  self.force=min(self.force+force,9)
  end,
 }

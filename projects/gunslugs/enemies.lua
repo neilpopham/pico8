@@ -43,53 +43,51 @@ enemy_stages_spider=function(o)
  enemy_add_stages(o,"run",5,true,{55,57},{56,58})
 end
 
+local goons={
+ {itchy=0.5,b=60,dx=1},
+ {itchy=0.5,b=60,dx=1,has_shot=enemy_has_shot_cautious},
+ {itchy=0.5,b=60,dx=1,jumps=true},
+ {itchy=0.5,b=60,dx=1,jumps=true,has_shot=enemy_has_shot_cautious},
+ {itchy=0.5,b=60,dx=1,col=9,has_shot=enemy_has_shot_cautious,bullet_type=3},
+ {itchy=0.7,b=60,dx=1,col=9,jumps=true,has_shot=enemy_has_shot_cautious,bullet_type=3},
+ {itchy=0.5,b=60,dx=2,jumps=true,has_shot=enemy_has_shot_cautious,bullet_type=2},
+}
+
 enemy_types={
- { -- goon 1 idiot
+ {
   health=100,
   col=6,
   size={8,12},
   b=60,
-  itchy=0.75,
+  itchy=0.3,
   bullet_type=2,
   dx=1,
+  jumps=false,
   has_shot=enemy_has_shot_dumb,
   shoot=enemy_shoot_dumb,
   add_stages=enemy_stages_goon
- },
- { -- goon 2 cautious
-  health=100,
-  col=9,
-  size={8,12},
-  b=60,
-  itchy=0.5,
-  bullet_type=2,
-  dx=1,
-  has_shot=enemy_has_shot_cautious,
-  shoot=enemy_shoot_dumb,
-  add_stages=enemy_stages_goon
- },
- { -- goon 3 grendader
-  health=100,
-  col=8,
-  size={8,12},
-  b=60,
-  itchy=0.5,
-  bullet_type=3,
-  dx=1,
-  has_shot=enemy_has_shot_cautious,
-  shoot=enemy_shoot_dumb,
-  add_stages=enemy_stages_goon
- },
- { -- spider
+ }
+}
+
+for _,e in pairs(goons) do
+  local o=extend(clone(enemy_types[1]),e)
+  add(enemy_types,o)
+end
+
+add(
+ enemy_types, -- spider
+ {
   health=50,
   col=1,
   size={8,12},
   b=60,
   itchy=0,
   dx=2,
+  jumps=true,
   add_stages=enemy_stages_spider
- },
-}
+ }
+)
+
 
 enemy={
  create=function(self,x,y,type)
@@ -141,11 +139,16 @@ enemy={
   if move.ok then
    self.x=self.x+round(self.dx)
   else
-   if self.dy==0 then self.button:increment() end
-   if self.button:valid() then
-    self.dy=self.dy+self.ay
-    self.max.dy=3
-    self.button:increment()
+   if self.type.jumps then
+    if self.dy==0 then self.button:increment() end
+    if self.button:valid() then
+     self.dy=self.dy+self.ay
+     self.max.dy=3
+     self.button:increment()
+    end
+   else
+    --self.x=move.tx+(self.dir)
+    self.dx=0
    end
   end
   self.dy=self.dy+drag.gravity
