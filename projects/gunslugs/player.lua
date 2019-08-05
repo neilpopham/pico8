@@ -19,9 +19,6 @@ p.reset=function(self,full)
   falling=false
  }
  self.complete=false
- self.shoot=32760
- self.grenade=32760
- p.btn1.released=false
  self.f=0
  self.x=8
  self.y=112
@@ -32,6 +29,9 @@ p.reset=function(self,full)
   self.weapon=weapon_types[1]
   self.health=self.max.health
  end
+ self.shoot=30
+ self.grenade=30
+ p.btn1.released=false
 end
 p.btn1=button:create(pad.btn1)
 p:reset(true)
@@ -221,42 +221,34 @@ p.update=function(self)
   end
 
   -- fire
-  if btn(pad.btn2) then
-   if self.shoot>0 then
-    self.shoot-=1
-   else
-    bullet:create(
-     self.x+(face==dir.left and 0 or 8),
-     self.y+5,
-     face,
-     self.weapon.bullet_type
-    )
-    shells:create(
-     self.x+(face==dir.left and 2 or 4),
-     self.y+4,
-     1,
-     {col=9}
-    )
-    self.shoot=self.weapon.rate
-    sfx(self.weapon.sfx)
-   end
-  else
-   self.shoot=0
+  if btn(pad.btn2) and self.shoot==0 then
+   bullet:create(
+    self.x+(face==dir.left and 0 or 8),
+    self.y+5,
+    face,
+    self.weapon.bullet_type
+   )
+   shells:create(
+    self.x+(face==dir.left and 2 or 4),
+    self.y+4,
+    1,
+    {col=9}
+   )
+   self.shoot=self.weapon.rate
+   sfx(self.weapon.sfx)
   end
+  if self.shoot>0 then self.shoot-=1 end
 
-  if btn(pad.down) then
-   if self.grenade>0 then
-    self.grenade-=1
-   else
-    bullet:create(
-     self.x+(face==dir.left and 0 or 8),
-     self.y+8,
-     face,
-     4
-    )
-    self.grenade=80
-   end
-  else
-   self.grenade=0
+  -- grenade
+  if btn(pad.down) and self.grenade==0 then
+   bullet:create(
+    self.x+(face==dir.left and 0 or 8),
+    self.y+8,
+    face,
+    4
+   )
+   self.grenade=60
   end
+  if self.grenade>0 then self.grenade-=1 end
+
 end
