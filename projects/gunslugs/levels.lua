@@ -74,47 +74,51 @@ function fillmap(level)
  -- create enemies pool
  pool={}
  f=floors
- local total=8+level
+ local total=6+level
  local best=min(level+1,8)
  local lower=flr((level+3)/4)
  for i=1,total do
    add(pool,mrnd({lower,best}))
  end
  for i=1,lower do
-   add(pool,9)
+   if rnd()<0.5 then add(pool,9) end
  end
  local ecount=#pool
  -- create enemies pool
- for x=0,127 do
-   if x>31 and x%8==0 then
-    -- place enemies
-    for i,l in pairs(levels) do
-     if ecount>0 and data[x] and data[x][l]==1 then
-      local m=ecount/(f/6)
-      if rnd()<m then
-       local p=l
-       repeat p-=1 until data[x][p]==nil
-       data[x][p]=48
-       ecount-=1
-       f-=4
-      end
+ -- place enemies
+ local r=0
+ repeat
+  for x=124,32,-8 do
+   for i,l in pairs(levels) do
+    if ecount>0 and data[x] and data[x][l]==1 then
+     local m=(ecount/(f/6))+r
+     if rnd()<m then
+      local p=l
+      repeat p-=1 until data[x][p]==nil
+      data[x][p]=48
+      ecount-=1
+      f-=4
      end
     end
-    -- place enemies
-    -- place medikits
-    if x%16==0 then
-     for i,l in pairs(levels) do
-      if data[x] and data[x][l]==1 then
-       if rnd()<0.25 then
-        data[x][l-3]=40
-        break
-       end
-      end
-     end
-    end
-    -- place medikit
    end
-  -- place bricks
+  end
+  r+=0.3
+ until ecount==0
+ -- place enemies
+ -- place medikits
+ for x=120,32,-16 do
+  for i,l in pairs(levels) do
+   if data[x] and data[x][l]==1 then
+    if rnd()<0.2 then
+     data[x][l-3]=40
+     break
+    end
+   end
+  end
+ end
+ -- place medikits
+ -- place bricks
+ for x=0,127 do
   if x>0 then
    for y=2,9 do
     if not data[x][y] or (data[x][y]>=9 and data[x][y]<=13) then
@@ -137,8 +141,8 @@ function fillmap(level)
     end
    end
   end
-  -- place bricks
  end
+ -- place bricks
  -- create map from data
  for x=0,127 do
   for y=0,15 do
@@ -155,4 +159,5 @@ function fillmap(level)
    end
   end
  end
+ -- create map from data
 end
