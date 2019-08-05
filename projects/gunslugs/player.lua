@@ -130,7 +130,8 @@ p.update=function(self)
    end
    if self.x>1023 then
     self:add_health(250)
-    stage_main:next()
+    sfx(5)
+    stage_main:complete()
    end
 
   -- cannot move horizontally

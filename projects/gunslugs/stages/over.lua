@@ -23,11 +23,21 @@ stage_over={
   self.t+=1
  end,
  draw=function(self)
-  stage_main.draw(self)
   if self.t>120 then
-   oprint("game over",46,61,8)
-   oprint("press \142 to restart",28,90,6)
-   oprint("or \151 to return to the menu",12,100,6)
+   print("game over",46,48,9)
+   print("press \142 to restart",28,60,13)
+   print("or \151 to return to the menu",12,68,13)
+  else
+   stage_main:draw()
+   if self.t>80 then
+    local t=self.t-80
+    for y=8,127,8 do
+     rectfill(-1,y,t*4,y+3,0)
+    end
+    for y=12,127,8 do
+     rectfill(127-t*4,y,128,y+3,0)
+    end
+   end
   end
  end
 }

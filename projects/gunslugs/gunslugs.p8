@@ -50,6 +50,7 @@ function _init()
  destructables=collection:create()
  pickups=collection:create()
  stage=stage_intro
+ draw_stage=stage
  stage:init()
 end
 
@@ -59,7 +60,8 @@ end
 
 function _draw()
  cls()
- stage:draw()
+ draw_stage:draw()
+ draw_stage=stage
 end
 
 __gfx__
