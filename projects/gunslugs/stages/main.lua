@@ -34,31 +34,37 @@ stage_main={
  end,
  draw_intro=function(self)
   self:draw_core()
-  self.t+=1
-  for y=8,127,8 do
-   rectfill(self.t*4,y,128,y+3,0)
-  end
-  for y=12,127,8 do
-   rectfill(-1,y,127-self.t*4,y+3,0)
-  end
-  if self.t>32 then
+  local f=flr(self.t/2)
+  if f<6 then
+   for y=8,127,8 do
+    for x=0,127,8 do
+     circfill(x+3,y+3,6-f,0)
+    end
+   end
+   self:draw_hud()
+   self.t+=1
+  else
    self.t=0
    self.draw=self.draw_core
   end
  end,
  draw_outro=function(self)
-  self:draw_core()
-  self.t+=1
-  for y=8,127,8 do
-   rectfill(-1,y,self.t*4,y+3,0)
-  end
-  for y=12,127,8 do
-   rectfill(127-self.t*4,y,128,y+3,0)
-  end
-  if self.t>32 then
+  local f=flr(self.t/2)
+  if f<6 then
+   self:draw_core()
+   for y=8,127,8 do
+    for x=0,127,8 do
+     circfill(x+3,y+3,f,0)
+    end
+   end
+   self:draw_hud()
+   self.t+=1
+  elseif f>10 then
    self.t=0
    self.draw=self.draw_intro
    self:next()
+  else
+   self.t+=1
   end
  end,
  draw_core=function(self)
@@ -70,7 +76,9 @@ stage_main={
   pickups:draw()
   particles:draw()
   p:draw()
-  -- draw hud
+  self:draw_hud()
+ end,
+ draw_hud=function(self)
   camera(0,0)
   print("level",1,1,6)
   print(lpad(level),24,1,9)

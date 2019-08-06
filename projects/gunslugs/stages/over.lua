@@ -23,20 +23,22 @@ stage_over={
   self.t+=1
  end,
  draw=function(self)
-  if self.t>120 then
+  if self.t<100 then
+   stage_main:draw()
+  elseif self.t>120 then
    print("game over",46,48,9)
    print("press \142 to restart",28,60,13)
    print("or \151 to return to the menu",12,68,13)
-  else
-   stage_main:draw()
-   if self.t>80 then
-    local t=self.t-80
+  elseif self.t>=100 then
+   local f=flr((self.t-100)/2)
+   if f<6 then
+    stage_main:draw()
     for y=8,127,8 do
-     rectfill(-1,y,t*4,y+3,0)
+     for x=0,127,8 do
+      circfill(x+3,y+3,f,0)
+     end
     end
-    for y=12,127,8 do
-     rectfill(127-t*4,y,128,y+3,0)
-    end
+    stage_main:draw_hud()
    end
   end
  end

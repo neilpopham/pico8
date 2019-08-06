@@ -19,6 +19,7 @@ p.reset=function(self,full)
   falling=false
  }
  self.complete=false
+ self.visible=true
  self.f=0
  self.x=8
  self.y=112
@@ -128,10 +129,11 @@ p.update=function(self)
    if adx>0.5 and self.is.grounded then
     smoke:create(self.x+(face==dir.left and 3 or 4),self.y+7,1,{size={1,3}})
    end
-   if self.x>1023 then
+   if self.x>1023 and self.visible then
     self:add_health(250)
-    sfx(5)
+    --sfx(5)
     stage_main:complete()
+    self.visible=false
    end
 
   -- cannot move horizontally
