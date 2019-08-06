@@ -137,7 +137,7 @@ enemy={
    move=self:collide_destructable(self.x+round(self.dx),self.y)
   end
   if move.ok then
-   self.x=self.x+round(self.dx)
+   self.x+=round(self.dx)
   else
    if self.type.jumps then
     if self.dy==0 then self.button:increment() end
@@ -159,7 +159,7 @@ enemy={
    move=self:collide_destructable(self.x,self.y+round(self.dy))
   end
   if move.ok then
-   self.y=self.y+round(self.dy)
+   self.y+=round(self.dy)
   else
    self.y=move.ty+(self.dy>0 and -8 or 8)
    self.dy=0
@@ -173,7 +173,7 @@ enemy={
    self.p=30
   end
   if self.b>0 then
-   self.b=self.b-1
+   self.b-=1
   else
    local r=rnd()
    if r<self.type.itchy and self.type.has_shot(self,p) then

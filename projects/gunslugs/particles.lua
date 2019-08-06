@@ -12,7 +12,7 @@ particle={
  end,
  draw=function(self,fn)
   self:_draw()
-  self.life=self.life-1
+  self.life-=1
   if self.life==0 then self.complete=true end
  end
 }
@@ -34,7 +34,7 @@ affector={
  gravity=function(self)
   local dx=cos(self.angle)*self.force
   local dy=-sin(self.angle)*self.force
-  dy=dy+self.g
+  dy+=self.g
   self.angle=atan2(dx,-dy)
   self.force=sqrt(dx^2+dy^2)
   self.dx=cos(self.angle)*self.force
@@ -77,8 +77,8 @@ affector={
  end,
 
  update=function(self)
-  self.x=self.x+self.dx
-  self.y=self.y+self.dy
+  self.x+=self.dx
+  self.y+=self.dy
  end
 }
 

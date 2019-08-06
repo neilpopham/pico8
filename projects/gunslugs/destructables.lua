@@ -1,8 +1,8 @@
 destructable_types={
  nil,
- {sprite=2,health=50,col=9,size={6,12}},
- {sprite=3,health=50,col=8,size={10,16},range=15,shake=2},
- {sprite=4,health=50,col=11,size={16,24},range=20,shake=3}
+ {sprite=2,health=10,col=9,size={6,12}},
+ {sprite=3,health=10,col=8,size={10,16},range=15,shake=2},
+ {sprite=4,health=10,col=11,size={16,24},range=20,shake=3}
 }
 
 destructable={
@@ -34,14 +34,14 @@ destructable={
  end,
  update=function(self)
   if not self.visible then return end
-  self.dy=self.dy+0.25
+  self.dy+=0.25
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   move=self:can_move_y()
   if move.ok then
    move=self:collide_destructable()
   end
   if move.ok then
-   self.y=self.y+round(self.dy)
+   self.y+=round(self.dy)
   else
    if self.dy>1 then
     particles:add(

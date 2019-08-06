@@ -102,16 +102,16 @@ p.update=function(self)
   if btn(pad.left) then
    self.anim.current.dir=dir.left
    check(self,stage,face)
-   self.dx=self.dx-self.ax
+   self.dx-=self.ax
   elseif btn(pad.right) then
    self.anim.current.dir=dir.right
    check(self,stage,face)
-   self.dx=self.dx+self.ax
+   self.dx+=self.ax
   else
    if self.is.jumping or self.is.falling then
-    self.dx=self.dx*drag.air
+    self.dx*=drag.air
    else
-    self.dx=self.dx*drag.ground
+    self.dx*=drag.ground
    end
   end
   self.dx=mid(-self.max.dx,self.dx,self.max.dx)
@@ -122,7 +122,7 @@ p.update=function(self)
 
   -- can move horizontally
   if move.ok then
-   self.x=self.x+round(self.dx)
+   self.x+=round(self.dx)
    local adx=abs(self.dx)
    if adx<0.05 then self.dx=0 end
    if adx>0.5 and self.is.grounded then
@@ -142,7 +142,7 @@ p.update=function(self)
 
   -- jump
   if self.btn1:pressed() and self:can_jump() then
-   self.dy=self.dy+self.ay
+   self.dy+=self.ay
    self.max.dy=3
   else
    if self.is.jumping then
@@ -151,7 +151,7 @@ p.update=function(self)
     self.btn1.disabled=false
    end
   end
-  self.dy=self.dy+drag.gravity
+  self.dy+=drag.gravity
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   move=self:can_move_y()
   if move.ok then
@@ -185,7 +185,7 @@ p.update=function(self)
     end
     self:set_state("jumping")
    end
-   self.y=self.y+round(self.dy)
+   self.y+=round(self.dy)
 
   -- cannot move vertically
   else

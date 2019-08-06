@@ -6,7 +6,7 @@ counter={
   return o
  end,
  increment=function(self)
-  self.tick=self.tick+1
+  self.tick+=1
   if self.tick>self.max then
    self:reset()
    if type(self.on_max)=="function" then
@@ -48,11 +48,11 @@ collection={
  end,
  add=function(self,object)
   add(self.items,object)
-  self.count=self.count+1
+  self.count+=1
  end,
  del=function(self,object)
   del(self.items,object)
-  self.count=self.count-1
+  self.count-=1
  end,
  reset=function(self)
   self.items={}
@@ -96,7 +96,7 @@ object={
    (object.y+object.hitbox.y<y+hitbox.h)
  end,
  damage=function(self,health)
-  self.health=self.health-health
+  self.health-=health
   if self.health>0 then
    self:hit(health)
   else
@@ -239,10 +239,10 @@ animatable={
   local s=self.anim.stage[c.stage]
   local d=s.dir[c.dir]
   if c.loop then
-   c.tick=c.tick+1
+   c.tick+=1
    if c.tick==s.ticks then
     c.tick=0
-    c.frame=c.frame+1
+    c.frame+=1
     if c.frame>d.fcount then
      if s.next then
       c:set(s.next)

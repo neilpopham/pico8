@@ -19,10 +19,10 @@ cam={
   local min_x = self.x-self.buffer
   local max_x = self.x+self.buffer
   if min_x>self.target.x then
-   self.x=self.x+min(self.target.x-min_x,2)
+   self.x+=min(self.target.x-min_x,2)
   end
   if max_x<self.target.x then
-   self.x=self.x+min(self.target.x-max_x,2)
+   self.x+=min(self.target.x-max_x,2)
   end
   if self.x<self.min then
    self.x=self.min
