@@ -147,7 +147,6 @@ enemy={
      self.button:increment()
     end
    else
-    --self.x=move.tx+(self.dir)
     self.dx=0
    end
   end
@@ -170,6 +169,7 @@ enemy={
    self.p=max(0,self.p-1)
   elseif self:collide_object(p) then
    p:foobar(1,20,sgn(self.dx))
+   sfx(2)
    self.p=30
   end
   if self.b>0 then

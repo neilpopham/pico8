@@ -63,16 +63,6 @@ bullet_update_arc=function(self,face)
  self.y+=self.dy
  if self.t>60 then
   self:destroy()
-  doublesmoke(
-   self.x,
-   self.y,
-   {20,10,10},
-   {
-    {col=8,size={8,12}},
-    {col=7,size={8,12}},
-    {col=8,life={20,40}}
-   }
-  )
  end
  self:check_visibility()
 end
@@ -153,6 +143,17 @@ bullet={
    {col=12,angle=angle,force={2,3},size={1,3}}
   )
   if self.type.range then
+   doublesmoke(
+    self.x,
+    self.y,
+    {20,10,10},
+    {
+     {col=8,size={8,12}},
+     {col=7,size={8,12}},
+     {col=8,life={20,40}}
+    }
+   )
+   sfx(3) 
    p.camera:shake(self.type.shake)
    self:collateral(self.type.range,self.type.health)
   end

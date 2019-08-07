@@ -30,6 +30,9 @@ destructable={
   if self.type.range then
    p.camera:shake(self.type.shake)
    self:collateral(self.type.range,abs(self.health))
+   sfx(4)
+  else
+   sfx(2)
   end
  end,
  update=function(self)
