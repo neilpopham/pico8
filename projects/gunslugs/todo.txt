@@ -1,0 +1,17 @@
+get spiders working
+show current gun in hud (2x1 sprites)
+place new guns in map
+try a grenade launch bullet type (angled and bouncing)
+- can be used by an enemy and player gun
+maybe take multiplier off camera and up values currently passed through
+change medikit to white case?
+check how many sprites we actually can use!
+way to pick enemies:
+- pick a number depending on the level
+- create pool from all picked starting with most difficult
+- limit pool so that easier ones slowly get missed out
+- use that pool when setting map
+use a counter to make enemies jump
+- as counter ticks down simulate button press
+create scene transition
+{{7},nil,nil,{15,10},nil,{6},nil,nil,{9},{14},{11,12},nil,{13},nil,{4},{8},{3,5},nil,{2},nil,nil,{1}}
