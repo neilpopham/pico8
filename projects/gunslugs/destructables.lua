@@ -11,6 +11,7 @@ destructable={
   local o=movable.create(self,x,y,0,0,0,3)
   o.type=ttype
   o.health=ttype.health
+  o.t=0
   return o
  end,
  destroy=function(self,health)
@@ -35,8 +36,18 @@ destructable={
    sfx(2)
   end
  end,
+ foobar=function(self,strength,health,dir)
+  self.fb={strength,health,dir}
+  self.t+=flr(strength*5)
+ end,
  update=function(self)
   if not self.visible then return end
+  if self.t>0 then
+   self.t-=1
+   if self.t==0 then
+    object.foobar(self,self.fb[1],self.fb[2],self.fb[3])
+   end
+  end
   self.dy+=0.25
   self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   move=self:can_move_y()

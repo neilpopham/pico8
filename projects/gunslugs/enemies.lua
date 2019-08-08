@@ -151,12 +151,12 @@ enemy={
    end
   end
   self.dy=self.dy+drag.gravity
-  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   move=self:can_move_y()
   if move.ok then
-   if self.dy>0 then self.max.dy=3 end
+   --if self.dy>0 then self.max.dy=3 end
    move=self:collide_destructable(self.x,self.y+round(self.dy))
   end
+  self.dy=mid(-self.max.dy,self.dy,self.max.dy)
   if move.ok then
    self.y+=round(self.dy)
   else
