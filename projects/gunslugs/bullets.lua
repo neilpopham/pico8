@@ -27,7 +27,6 @@ bullet_collection={
  end
 } setmetatable(bullet_collection,{__index=collection})
 
-
 bullet_update_linear=function(self,face)
  self.x=self.x+(face==dir.left and -self.ax or self.ax)
  self:check_visibility()
@@ -153,7 +152,7 @@ bullet={
      {col=8,life={20,40}}
     }
    )
-   sfx(3) 
+   sfx(3)
    p.camera:shake(self.type.shake)
    self:collateral(self.type.range,self.type.health)
   end

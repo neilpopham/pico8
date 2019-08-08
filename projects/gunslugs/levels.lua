@@ -5,7 +5,6 @@ function fillmap(level)
   data[x]={}
   data[x][15]=1
  end
- -- init
  -- place floors
  for x=0,127 do
   if x>7 and x<120 then
@@ -29,7 +28,6 @@ function fillmap(level)
    end
   end
  end
- -- place loors
  -- create destructables pool
  pool={}
  f=floors
@@ -48,7 +46,6 @@ function fillmap(level)
    add(pool,2)
   end
  end
- -- create destructables pool
  -- place destructables
  for x=7,124 do
   local pcount=#pool
@@ -70,7 +67,6 @@ function fillmap(level)
    end
   end
  end
- -- place destructables
  -- create enemies pool
  pool={}
  f=floors
@@ -84,7 +80,6 @@ function fillmap(level)
    if rnd()<0.5 then add(pool,9) end
  end
  local ecount=#pool
- -- create enemies pool
  -- place enemies
  local r=0
  repeat
@@ -104,7 +99,6 @@ function fillmap(level)
   end
   r+=0.3
  until ecount==0
- -- place enemies
  -- place medikits
  for x=120,32,-16 do
   for i,l in pairs(levels) do
@@ -116,7 +110,6 @@ function fillmap(level)
    end
   end
  end
- -- place medikits
  -- place bricks
  for x=0,127 do
   if x>0 then
@@ -142,7 +135,6 @@ function fillmap(level)
    end
   end
  end
- -- place bricks
  -- create map from data
  for x=0,127 do
   for y=0,15 do
@@ -159,5 +151,4 @@ function fillmap(level)
    end
   end
  end
- -- create map from data
 end

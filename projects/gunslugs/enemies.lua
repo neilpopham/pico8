@@ -88,7 +88,6 @@ add(
  }
 )
 
-
 enemy={
  create=function(self,x,y,type)
   local ttype=enemy_types[type]

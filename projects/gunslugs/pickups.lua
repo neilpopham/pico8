@@ -22,7 +22,7 @@ medikit={
  end,
  update=function(self)
   if not self.visible then return end
- 	if self:collide_object(p) then
+  if self:collide_object(p) then
    p:add_health(250)
    smoke:create(self.x+4,self.y+4,10,{col=8,size={8,16}})
    self:destroy()
