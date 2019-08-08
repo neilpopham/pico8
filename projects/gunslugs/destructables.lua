@@ -38,7 +38,12 @@ destructable={
  end,
  foobar=function(self,strength,health,dir)
   self.fb={strength,health,dir}
-  self.t+=flr(strength*5)
+  local t=round(20/strength)
+  if self.t>0 then
+   self.t=min(self.t,t)
+  else
+   self.t=t
+  end
  end,
  update=function(self)
   if not self.visible then return end
