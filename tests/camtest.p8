@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- 
+--
 -- by neil popham
 
 function round(x) return flr(x+0.5) end
@@ -70,7 +70,7 @@ end
 function _init()
   p=create_item(40,40)
   p.camera=create_camera(p,320,192)
-end 
+end
 
 function _update60()
   if btn(2) then p.y=p.y-1 end
@@ -82,7 +82,7 @@ end
 
 function _draw()
  cls()
- 
+
  --camera(p.camera:position())
  --map(0,0)
  p.camera:map()
@@ -107,7 +107,7 @@ function _draw()
  end
 
  print ("player x:"..p.x,0,110)
- print ("y:"..p.y,60,110) 
+ print ("y:"..p.y,60,110)
 
 end
 __gfx__
