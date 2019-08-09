@@ -28,7 +28,7 @@ bullet_collection={
 } setmetatable(bullet_collection,{__index=collection})
 
 bullet_update_linear=function(self,face)
- self.x=self.x+(face==dir.left and -self.ax or self.ax)
+ self.x+=(face==dir.left and -self.ax or self.ax)
  self:check_visibility()
 end
 
