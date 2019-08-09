@@ -3,7 +3,6 @@ cam={
   local o={
    target=item,
    x=item.x,
-   y=item.y,
    buffer=12,
    min=40,
    force=0,
