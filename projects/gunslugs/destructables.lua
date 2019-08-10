@@ -24,7 +24,7 @@ destructable={
    {
     {col=self.type.col,size=self.type.size},
     {col=7,size=self.type.size},
-    {col=self.type.col,life={20,30}}
+    {col=self.type.col,life={20,50}}
    }
   )
   if self.type.range then
