@@ -90,7 +90,7 @@ shells={
      {
       x=x,
       y=y,
-      life={30,60},
+      life={30,50},
       force={1,2},
       g=0.2,
       b=0.7,
@@ -116,7 +116,7 @@ smoke={
       delay=0,
       col=7,
       life={10,20},
-      force={0.2,1},
+      force={0.3,1.2},
       angle={0,1},
       size={4,6},
       shrink=0.8
@@ -133,6 +133,6 @@ smoke={
 
 function doublesmoke(x,y,count,params)
  smoke:create(x,y,count[1],params[1])
- smoke:create(x+1,y-1,count[2],params[2])
+ smoke:create(x+rnd(3),y-rnd(3),count[2],params[2])
  shells:create(x,y,count[3],params[3])
 end

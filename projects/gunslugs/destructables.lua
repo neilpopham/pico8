@@ -2,7 +2,7 @@ destructable_types={
  nil,
  {sprite=2,health=10,col=9,size={6,12}},
  {sprite=3,health=10,col=8,size={10,16},range=15,shake=2},
- {sprite=4,health=10,col=11,size={16,24},range=20,shake=3}
+ {sprite=4,health=10,col=11,size={14,20},range=20,shake=3}
 }
 
 destructable={
@@ -17,15 +17,14 @@ destructable={
  destroy=function(self,health)
   self.complete=true
   self.visible=false
-  local size={self.type.size[1]*(health/200),self.type.size[2]*(health/200)}
   doublesmoke(
    (flr(self.x/8)*8)+4,
    (flr(self.y/8)*8)+4,
    {10,5,5},
    {
-    {col=self.type.col,size=size},
-    {col=7,size=size},
-    {col=self.type.col,life={20,30}}
+    {col=self.type.col,size=self.type.size},
+    {col=7,size=self.type.size},
+    {col=self.type.col,life={20,50}}
    }
   )
   if self.type.range then
