@@ -21,6 +21,7 @@ drag={air=0.95,ground=0.65,gravity=0.7}
 #include bullets.lua
 #include pickups.lua
 #include levels.lua
+#include stages/transition.lua
 #include stages/intro.lua
 #include stages/main.lua
 #include stages/over.lua

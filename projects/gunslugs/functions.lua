@@ -11,7 +11,7 @@ end
 function extend(...)
  local arg={...}
  local o=del(arg,arg[1])
- for a in all(arg) do
+ for _,a in pairs(arg) do
   for k,v in pairs(a) do
    o[k]=v
   end
@@ -27,11 +27,13 @@ function clone(o)
  return c
 end
 
-function set_visible(collection)
+function set_visible(items)
  local cx=p.camera:position()
  local cx2=cx+screen.width
- for _,o in pairs(collection.items) do
-  o.visible=(o.complete==false and o.x>=cx-32 and o.x<=cx2+32)
+ for _,collection in pairs(items) do
+  for _,o in pairs(collection.items) do
+   o.visible=(o.complete==false and o.x>=cx-32 and o.x<=cx2+32)
+  end
  end
 end
 

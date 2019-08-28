@@ -39,6 +39,9 @@ cam={
    end
   end
  end,
+ screenx=function(self)
+  return self.target.x-max(0,self.x-self.min)
+ end,
  position=function(self)
   return self.x-self.min
  end,

@@ -3,8 +3,6 @@ stage_main={
  init=function(self)
   level=0
   self:next(true)
-  self.draw=self.draw_intro
-  self.t=0
  end,
  next=function(self,full)
   level+=1
@@ -15,18 +13,18 @@ stage_main={
   particles:reset()
   p:reset(full)
   fillmap(level)
+  self.draw=self.draw_intro
+  self.transition=squares_in:create(p.camera:screenx(),p.y)
+  self.t=0
  end,
  complete=function(self)
-  --self:next()
   self.draw=self.draw_outro
  end,
  update=function(self)
   p:update()
   p.camera:update()
   bullets:update()
-  set_visible(destructables)
-  set_visible(enemies)
-  set_visible(pickups)
+  set_visible({destructables,enemies,pickups})
   enemies:update()
   destructables:update()
   pickups:update()
@@ -34,37 +32,22 @@ stage_main={
  end,
  draw_intro=function(self)
   self:draw_core()
-  local f=flr(self.t/2)
-  if f<6 then
-   for y=8,127,8 do
-    for x=0,127,8 do
-     circfill(x+3,y+3,6-f,0)
-    end
+  if self.transition then
+   if self.transition:draw() then
+    self.transition=nil
+    self.draw=self.draw_core
    end
-   self:draw_hud()
-   self.t+=1
-  else
-   self.t=0
-   self.draw=self.draw_core
   end
  end,
  draw_outro=function(self)
-  local f=flr(self.t/2)
-  if f<6 then
+  if self.transition then
    self:draw_core()
-   for y=8,127,8 do
-    for x=0,127,8 do
-     circfill(x+3,y+3,f,0)
-    end
+   if self.transition:draw() then
+    self.transition=nil
+    self:next()
    end
-   self:draw_hud()
-   self.t+=1
-  elseif f>10 then
-   self.t=0
-   self.draw=self.draw_intro
-   self:next()
   else
-   self.t+=1
+   self.transition=squares_out:create(p.camera:screenx(),p.y)
   end
  end,
  draw_core=function(self)
