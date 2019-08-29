@@ -167,9 +167,13 @@ enemy={
   if self.p>0 then
    self.p=max(0,self.p-1)
   elseif self:collide_object(p) then
-   p:foobar(1,20,sgn(self.dx))
-   sfx(2)
-   self.p=30
+   if p.f>10 then
+    self:hit(p.f*10)
+   else
+    p:foobar(1,20,sgn(self.dx))
+    sfx(2)
+    self.p=30
+   end
   end
   if self.b>0 then
    self.b-=1

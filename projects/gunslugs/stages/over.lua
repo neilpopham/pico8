@@ -2,10 +2,10 @@ stage_over={
  t=0,
  init=function(self)
   self.t=0
+  self.step=1
  end,
  update=function(self)
-  stage_main.update(self)
-  if self.t>120 then
+  if self.step==3 then
    if btn(pad.btn1) then
     stage=stage_main
     stage:init()
@@ -19,31 +19,31 @@ stage_over={
     stage=stage_intro
     stage:init()
    end
+  else
+   stage_main.update(self)
   end
   self.t+=1
  end,
  draw=function(self)
-  if self.t<100 then
-   stage_main:draw()
+  if self.step==3 then
+   stage_main:draw_hud()
+   print("game over",46,48,9)
+   print("press \142 to restart",28,60,13)
+   print("or \151 to return to the menu",12,68,13)
   else
-   local f=flr((self.t-100)/2)
-   if f<6 then
-    stage_main:draw()
-    for y=8,127,8 do
-     for x=0,127,8 do
-      circfill(x+3,y+3,f,0)
-     end
-    end
-   else
-    stage_main:draw_hud()
-    print("game over",46,48,9)
-    print("press \142 to restart",28,60,13)
-    print("or \151 to return to the menu",12,68,13)
-    if f<12 then
-     for y=8,127,8 do
-      for x=0,127,8 do
-       circfill(x+3,y+3,12-f,0)
-      end
+   stage_main:draw()
+  end
+  if self.t>100 then
+   if self.step==1 then
+    self.step=2
+    self.transition=squares_out:create(p.camera:screenx(),p.y)
+   elseif self.transition then
+    if self.transition:draw() then
+     if self.step==2 then
+      self.step=3
+      self.transition=squares_in:create(64,64)
+     else
+      self.transition=nil
      end
     end
    end
