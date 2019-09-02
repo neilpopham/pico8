@@ -136,76 +136,75 @@ squares_out={
 
 --[[
 function minskycircfill(y,x,r)
+ local size=8
+ local r1=8/size
+ local x=flr(x/size)
+ local y=flr(y/size)
+ local cells={x=(screen.width/size),y=(screen.height/size),x2=(screen.width/size)-1,y2=(screen.height/size)-1}
  local data={}
- --if r==1 then
-  --if y>0 then data[y-1]={x1=x,x2=x} end
-  --data[y]={x1=max(0,x-1),x2=min(15,x+1)}
-  --if y<15 then data[y+1]={x1=x,x2=x} end
- --end
  local j,k,rat=r,0,1/r
  for i=1,r*0.786 do
   k=k-rat*j
   j=j+rat*k
   ij=round(j)
-  mn,mx=max(0,flr(y+k)),min(15,ceil(y-k))
-  if x+ij<16 then
-   if data[x+ij]==nil then data[x+ij]={x1=127,x2=0} end
+  mn,mx=max(0,flr(y+k)),min(cells.x2,ceil(y-k))
+  if x+ij<cells.y then
+   if data[x+ij]==nil then data[x+ij]={x1=128,x2=0} end
    if mn<data[x+ij].x1 then data[x+ij].x1=mn end
    if mx>data[x+ij].x2 then data[x+ij].x2=mx end
   end
-  if x-ij>0 then
-   if data[x-ij]==nil then data[x-ij]={x1=127,x2=0} end
+  if x-ij>=r1 then
+   if data[x-ij]==nil then data[x-ij]={x1=128,x2=0} end
    if mn<data[x-ij].x1 then data[x-ij].x1=mn end
    if mx>data[x-ij].x2 then data[x-ij].x2=mx end
   end
   ik=round(k)
-  mn,mx=max(0,flr(y-j)),min(15,ceil(y+j))
-  if x+ik>0 then
-   if data[x+ik]==nil then data[x+ik]={x1=127,x2=0} end
+  mn,mx=max(0,flr(y-j)),min(cells.x2,ceil(y+j))
+  if x+ik>=r1 then
+   if data[x+ik]==nil then data[x+ik]={x1=128,x2=0} end
    if mn<data[x+ik].x1 then data[x+ik].x1=mn end
    if mx>data[x+ik].x2 then data[x+ik].x2=mx end
   end
-  if x-ik<16 then
-   if data[x-ik]==nil then data[x-ik]={x1=127,x2=0} end
+  if x-ik<cells.y then
+   if data[x-ik]==nil then data[x-ik]={x1=128,x2=0} end
    if mn<data[x-ik].x1 then data[x-ik].x1=mn end
    if mx>data[x-ik].x2 then data[x-ik].x2=mx end
   end
  end
- if data[x]==nil then data[x]={x1=127,x2=0} end
+ if data[x]==nil then data[x]={x1=128,x2=0} end
  if y-r<data[x].x1 then data[x].x1=max(0,y-r) end
- if y+r>data[x].x2 then data[x].x2=min(15,y+r) end
- local mx,my={min=15,max=0},{min=15,max=0}
+ if y+r>data[x].x2 then data[x].x2=min(cells.x2,y+r) end
+ local mx,my={min=cells.x2,max=0},{min=cells.x2,max=0}
  for y,d in pairs(data) do
   if y<my.min then my.min=y end
   if y>my.max then my.max=y end
   if d.x1<mx.min then mx.min=d.x1 end
   if d.x2>mx.max then mx.max=d.x2 end
  end
- if my.min>1 then
-  rectfill(0,8,127,(my.min*8)-1,0)
+ if my.min>r1 then
+  rectfill(0,8,screen.x2,(my.min*size)-1,0)
  end
- if my.max<15 then
-  rectfill(0,my.max*8+8,127,127,0)
+ if my.max<cells.y then
+  rectfill(0,my.max*size+size,screen.x2,screen.y2,0)
  end
  for y,d in pairs(data) do
-  if d.x1>0 then rectfill(0,y*8,(d.x1*8)-1,y*8+7,0) end
-  if d.x2<15 then rectfill(d.x2*8+8,y*8,127,y*8+7,0) end
+  if d.x1>0 then rectfill(0,y*size,(d.x1*size)-1,y*size+size-1,0) end
+  if d.x2<cells.x2 then rectfill(d.x2*size+size,y*size,screen.x2,y*size+size-1,0) end
  end
 end
 
 minsky_in={
  create=function(self,x,y)
   local o=transition.create(self,x,y)
-  o.tx,o.ty=flr(x/8),flr(y/8)
   return o
  end,
  radius=function(self)
   return self.t
  end,
  draw=function(self)
-  minskycircfill(self.tx,self.ty,self:radius())
-  if self.t>20 then self.complete=true end
-  self.t+=1
+  minskycircfill(self.x,self.y,self:radius())
+  if self.t>40 then self.complete=true end
+  self.t=self.t+1
   return self.complete
  end
 } setmetatable(squares_in,{__index=transition})
@@ -215,7 +214,7 @@ minsky_out={
   return squares_in.create(self,x,y)
  end,
  radius=function(self)
-  return 20-self.t
+  return 40-self.t
  end
-} setmetatable(squares_out,{__index=squares_in})
+} setmetatable(minsky_out,{__index=minsky_in})
 ]]
