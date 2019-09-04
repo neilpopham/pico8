@@ -97,3 +97,7 @@ function _draw()
  end
 
 end
+
+menuitem(1,"palette",function() p8ap=bxor(p8ap,128) for i=0,15 do pal(i,i+p8ap,1) end end)
+--local p8ap=false
+--menuitem(1,"palette",function() p8ap = not p8ap for i=0,15 do pal(i,i+(p8ap and 128 or 0),1) end end)
