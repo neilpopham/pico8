@@ -1,7 +1,7 @@
 function mrnd(x,f)
  if f==nil then f=true end
- local v=(rnd()*(x[2]-x[1]+(f and 1 or 0.0001)))+x[1]
- return f and flr(v) or flr(v*1000)/1000
+ local r=x[1]+rnd((f and 1 or 0)+x[2]-x[1])
+ return f and flr(r) or r
 end
 
 function round(x)
@@ -47,15 +47,6 @@ function zget(tx,ty)
   end
  end
  return false
-end
-
-function oprint(text,x,y,col)
- for dx=-1,1 do
-  for dy=-1,1 do
-   print(text,x+dx,y+dy,0)
-  end
- end
- print(text,x,y,col)
 end
 
 function lpad(x,n)
