@@ -46,6 +46,15 @@ child={
  end
 } setmetatable(child,{__index=parent})
 
+new={
+ create=function(self,o)
+  o=child.create(self,o)
+  return o
+ end
+} setmetatable(new,{__index=child})
+
+printh("===")
+
 p=parent:create({x=1,y=2})
 c=child:create({x=10,z=30})
 
@@ -64,6 +73,13 @@ printh(p.baz)
 printh(c.baz)
 printh(p.qux)
 printh(c.qux)
+
+n=new:create({x=1,y=2})
+
+printh(n:foo())
+printh(n.baz)
+printh(n.qux)
+printh(n.y)
 
 --[[ output
 INFO: foo 1
