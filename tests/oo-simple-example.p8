@@ -38,8 +38,7 @@ parent={
 child={
  create=function(self,o)
   o=parent.create(self,o)
-  setmetatable(o,self)
-  self.__index=self
+  o.qux=48
   return o
  end,
  bar=function(self)
@@ -63,6 +62,8 @@ printh(p.z)
 printh(c.z)
 printh(p.baz)
 printh(c.baz)
+printh(p.qux)
+printh(c.qux)
 
 --[[ output
 INFO: foo 1
@@ -77,4 +78,6 @@ INFO: [nil]
 INFO: 30
 INFO: 12
 INFO: 12
+INFO: [nil]
+INFO: 48
 ]]
