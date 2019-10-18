@@ -8,9 +8,9 @@ function round(x)
  return flr(x+0.5)
 end
 
-separation={distance=8,strength=100}
-alignment={distance=12,strength=100}
-cohesion={distance=20,strength=100}
+separation={distance=5,strength=10}
+alignment={distance=30,strength=100}
+cohesion={distance=10,strength=100}
 
 boid={
  create=function(self,x,y)
@@ -18,7 +18,8 @@ boid={
    {
     x=x,
     y=y,
-    angle=rnd()
+    angle=rnd(),
+    strength=1+rnd()
    },
    self
   )
@@ -32,92 +33,79 @@ boid={
   --local dy=(target.y)/1000-(self.y)/1000
   --return sqrt(dx^2+dy^2)*1000
  end,
- adiff=function(self,target)
-  --0.5-MOD(A26+0.5-$B$25,1)
-  return 0.5-(self.angle+0.5-target.angle)%1
+ adiff=function(self,angle)
+  return 0.5-(self.angle+0.5-angle)%1
+ end,
+ separation=function(self,s)
+  local bdx,bdy=0,0
+  for _,b in pairs(s) do
+   local dx=b.x-self.x
+   local dy=b.y-self.y
+   local a=atan2(dx,-dy)
+   local power=(separation.distance/b.d)*separation.strength
+   bdx=bdx-cos(atan2(dx,-dy))*power
+   bdy=bdy+sin(atan2(dx,-dy))*power
+  end
+  return atan2(bdx,bdy)
+ end,
+ alignment=function(self,a)
+  local da=0
+  for i,b in pairs(a) do
+   da=da+self:adiff(b.angle)
+  end
+  da=da/#a
+  return (self.angle+da)%1
+ end,
+ cohesion=function(self,c)
+  local dx,dy=0,0
+  for _,b in pairs(c) do
+   dx=dx+b.x
+   dy=dy+b.y
+  end
+  local bdx=dx/#c
+  local bdy=dy/#c
+  return atan2(bdx-self.x,bdy-self.y)
  end,
  update=function(self)
-  local s,a,c={},{},{}
-
+  local s,a,c,angle={},{},{},2
   for i,b in pairs(boids) do
-   local d=self:distance(b)
-
-   if d>0 and d<separation.distance then
+   b.d=self:distance(b)
+   if b.d>0 and b.d<separation.distance then
     add(s,b)
    end
-   if d>0 and d<alignment.distance then
+   if b.d>0 and b.d<alignment.distance then
     add(a,b)
    end
-   if d>0 and d<cohesion.distance then
+   if b.d>0 and b.d<cohesion.distance then
     add(c,b)
    end
   end
-
-  local sdx,sdy=0,0
-  local adx,ady=0,0
-  local cdx,cdy=0,0
-
----[[
   if #s>0 then
-   local dx,dy=0,0
-   for _,b in pairs(s) do
-    dx=dx+self.x-b.x
-    dy=dy+self.y-b.y
+   angle=self:separation(s)
+  else
+   if #a>0 then
+    angle=self:alignment(a)
    end
-   da=atan2(dx,dy)
-   sdx=cos(da) -- *separation.strength
-   sdy=sin(da) -- *separation.strength
-  end
---]]
-
----[[
-  if #a>0 then
-   local da=0
-   for _,b in pairs(a) do
-    da=da+b.angle
+   if #c>0 then
+    angle=self:cohesion(c)
    end
-   da=da/#a
-   adx=cos(da)
-   ady=sin(da)
   end
---]]
-
----[[
-  if #c>0 then
-   local dx,dy=0,0
-   for _,b in pairs(a) do
-    dx=dx+self.x-b.x
-    dy=dy+self.y-b.y
-   end
-   da=atan2(-dx,-dy)
-   cdx=cos(da)
-   cdy=sin(da)
-  end
---]]
-
-  dx=sdx+adx+cdx+cos(self.angle)*1
-  dy=sdy+ady+cdy-sin(self.angle)*1
-
-  self.angle=atan2(dx,-dy)
-
-  self.x=round(self.x+cos(self.angle)*1)
-  self.y=round(self.y-sin(self.angle)*1)
-
-  self.x=self.x%128
-  self.y=self.y%128
-
-  --if self.x<0 then self.x=128+self.x end
-  --if self.x>127 then self.x=128-self.x end
-  --if self.y<0 then self.y=128+self.y end
-  --if self.y>127 then self.y=128-self.y end
+  local adiff=angle<2 and self:adiff(angle) or 0
+  self.angle=self.angle+adiff*0.25
+  self.x=self.x+round(cos(self.angle)*self.strength)
+  self.y=self.y-round(sin(self.angle)*self.strength)
+  --self.x=self.x%128
+  --self.y=self.y%128
+  if self.x>127 then self.x=0 end
+  if self.y>127 then self.y=0 end
+  if self.x<0 then self.x=127 end
+  if self.y<0 then self.y=127 end
  end,
  draw=function(self)
-  circ(self.x,self.y,2,3)
-  line(self.x,self.y,self.x+(cos(self.angle)*5),self.y-(sin(self.angle)*3),2)
-  --print(flr(self.angle*100),self.x,self.y,12)
+  line(self.x,self.y,self.x+(cos(self.angle)*3),self.y-(sin(self.angle)*3),9)
+  circfill(self.x,self.y,1,5)
  end,
 }
-
 
 function _init()
  boids={}
@@ -137,6 +125,6 @@ function _draw()
  for _,b in pairs(boids) do
   b:draw()
  end
- print(stat(0),0,0,7)
- print(stat(1),0,10,7)
+ --print(stat(0),0,0,7)
+ --print(stat(1),0,10,7)
 end
