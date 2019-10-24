@@ -9,8 +9,8 @@ function round(x)
 end
 
 separation={distance=5,strength=10}
-alignment={distance=30,strength=100}
-cohesion={distance=10,strength=100}
+alignment={distance=20,strength=100}
+cohesion={distance=15,strength=100}
 
 boid={
  create=function(self,x,y)
@@ -64,7 +64,7 @@ boid={
   end
   local bdx=dx/#c
   local bdy=dy/#c
-  return atan2(bdx-self.x,bdy-self.y)
+  return atan2(bdx-self.x,self.y-bdy)
  end,
  update=function(self)
   local s,a,c,angle={},{},{},2
@@ -83,23 +83,25 @@ boid={
   if #s>0 then
    angle=self:separation(s)
   else
-   if #a>0 then
-    angle=self:alignment(a)
-   end
    if #c>0 then
     angle=self:cohesion(c)
+   end
+   if #a>0 then
+    angle=self:alignment(a)
    end
   end
   local adiff=angle<2 and self:adiff(angle) or 0
   self.angle=self.angle+adiff*0.25
   self.x=self.x+round(cos(self.angle)*self.strength)
   self.y=self.y-round(sin(self.angle)*self.strength)
-  --self.x=self.x%128
-  --self.y=self.y%128
+  self.x=self.x%128
+  self.y=self.y%128
+  --[[
   if self.x>127 then self.x=0 end
   if self.y>127 then self.y=0 end
   if self.x<0 then self.x=127 end
   if self.y<0 then self.y=127 end
+  ]]
  end,
  draw=function(self)
   line(self.x,self.y,self.x+(cos(self.angle)*3),self.y-(sin(self.angle)*3),9)

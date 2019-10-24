@@ -18,6 +18,7 @@ as={
  {30,35,0.75},
 }
 
+--[[
 as={
  {20,40,0.5},
  {45,30,0.3},
@@ -25,6 +26,7 @@ as={
  {35,70,0.8},
 
 }
+--]]
 
 b={50,50,0.5}
 
@@ -52,6 +54,8 @@ function cohesion()
  bdx=dx/#as
  bdy=dy/#as
  c={bdx,bdy}
+ b[3]=atan2(bdx-b[1],b[2]-bdy)
+ printh(b[3])
 
  printh(c[1]..","..c[2])
  circfill(c[1],c[2],2,7)
@@ -101,8 +105,8 @@ function avoid()
 end
 
 --avoid()
-align()
---cohesion()
+--align()
+cohesion()
 
 circfill(b[1],b[2],2,3)
 line(b[1],b[2],b[1]+cos(b[3])*5,b[2]-sin(b[3])*5,12)
