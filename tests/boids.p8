@@ -10,7 +10,7 @@ end
 
 separation={distance=5,strength=10}
 alignment={distance=20,strength=100}
-cohesion={distance=15,strength=100}
+cohesion={distance=10,strength=100}
 
 boid={
  create=function(self,x,y)
@@ -18,6 +18,8 @@ boid={
    {
     x=x,
     y=y,
+    gx=ceil((x+1)/16),
+    gy=ceil((y+1)/16),
     angle=rnd(),
     strength=1+rnd()
    },
@@ -28,10 +30,12 @@ boid={
  end,
  distance=function(self,target)
   return abs(self.x-target.x)+abs(self.y-target.y)
-  --if target==self then return 0 end
-  --local dx=(target.x)/1000-(self.x)/1000
-  --local dy=(target.y)/1000-(self.y)/1000
-  --return sqrt(dx^2+dy^2)*1000
+  --[[
+  if target==self then return 0 end
+  local dx=(target.x)/1000-(self.x)/1000
+  local dy=(target.y)/1000-(self.y)/1000
+  return sqrt(dx^2+dy^2)*1000
+  --]]
  end,
  adiff=function(self,angle)
   return 0.5-(self.angle+0.5-angle)%1
@@ -68,16 +72,19 @@ boid={
  end,
  update=function(self)
   local s,a,c,angle={},{},{},2
-  for i,b in pairs(boids) do
+  for _,i in pairs(pool[self.gx][self.gy]) do
+   local b=boids[i]
    b.d=self:distance(b)
-   if b.d>0 and b.d<separation.distance then
-    add(s,b)
-   end
-   if b.d>0 and b.d<alignment.distance then
-    add(a,b)
-   end
-   if b.d>0 and b.d<cohesion.distance then
-    add(c,b)
+   if b.d>0 then
+    if b.d<separation.distance then
+     add(s,b)
+    end
+    if b.d<alignment.distance then
+     add(a,b)
+    end
+    if b.d<cohesion.distance then
+     add(c,b)
+    end
    end
   end
   if #s>0 then
@@ -96,12 +103,8 @@ boid={
   self.y=self.y-round(sin(self.angle)*self.strength)
   self.x=self.x%128
   self.y=self.y%128
-  --[[
-  if self.x>127 then self.x=0 end
-  if self.y>127 then self.y=0 end
-  if self.x<0 then self.x=127 end
-  if self.y<0 then self.y=127 end
-  ]]
+  self.gx=ceil((self.x+1)/16)
+  self.gy=ceil((self.y+1)/16)
  end,
  draw=function(self)
   line(self.x,self.y,self.x+(cos(self.angle)*3),self.y-(sin(self.angle)*3),9)
@@ -111,12 +114,44 @@ boid={
 
 function _init()
  boids={}
- for i=1,40 do
-  add(boids,boid:create(rnd(128),rnd(128)))
+ for i=1,50 do
+  add(boids,boid:create(flr(rnd(128)),flr(rnd(128))))
+ end
+ pool=make_table({1,8},{1,8})
+end
+
+function make_table(tx,ty)
+ t={}
+ for x=tx[1],tx[2] do
+  t[x]={}
+  for y=ty[1],ty[2] do
+   t[x][y]={}
+  end
+ end
+ return t
+end
+
+function empty_table(t)
+ for x,r in pairs(t) do
+  for y=1,#r do
+   t[x][y]={}
+  end
+ end
+end
+
+function update_pool()
+ empty_table(pool)
+ for i,b in pairs(boids) do
+  for x=max(b.gx-1,1),min(b.gx+1,8) do
+   for y=max(b.gy-1,1),min(b.gy+1,8) do
+    add(pool[x][y],i)
+   end
+  end
  end
 end
 
 function _update60()
+ update_pool()
  for _,b in pairs(boids) do
   b:update()
  end
@@ -127,6 +162,6 @@ function _draw()
  for _,b in pairs(boids) do
   b:draw()
  end
- --print(stat(0),0,0,7)
- --print(stat(1),0,10,7)
+ print(stat(0),0,0,7)
+ print(stat(1),0,10,7)
 end
