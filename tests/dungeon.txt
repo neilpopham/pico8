@@ -1,0 +1,26 @@
+dungeon creator
+
+room has a width of 3,5,7,...,13
+room has a height of 3,5,7,...,13
+room can have a door at n,e,s or w (1-4 doors). always middle
+if a room has a opposite doors (n+s or e+w) it can turn into a corridor
+weighting on the chance of having an opposite door (so a S door may be more likely if a N door exists)
+weighting on the chance of a room becoming a corridor
+start with a room
+    loop through each door
+    create a room for that door with a door to match the parent
+stop when
+    certain floor area has been created
+    use thread idea and stop when all threads end in a room with one door (entrance only)
+consider trap doors/stairs
+    5th(/6th) door type
+    way to move to another level
+    needs to be link between two, so level knows where to start user
+
+
+can i do secret doors? how would they work?
+    maybe just a weighted chance of a door becoming secret
+    only for doors leading to a single room?
+    weighted chance of an end room becoming secret
+
+maybe have pre-arranged furniture layouts for rooms
