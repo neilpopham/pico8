@@ -1,16 +1,40 @@
+local diff={{0,-1},{1,0},{0,1},{-1,0}}
+local index={2,6,8,4}
+local oindex={8,4,2,6}
+
 function get_opposite_direction(dir)
  local opposite=dir+2
  if opposite>4 then opposite=opposite-4 end
  return opposite
 end
 
+function get_index(x,y)
+ return x+2+((y+1)*3)
+end
+
+function get_types(x,y)
+ local types={}
+ for ty=-1,1 do
+  for tx=-1,1 do
+   local i=get_index(tx,ty)
+   if cells[x+tx] and cells[x+tx][y+ty] and cells[x+tx][y+ty].group==1 then
+    add(types,i)
+   end
+  end
+ end
+ return types
+end
+
 function generate()
  count=0
- total=mrnd({10,15})
+ total=mrnd({20,30})
  cells={}
  local x,y=100,100
+
+ -- start the room-making process
  makeroom(x,y,3)
 
+ -- convert array to start from 1,1
  local mx,my=500,500
  for x,rows in pairs(cells) do
   if x<mx then mx=x end
@@ -18,9 +42,7 @@ function generate()
    if y<my then my=y end
   end
  end
-
  printh(mx.." and "..my)
-
  local data={}
  for x,rows in pairs(cells) do
   local ox=x-mx+1
@@ -31,14 +53,94 @@ function generate()
   end
  end
  cells=data
+
+ -- create larger rooms
+ for x,rows in pairs(cells) do
+  for y,cell in pairs(rows) do
+   local types=get_types(x,y)
+   --if #types==9 and rnd()>0.3 then
+   if #types==9 then
+    for ty=-1,1 do
+     for tx=-1,1 do
+      local i=get_index(tx,ty)
+      cells[x+tx][y+ty].type=i
+      cells[x+tx][y+ty].group=9
+     end
+    end
+   end
+  end
+ end
+ --2x2
+ for x,rows in pairs(cells) do
+  for y,cell in pairs(rows) do
+   local types=get_types(x,y)
+   if cell.group==1 and #types>3 then
+    local offset={0,1,3,4}
+    local diff={{-1,-1},{0,-1},{1,-1},{-1,0},{0,0},{1,0},{-1,1},{0,1},{1,1}}
+    for k,o in pairs(offset) do
+     local tl,tr,bl,br=1+o,2+o,4+o,5+o
+     local ctl=cells[x+diff[tl][1]][y+diff[tl][2]]
+     local ctr=cells[x+diff[tr][1]][y+diff[tr][2]]
+     local cbl=cells[x+diff[bl][1]][y+diff[bl][2]]
+     local cbr=cells[x+diff[br][1]][y+diff[br][2]]
+     if in_array(types,tl) and ctl.group==1
+      and in_array(types,tr) and ctr.group==1
+      and in_array(types,bl) and cbl.group==1
+      and in_array(types,br) and cbr.group==1 then
+      ctl.group=4
+      ctr.group=4
+      cbl.group=4
+      cbr.group=4
+      ctl.type=1
+      ctr.type=3
+      cbl.type=7
+      cbr.type=9
+     end
+    end
+
+   end
+  end
+ end
+ -- 1x2
+ for x,rows in pairs(cells) do
+  for y,cell in pairs(rows) do
+   local types=get_types(x,y)
+   if cell.group==1 and #types>1 then
+    local diff={{0,-1},{1,0},{0,1},{-1,0}}
+    local index={2,6,8,4}
+    local oindex={8,4,2,6}
+    local twoer={}
+    for k,i in pairs(index) do
+     local o=diff[k]
+     if in_array(types,i) and cells[x+o[1]][y+o[2]].group==1 then
+      add(twoer,k)
+     end
+    end
+    --if #twoer>0 and rnd()>0.7 then
+    if #twoer>0 then
+     local si=twoer[mrnd({1,#twoer})]
+     local o=diff[si]
+     cell.group=2
+     cell.type=oindex[si]
+     cells[x+o[1]][y+o[2]].group=2
+     cells[x+o[1]][y+o[2]].type=index[si]
+    end
+   end
+  end
+ end
+
+ --[[
  for x,rows in pairs(cells) do
   for y,cell in pairs(rows) do
    printh(x.."|"..y)
   end
  end
+ --]]
+
 end
 
 function makeroom(x,y,exit)
+ printh("---")
 
  --[[
 
@@ -64,47 +166,46 @@ function makeroom(x,y,exit)
  count=count+1
  printh("exits:"..exits)
  local doors={}
-
- ---[[
- local types={5}
-
- local dc={nil,1,nil,4,nil,2,nil,3,nil}
-
- for tx=-1,1 do
-  for ty=-1,1 do
-   local i=tx+2+((ty+1)*3)
-   --local d=get_opposite_direction(dc[i])
-   local d=dc[i] and get_opposite_direction(dc[i]) or 0
-   printh(tx..","..ty..":"..i..":"..(dc[i] and dc[i] or 0)..":"..d)
-   if cells[x+tx] and cells[x+tx][y+ty] and cells[x+tx][y+ty].doors[d] then
-    if dc[i] then printh("adding "..dc[i]) add(doors,dc[i]) end
-   end
+ local types={}
+ local door_map={nil,1,nil,4,nil,2,nil,3,nil}
+ local diff_map={}
+ for ty=-1,1 do
+  for tx=-1,1 do
+   add(diff_map,{tx,ty})
   end
  end
- --]]
 
-
-
- --[[
- if cells[x][y-1] and cells[x][y-1].doors[3] then
-  add(doors,1)
-  add(types,2)
+ for ty=-1,1 do
+  for tx=-1,1 do
+   local i=get_index(tx,ty)
+   --local d=get_opposite_direction(door_map[i])
+   local opposite=door_map[i] and get_opposite_direction(door_map[i]) or 0
+   printh(tx..","..ty..":"..i..":"..(door_map[i] and door_map[i] or 0)..":"..opposite)
+   if cells[x+tx] and cells[x+tx][y+ty] then
+    add(types,i)
+    if door_map[i] and cells[x+tx][y+ty].doors[opposite] then
+     add(doors,door_map[i])
+    end
+   end
+   --[[
+   if cells[x+tx] and cells[x+tx][y+ty] and cells[x+tx][y+ty].doors[opposite] then
+    if door_map[i] then
+     add(doors,door_map[i])
+     add(types,i)
+    end
+   end
+   ]]
+  end
  end
- if cells[x][y+1] and cells[x][y+1].doors[1] then
-  add(doors,3)
-  add(types,8)
- end
- if cells[x-1] and cells[x-1][y] and cells[x-1][y].doors[2] then
-  add(doors,4)
-  add(types,4)
- end
- if cells[x+1] and cells[x+1][y] and cells[x+1][y].doors[4] then
-  add(doors,2)
-  add(types,6)
- end
---]]
 
  printh("doors:"..#doors)
+ printh("types:"..#types)
+
+ local s=""
+ for _,v in pairs(types) do
+  s=s..v.."|"
+ end
+ printh(s)
 
  while #doors<exits do
   -- start off with a 1/4 chance of picking a direction
@@ -123,9 +224,11 @@ function makeroom(x,y,exit)
   add(doors,directions[mrnd({1,#directions})])
  end
 
+ ---[[
  for k,v in pairs(doors) do
   printh(k..":"..v)
  end
+ --]]
 
  --assert(false,"exit")
 
@@ -134,47 +237,61 @@ function makeroom(x,y,exit)
   cells[x][y].doors[v]=1
  end
 
+ local diff={{0,-1},{1,0},{0,1},{-1,0}}
  for k,_ in pairs(cells[x][y].doors) do
-  if k==1 then makeroom(x,y-1,1) end
-  if k==2 then makeroom(x+1,y,2) end
-  if k==3 then makeroom(x,y+1,3) end
-  if k==4 then makeroom(x-1,y,4) end
+  makeroom(x+diff[k][1],y+diff[k][2],k)
  end
 
 end
 
 function drawcells()
-
- --[[
- rectfill(64,64,70,70,1)
-
- for x,rows in pairs(cells) do
-  for y,cell in pairs(rows) do
-   --printh(x..","..y)
-   local lx,ly=x-100,y-100
-   local rc=9 --7+y%4+x%4
-   pset(67+lx*7,67+ly*7,7)
-   rect(64+lx*7,64+ly*7,70+lx*7,70+ly*7,rc)
-   for d,_ in pairs(cell.doors) do
-    local dc,di=0,3
-    if d==1 then pset(67+lx*7,64+ly*7,dc) pset(67+lx*7,66+ly*7,di) end
-    if d==2 then pset(70+lx*7,67+ly*7,dc) pset(68+lx*7,67+ly*7,di) end
-    if d==3 then pset(67+lx*7,70+ly*7,dc) pset(67+lx*7,68+ly*7,di) end
-    if d==4 then pset(64+lx*7,67+ly*7,dc) pset(66+lx*7,67+ly*7,di) end
-    --printh(" "..d)
-   end
-  end
- end
- ]]
-
+ pal(1,128,1)
  local s=7
  local os=flr(s/2)
  for x,rows in pairs(cells) do
   for y,cell in pairs(rows) do
    --printh(x..","..y)
-
    pset(os+x*s,os+y*s,7)
-   rect(x*s,y*s,s-1+x*s,s-1+y*s,9)
+
+
+   --rect(x*s,y*s,s-1+x*s,s-1+y*s,cell.group)
+
+
+   function drawline(s,x,y,index,col)
+    if index==2 then line(x*s,y*s,s-1+x*s,y*s,col) end
+    if index==6 then line(s-1+x*s,y*s,s-1+x*s,s-1+y*s,col) end
+    if index==8 then line(x*s,s-1+y*s,s-1+x*s,s-1+y*s,col) end
+    if index==4 then line(x*s,y*s,x*s,s-1+y*s,col) end
+   end
+
+   if cell.group==1 then
+    rect(x*s,y*s,s-1+x*s,s-1+y*s,6)
+   elseif cell.group==2 then
+    rect(x*s,y*s,s-1+x*s,s-1+y*s,cell.group)
+    if cell.type==2 then line(1+x*s,s-1+y*s,s-2+x*s,s-1+y*s,1) end
+    if cell.type==6 then line(x*s,1+y*s,x*s,s-2+y*s,1) end
+    if cell.type==8 then line(1+x*s,y*s,s-2+x*s,y*s,1) end
+    if cell.type==4 then line(s-1+x*s,1+y*s,s-1+x*s,s-2+y*s,1) end
+   elseif cell.group==4 then
+    rect(x*s,y*s,s-1+x*s,s-1+y*s,1)
+    if cell.type==1 then drawline(s,x,y,2,cell.group) drawline(s,x,y,4,cell.group) end
+    if cell.type==3 then drawline(s,x,y,2,cell.group) drawline(s,x,y,6,cell.group) end
+    if cell.type==7 then drawline(s,x,y,4,cell.group) drawline(s,x,y,8,cell.group) end
+    if cell.type==9 then drawline(s,x,y,6,cell.group) drawline(s,x,y,8,cell.group) end
+   elseif cell.group==9 then
+    rect(x*s,y*s,s-1+x*s,s-1+y*s,1)
+    if cell.type==1 then drawline(s,x,y,2,cell.group) drawline(s,x,y,4,cell.group) end
+    if cell.type==2 then drawline(s,x,y,2,cell.group) end
+    if cell.type==3 then drawline(s,x,y,2,cell.group) drawline(s,x,y,6,cell.group) end
+    if cell.type==4 then drawline(s,x,y,4,cell.group) end
+    --if cell.type==5 then drawline(s,x,y,2,cell.group) drawline(s,x,y,4,cell.group) end
+    if cell.type==6 then drawline(s,x,y,6,cell.group) end
+    if cell.type==7 then drawline(s,x,y,4,cell.group) drawline(s,x,y,8,cell.group) end
+    if cell.type==8 then drawline(s,x,y,8,cell.group) end
+    if cell.type==9 then drawline(s,x,y,6,cell.group) drawline(s,x,y,8,cell.group) end
+   end
+
+
    for d,_ in pairs(cell.doors) do
     local dc,di=0,3
     if d==1 then pset(os+x*s,y*s,dc) pset(os+x*s,os-1+y*s,di) end
@@ -182,24 +299,9 @@ function drawcells()
     if d==3 then pset(os+x*s,s-1+y*s,dc) pset(os+x*s,os+1+y*s,di) end
     if d==4 then pset(x*s,os+y*s,dc) pset(os-1+x*s,os+y*s,di) end
    end
-
-   --[[
-   local lx,ly=x-100,y-100
-   local rc=9 --7+y%4+x%4
-   pset(67+lx*7,67+ly*7,7)
-   rect(64+lx*7,64+ly*7,70+lx*7,70+ly*7,rc)
-   for d,_ in pairs(cell.doors) do
-    local dc,di=0,3
-    if d==1 then pset(67+lx*7,64+ly*7,dc) pset(67+lx*7,66+ly*7,di) end
-    if d==2 then pset(70+lx*7,67+ly*7,dc) pset(68+lx*7,67+ly*7,di) end
-    if d==3 then pset(67+lx*7,70+ly*7,dc) pset(67+lx*7,68+ly*7,di) end
-    if d==4 then pset(64+lx*7,67+ly*7,dc) pset(66+lx*7,67+ly*7,di) end
-    --printh(" "..d)
-   end
-   ]]
+   --print(cell.type,x*s,y*s,15)
   end
  end
-
 end
 
 function _init()
@@ -207,10 +309,7 @@ function _init()
  printh("==================")
  generate()
  drawcells()
-
-
 end
-
 
 function _update60()
 

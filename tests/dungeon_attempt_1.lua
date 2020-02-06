@@ -118,13 +118,6 @@ function debugroom(room)
  end
 end
 
-function in_array(a,i)
- for k,v in pairs(a) do
-  if v==i then return true end
- end
- return false
-end
-
 drawn={}
 
 function drawroom(x,y,room)

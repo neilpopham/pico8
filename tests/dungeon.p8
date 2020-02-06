@@ -10,5 +10,12 @@ function mrnd(x,f)
  return f and flr(r) or r
 end
 
+function in_array(a,i)
+ for k,v in pairs(a) do
+  if v==i then return true end
+ end
+ return false
+end
+
 -- #include dungeon_attempt_1.lua
 #include dungeon_attempt_2.lua
