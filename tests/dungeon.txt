@@ -3,7 +3,7 @@ dungeon creator
 room has a width of 3,5,7,...,13
 room has a height of 3,5,7,...,13
 room can have a door at n,e,s or w (1-4 doors). always middle
-if a room has a opposite doors (n+s or e+w) it can turn into a corridor
+if a room has more than one door it can turn into a corridor
 weighting on the chance of having an opposite door (so a S door may be more likely if a N door exists)
 weighting on the chance of a room becoming a corridor
 start with a room
@@ -16,7 +16,10 @@ consider trap doors/stairs
     5th(/6th) door type
     way to move to another level
     needs to be link between two, so level knows where to start user
-
+need to restrict child rooms so that they don't overlap
+    if a small room leads to a large room north and east those rooms would overlap
+    need a formula to work out how to restrict room size so as to be possible
+    or to loop through rooms after creation and shrink any necessary
 
 can i do secret doors? how would they work?
     maybe just a weighted chance of a door becoming secret
@@ -24,3 +27,11 @@ can i do secret doors? how would they work?
     weighted chance of an end room becoming secret
 
 maybe have pre-arranged furniture layouts for rooms
+
+
+======== !
+issue of rooms overlapping and not matching
+    room may create a child east
+    a room above and to the right may create a room to the south
+    these rooms need to be the same room!
+    for this to happen dimensions need to match up

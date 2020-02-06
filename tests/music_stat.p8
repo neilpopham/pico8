@@ -16,23 +16,72 @@ __lua__
 
 function _init()
  music(25)
+ s=nil
 end
 
 function _update60()
  if btnp(4) then
-
+  s=1
+  printh("26:"..stat(26))
  end
  if btnp(5) then
-  
+
+ end
+ if s and (stat(20)%8==0) then
+  sfx(s)
+  s=nil
+  printh("20:"..stat(20))
+  printh("26:"..stat(26))
  end
 end
 
 function _draw()
  cls ()
+
+ --[[
  for i=0,10 do
   print((i+16)..": "..stat(i+16),0,i*7,7)
  end
+ ]]
+
+ print("16. c1 sfx id:  "..stat(16),0,0,7)
+ print("17. c2 sfx id:  "..stat(17),0,8,7)
+ print("18. c3 sfx id:  "..stat(18),0,16,7)
+ print("19. c4 sfx id:  "..stat(19),0,24,7)
+
+ print("20. c1 note #:  "..stat(20),0,32,7)
+ print("21. c2 note #:  "..stat(21),0,40,7)
+ print("22. c3 note #:  "..stat(22),0,48,7)
+ print("23. c4 note #:  "..stat(23),0,56,7)
+
+ print("24. pattern id: "..stat(24),0,64,7)
+ print("25. #patterns:  "..stat(25),0,72,7)
+ print("26. #ticks:     "..stat(26),0,80,7)
 end
+
+--[[
+-> 16-19. stat(16) through stat(19) return the index of the sound effect
+currently playing on the four channels, respectively. If no sound is playing
+on the channel, stat() returns -1.
+-> 20-23. stat(20) through stat(23) return the note number (0 through 31) of
+the sound effect currently playing on the four channels, respectively. If no
+sound is playing on the channel, stat() returns -1.
+From zep: "Note that the row number may not be very precise depending on what
+is going on with the host operating system's audio mixer. Also in the case of
+the web player which needs to have a large mixing buffer, the result is often
+slightly earlier that what is audible."
+-> 24. stat(24) is the music pattern ID currently being played, as a result of
+the most recent call to music().
+Caution: There is a bug in PICO-8 versions prior to 0.1.12: If no music is
+currently playing, an ID of 0 will be returned instead of -1, but this does
+not mean music pattern 0 is actively playing. In affected versions,
+workarounds like checking stat(25) are necessary to detect whether music
+is actually playing.
+-> 25. stat(25) is the number of music patterns played since the most recent
+call to music().
+-> 26. stat(26) is the number of ticks (notes or rests) played on the current
+pattern.
+]]
 
 __gfx__
 00012000606660666066606660666066606660666066606616666661feeeeee87bbbbbb30000004000000030000300000b0dd030777777674f9f4fff7999a999
