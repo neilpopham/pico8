@@ -9,6 +9,25 @@ for ty=-1,1 do
 end
 ]]
 
+
+lost_doors = {
+ {nil,nil,nil,nil,{},nil,nil,nil,nil},
+ {nil,{3},nil,{2},nil,{4},nil,{1},nil},
+ nil,
+ {{2,3},nil,{3,4},nil,nil,nil,{1,2},nil,{1,4}},
+ nil,
+ nil,
+ nil,
+ nil,
+ {{2,3},{2,3,4},{3,4},{1,2,3},{1,2,3,4},{1,3,4},{1,2},{1,2,4},{1,4}}
+}
+
+function tcount(t)
+ local i=0
+ for k,_ in pairs(t) do i=i+1 end
+ return i
+end
+
 function get_opposite_direction(dir)
  local opposite=dir+2
  if opposite>4 then opposite=opposite-4 end
@@ -33,11 +52,14 @@ function get_types(x,y)
 end
 
 function generate()
- -- initiate
+ printh("---- generate ----------------------------------------")
  count=0
  total=mrnd({20,30})
  cells={}
  local x,y=100,100
+ local r=rnd() -- ##############################################################
+ printh("srand: "..r) -- ##############################################################
+ srand(r) -- ##############################################################
  makeroom(x,y,3)
 
  -- debugging issue with door to nowhere sometimes
@@ -57,7 +79,6 @@ function generate()
    end
   end
   printh("##############END DUMP############")
-
  end
  for x,rows in pairs(cells) do
   for y,cell in pairs(rows) do
@@ -178,6 +199,53 @@ function generate()
   end
  end
 
+ -- remove doors with no walls (due to cell merging)
+ for x,rows in pairs(cells) do
+  for y,cell in pairs(rows) do
+   for i,d in pairs(lost_doors[cell.group][cell.type]) do
+    cell.doors[d]=nil
+   end
+  end
+ end
+ -- maybe don't remove these
+ -- - maybe we could use these to ensure that there is a way to navigate through a room
+ -- - so you can put stuff anywhere else but not on these doors
+ -- - so you may have to exit a room to get to the other side of it
+ -- on a side note, could have furniture arrangements according to group and index
+ -- - so a design for index 1 (top left) in both a 2x2 and 3x3 room
+
+
+ -- turn some doors into secret doors
+ -- later we can merge these into one x,y loop
+ for x,rows in pairs(cells) do
+  for y,cell in pairs(rows) do
+   if cell.group==1 and rnd()>0.5 then
+    if tcount(cell.doors)==1 then
+     for k,_ in pairs(cell.doors) do
+      cells[x+diff_dir[k][1]][y+diff_dir[k][2]].doors[get_opposite_direction(k)]=2
+      --cell.doors[k]=2 -- no, but leave for now
+      cell.secret=true
+      printh("secret door!")
+     end
+    end
+   end
+  end
+ end
+
+
+ for x,rows in pairs(cells) do
+  for y,cell in pairs(rows) do
+   local s=""
+   for d,_ in pairs(cell.doors) do
+    s=s..d.." "
+   end
+   printh("x,y: "..x..","..y.. " | doors: "..s.."| group: "..cell.group.." | type: "..cell.type)
+  end
+ end
+
+
+
+ --assert(false,"")
  --[[
  for x,rows in pairs(cells) do
   for y,cell in pairs(rows) do
@@ -220,7 +288,7 @@ function makeroom(x,y,exit)
  end
  --]]
 
- cells[x][y]={doors={},type=5,group=1}
+ cells[x][y]={doors={},type=5,group=1,srand=rnd()}
 
  local exits=count<total and mrnd({count<(total/3) and 2 or 1,4}) or 1
  count=count+1
@@ -335,8 +403,9 @@ function drawcells()
     asert(false,cell.group)
    end
 
-   for d,_ in pairs(cell.doors) do
+   for d,dt in pairs(cell.doors) do
     local dc,di=0,3
+    if dt==2 then dc=8 di=8 end
     if d==1 then pset(os+x*s,y*s,dc) pset(os+x*s,os-1+y*s,di) end
     if d==2 then pset(s-1+x*s,os+y*s,dc) pset(os+1+x*s,os+y*s,di) end
     if d==3 then pset(os+x*s,s-1+y*s,dc) pset(os+x*s,os+1+y*s,di) end
@@ -345,6 +414,15 @@ function drawcells()
    --print(cell.type,x*s,y*s,15)
   end
  end
+end
+
+function drawroom(x,y)
+ local offset={44,nil,nil,24,nil,nil,nil,nil,4}
+ local cell=cells[x][y]
+ local o=offset[cell.group]
+ if cell.group==2 and (cell.type==2 or cell.type==8) then o=offset[1] end
+ srand(cell.srand)
+
 end
 
 function _init()
@@ -356,7 +434,6 @@ end
 function _update60()
  if t==max then
   t=0
-  printh("-- generating --------------------------------------")
   generate()
  end
  t=t+1
