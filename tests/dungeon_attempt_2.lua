@@ -35,13 +35,10 @@ end
 function generate()
  -- initiate
  count=0
- total=mrnd({5,10})
+ total=mrnd({20,30})
  cells={}
  local x,y=100,100
- -- start the room-making process
  makeroom(x,y,3)
-
-
 
  -- debugging issue with door to nowhere sometimes
  function dump(dx,dy,dd)
@@ -205,24 +202,33 @@ function makeroom(x,y,exit)
 
  if cells[x]==nil then cells[x]={} end
 
- if cells[x][y]==nil then
-  cells[x][y]={doors={},type=5,group=1}
-  --cells[x][y].doors[get_opposite_direction(exit)]=1
- else
+ if cells[x][y]~=nil then
   cells[x][y].doors[get_opposite_direction(exit)]=1
   return
  end
 
  printh(count.."/"..total)
 
- local exits=count<total and mrnd({count<(total/2) and 2 or 1,4}) or 1
+ ---[[
+ if count>total*2 then
+  cells[x-diff_dir[exit][1]][y-diff_dir[exit][2]].doors[exit]=nil
+  --if exit==1 then cells[x][y+1].doors[1]=nil end
+  --if exit==2 then cells[x-1][y].doors[2]=nil end
+  --if exit==3 then cells[x][y-1].doors[3]=nil end
+  --if exit==4 then cells[x+1][y].doors[4]=nil end
+  return
+ end
+ --]]
+
+ cells[x][y]={doors={},type=5,group=1}
+
+ local exits=count<total and mrnd({count<(total/3) and 2 or 1,4}) or 1
  count=count+1
  printh("exits:"..exits)
  local doors={}
  local directions={1,2,3,4}
-
- ---[[
  local door_map={nil,1,nil,4,nil,2,nil,3,nil}
+
  for ty=-1,1 do
   for tx=-1,1 do
    local i=get_index(tx,ty)
@@ -240,10 +246,9 @@ function makeroom(x,y,exit)
    if a==b then del(directions,a) end
   end
  end
- --]]
 
- for i=#doors,exits do
-  add(doors,del(directions,mrnd({1,#directions})))
+ for i=#doors+1,exits do
+  add(doors,del(directions,directions[mrnd({1,#directions})]))
  end
 
  if false then
@@ -270,12 +275,15 @@ function makeroom(x,y,exit)
   cells[x][y].doors[v]=1
  end
 
- local s="" for _,v in pairs(doors) do s=s..v.." " end printh("doors: "..s)
+ --local s="" for _,v in pairs(doors) do s=s..v.." " end printh("doors: "..s)
 
+ --[[
  for k,_ in pairs(cells[x][y].doors) do
-  if x==100 and y==100 then
-   printh("makeroom("..(x+diff_dir[k][1])..","..(y+diff_dir[k][2])..","..k..")")
-  end
+  makeroom(x+diff_dir[k][1],y+diff_dir[k][2],k)
+ end
+ ]]
+ -- use doors as its more random, otherwise 1 gets used more often
+ for _,k in pairs(doors) do
   makeroom(x+diff_dir[k][1],y+diff_dir[k][2],k)
  end
 
@@ -341,7 +349,7 @@ end
 
 function _init()
  printh("==================")
- max=10
+ max=20
  t=max
 end
 

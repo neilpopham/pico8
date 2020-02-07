@@ -32,7 +32,7 @@ function makeroom(x,y)
  count=count+1
  local choice={1,2,3,4}
  for i=1,exits do
-  local d=del(choice,mrnd({1,#choice}))
+  local d=del(choice,choice[mrnd({1,#choice})])
   add(cells[x][y],d)
  end
  for _,d in pairs(cells[x][y]) do
