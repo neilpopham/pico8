@@ -18,4 +18,5 @@ function in_array(a,i)
 end
 
 -- #include dungeon_attempt_1.lua
-#include dungeon_attempt_2.lua
+-- #include dungeon_attempt_2.lua
+#include dungeon_attempt_3.lua
