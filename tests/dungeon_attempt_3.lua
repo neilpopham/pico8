@@ -85,6 +85,7 @@ end
 
 local m=0
 function s2t()
+ printh("m: "..m)
  local c=mapi(m)
  local i=0
  local t={}
@@ -92,11 +93,10 @@ function s2t()
   m+=1
   i+=1
   local n=mapi(m)
-  printh("v: "..n)
   if n==-127 then
    printh("table")
    m+=1
-   --add(t,s2t())
+   add(t,s2t())
   else
    printh("value: "..n)
    add(t,n)
@@ -111,7 +111,7 @@ end
 
 function myget(x,y)
  local s="040a8103010203810264781e"
- local s="01020a"
+ --local s="02020a"
  local n=to_signed(tonum('0x'..sub(s,2*x+1,2*x+2)))
  printh("n: "..n.. " x: "..x.." y: "..y)
  --printh(2*x+1)
@@ -139,8 +139,17 @@ printh(x)
 
 y=s2t()
 for k,v in pairs(y) do
- printh(k.." => "..v)
+ if type(v)=="table" then
+  printh(k.." => table #"..#v)
+  for k2,v2 in pairs(v) do
+   printh(" - "..k2.." => "..v2)
+  end
+ else
+  printh(k.." => "..v)
+ end
 end
+
+printh(y[3][2])
 
 
 
