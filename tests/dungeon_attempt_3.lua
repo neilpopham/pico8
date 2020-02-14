@@ -44,27 +44,6 @@ function lpad(x,n)
  return sub("0000000"..x,-n)
 end
 
---[[
-function t2s(t)
- local s={#t}
- for i=1,#t do
-  if type(t[i])=="table" then
-   add(s,-127)
-   add(s,t2s(t[i]))
-  else
-   add(s,t[i])
-  end
- end
- local r=""
- for i=1,#s do
-  --printh(i..": "..s[i])
-  r=r..lpad(hex(to_unsigned(s[i])),2)
- end
- printh("r: "..r)
- return r
-end
-]]
-
 function unsignedhex(n)
  return lpad(hex(to_unsigned(n)),2)
 end
@@ -85,20 +64,15 @@ end
 
 local m=0
 function s2t()
- printh("m: "..m)
- local c=mapi(m)
- local i=0
- local t={}
+ local t,i,c={},0,mapi(m)
  while i<c do
   m+=1
   i+=1
   local n=mapi(m)
   if n==-127 then
-   printh("table")
    m+=1
    add(t,s2t())
   else
-   printh("value: "..n)
    add(t,n)
   end
  end
@@ -110,13 +84,22 @@ function mapi(i)
 end
 
 function myget(x,y)
- local s="040a8103010203810264781e"
  --local s="02020a"
+ --local s="040a8103010203810264781e"
+ local s="04810200ff81020100810200018102ff00"
  local n=to_signed(tonum('0x'..sub(s,2*x+1,2*x+2)))
  printh("n: "..n.. " x: "..x.." y: "..y)
  --printh(2*x+1)
  return n
 end
+
+function mapi2(i)
+ return to_signed(mget(i%128,flr(i/128)))
+end
+
+printh(t2s(diff_dir))
+
+--assert(false)
 
 --[[
 x=t2s({10,20,30})
@@ -152,47 +135,7 @@ end
 printh(y[3][2])
 
 
-
 assert(false)
-
-
-function table2string(t)
- local t1,t2,s=#t,0,""
- for k,v in pairs(t) do
-  t2+=1
-  if type(v)=="table" then
-   t[v]=table2string(v)
-  end
-  printh(t[v])
- end
- if t1==t2 then
-  local s=""
-  for i=1,#t do
-   s=s..t[i]
-   if i<#t then s=s.."|" end
-  end
- else
-  local s=""
-  for k,v in pairs(t) do
-   s=s..k.."|"..v
-  end
- end
-
-end
-
---[[
-
-64 32 16 08 04 02 01
-
-1  1  1  1  1  1  1
-
-items in table
-|
-XXYY
-
-]]
-
-
 
 
 for i=-128,127 do
