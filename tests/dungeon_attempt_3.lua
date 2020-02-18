@@ -12,19 +12,18 @@ end
 printh("+++")
 
 lost_doors = {
- {nil,nil,nil,nil,{},nil,nil,nil,nil},
- {nil,{3},nil,{2},nil,{4},nil,{1},nil},
- nil,
- {{2,3},nil,{3,4},nil,nil,nil,{1,2},nil,{1,4}},
- nil,
- nil,
- nil,
- nil,
+ {0,0,0,0,{},0,0,0,0},
+ {0,{3},0,{2},0,{4},0,{1},0},
+ 0,
+ {{2,3},0,{3,4},0,0,0,{1,2},0,{1,4}},
+ 0,
+ 0,
+ 0,
+ 0,
  {{2,3},{2,3,4},{3,4},{1,2,3},{1,2,3,4},{1,3,4},{1,2},{1,2,4},{1,4}}
 }
 
 function to_unsigned(n)
- printh("n: "..n)
  return n==nil and 128 or (n<0 and (n+256) or n)
 end
 
@@ -57,29 +56,32 @@ function t2s(t)
    r=r..unsignedhex(t[i])
   end
  end
- printh("r: "..r)
  return r
 end
 
-
 local m=0
-function s2t()
- local t,i,c={},0,mapi(m)
- while i<c do
+function s2t(sub)
+ local t,c={},mapi(m)
+ for i=1,c do
   m+=1
-  i+=1
   local n=mapi(m)
   if n==-127 then
    m+=1
-   add(t,s2t())
+   add(t,s2t(true))
   else
    add(t,n)
   end
  end
+ if not sub then m+=1 end
  return t
 end
 
 function mapi(i)
+ return to_signed(mget(i%128,flr(i/128)))
+end
+
+--[[
+function mapi2(i)
  return myget(i,0)
 end
 
@@ -92,50 +94,79 @@ function myget(x,y)
  --printh(2*x+1)
  return n
 end
-
-function mapi2(i)
- return to_signed(mget(i%128,flr(i/128)))
-end
-
-printh(t2s(diff_dir))
-
---assert(false)
-
---[[
-x=t2s({10,20,30})
-printh(x)
-
-
-x=t2s({10,{100,120},30})
-printh(x)
-
-x=t2s(lost_doors)
-printh(x)
 ]]
 
---x=t2s({10,20,30})
---y=s2t(x)
+--[[
+printh(t2s(lost_doors))
+assert(false)
+printh(t2s(diff_dir))
+assert(false)
 
---x=t2s({10,20,30})
+x=t2s({10,20,30})
+printh(x)
+x=t2s({10,{100,120},30})
+printh(x)
+x=t2s(lost_doors)
+printh(x)
+
+x=t2s({10,20,30})
+y=s2t(x)
+x=t2s({10,20,30})
 x=t2s({10,{1,2,3},{100,120},30})
 printh(x)
+]]
 
 y=s2t()
 for k,v in pairs(y) do
  if type(v)=="table" then
-  printh(k.." => table #"..#v)
+  printh(k.." => table")
   for k2,v2 in pairs(v) do
-   printh(" - "..k2.." => "..v2)
+   if type(v2)=="table" then
+    printh(" - "..k2.." => table")
+    for k3,v3 in pairs(v2) do
+     printh(" - - "..k3.." => "..v3)
+    end
+   else
+    printh(" - "..k2.." => "..v2)
+   end
   end
  else
   printh(k.." => "..v)
  end
 end
 
-printh(y[3][2])
+printh(lost_doors[2][2][1])
+printh(y[2][2][1])
+
+
+printh(lost_doors[9][2][3])
+printh(y[9][2][3])
+
+y=s2t()
+for k,v in pairs(y) do
+ if type(v)=="table" then
+  printh(k.." => table")
+  for k2,v2 in pairs(v) do
+   if type(v2)=="table" then
+    printh(" - "..k2.." => table")
+    for k3,v3 in pairs(v2) do
+     printh(" - - "..k3.." => "..v3)
+    end
+   else
+    printh(" - "..k2.." => "..v2)
+   end
+  end
+ else
+  printh(k.." => "..v)
+ end
+end
+
+printh(diff_dir[4][1])
+printh(y[4][1])
 
 
 assert(false)
+
 
 
 for i=-128,127 do
