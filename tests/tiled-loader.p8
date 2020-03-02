@@ -17,6 +17,7 @@ for y=0,layer.height-1 do
   i+=1
  end
 end
+--cstore(0x0000,0x0000,0x3000)
 cstore(0x0000,0x0000,0x3000,'tiled.p8')
 
 printh(#tiled.layers[1].data)
