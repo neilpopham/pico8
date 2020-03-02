@@ -6,20 +6,20 @@ __lua__
 
 
 
-function parsetiler()
-#include tiler.lua
+function parsetiled()
+#include tiled.lua
 end
-tiler=parsetiler()
-layer,i=tiler.layers[1],1
+tiled=parsetiled()
+layer,i=tiled.layers[1],1
 for y=0,layer.height-1 do
  for x=0,layer.width-1 do
   mset(x,y,layer.data[i])
   i+=1
  end
 end
-cstore(0x0000, 0x0000, 0x3000, 'tiler.p8')
+cstore(0x0000,0x0000,0x3000,'tiled.p8')
 
-printh(#tiler.layers[1].data)
+printh(#tiled.layers[1].data)
 
 function _init()
 
