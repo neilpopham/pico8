@@ -1,28 +1,39 @@
-local diff_dir={{0,-1},{1,0},{0,1},{-1,0}}
---local diff_index={{-1,-1},{0,-1},{1,-1},{-1,0},{0,0},{1,0},{-1,1},{0,1},{1,1}}
---[[
-local diff_map={}
-for ty=-1,1 do
- for tx=-1,1 do
-  add(diff_map,{x=tx,y=ty})
- end
-end
-]]
-
-
+diff_dir={{0,-1},{1,0},{0,1},{-1,0}}
 lost_doors = {
- {nil,nil,nil,nil,{},nil,nil,nil,nil},
- {nil,{3},nil,{2},nil,{4},nil,{1},nil},
- nil,
- {{2,3},nil,{3,4},nil,nil,nil,{1,2},nil,{1,4}},
- nil,
- nil,
- nil,
- nil,
+ {0,0,0,0,{},0,0,0,0},
+ {0,{3},0,{2},0,{4},0,{1},0},
+ 0,
+ {{2,3},0,{3,4},0,0,0,{1,2},0,{1,4}},
+ 0,
+ 0,
+ 0,
+ 0,
  {{2,3},{2,3,4},{3,4},{1,2,3},{1,2,3,4},{1,3,4},{1,2},{1,2,4},{1,4}}
 }
+roomtl={
+ {0,0,0,0,{0,0},0,0,0,0},
+ {0,{0,0},0,{0,0},0,{1,0},0,{0,1},0},
+ 0,
+ {{0,0},0,{1,0},0,0,0,{0,1},0,{1,1}},
+ 0,
+ 0,
+ 0,
+ 0,
+ {{0,0},{1,0},{2,0},{0,1},{1,1},{2,1},{0,2},{1,2},{2,2}},
+}
+idx={
+ {5},
+ {{2,8},{4,6}},
+ 0,
+ {1,3,7,9},
+ 0,
+ 0,
+ 0,
+ 0,
+ {1,2,3,4,5,6,7,8,9}
+}
 
-function tcount(t)
+function sizeof(t)
  local i=0
  for k,_ in pairs(t) do i=i+1 end
  return i
@@ -52,62 +63,15 @@ function get_types(x,y)
 end
 
 function generate()
- printh("---- generate ----------------------------------------")
- local r=rnd() -- #########################################################
+ local r=flr(rnd(32767)) -- #########################################################
  printh("srand: "..r) -- ##################################################
  srand(r) -- ##############################################################
  count=0
- total=mrnd({30,40})
+ total=mrnd({20,30})
  cells={}
+ room={}
  local x,y=100,100
  makeroom(x,y,3)
-
- -- debugging issue with door to nowhere sometimes
- function dump(dx,dy,dd)
-  printh("##################DUMP############")
-  printh(dx)
-  printh(dy)
-  printh(dd)
-  for x,rows in pairs(cells) do
-   for y,cell in pairs(rows) do
-    --printh(x..", "..y)
-    local s=""
-    for d,_ in pairs(cell.doors) do
-     s=s..d.." "
-    end
-    printh(x..", "..y.." doors:"..s)
-   end
-  end
-  printh("##############END DUMP############")
- end
- for x,rows in pairs(cells) do
-  for y,cell in pairs(rows) do
-   for d,_ in pairs(cell.doors) do
-
-    if d==1 and cells[x][y-1]==nil then
-     dump(x,y,d)
-    end
-    if d==2 and cells[x+1][y]==nil then
-     dump(x,y,d)
-    end
-    if d==3 and cells[x][y+1]==nil then
-     dump(x,y,d)
-    end
-    if d==4 and cells[x-1][y]==nil then
-     dump(x,y,d)
-    end
-    ---[[
-    if d==1 then assert(cells[x][y-1],x..","..y..":"..d) end
-    if d==2 then assert(cells[x+1][y],x..","..y..":"..d) end
-    if d==3 then assert(cells[x][y+1],x..","..y..":"..d) end
-    if d==4 then assert(cells[x-1][y],x..","..y..":"..d) end
-    --]]
-   end
-  end
- end
-
-
-
  -- convert array to start from 1,1
  local mx,my=500,500
  for x,rows in pairs(cells) do
@@ -137,6 +101,7 @@ function generate()
       local i=get_index(tx,ty)
       cells[x+tx][y+ty].type=i
       cells[x+tx][y+ty].group=9
+      cells[x+tx][y+ty].room=cells[x][y].room
      end
     end
    end
@@ -168,6 +133,7 @@ function generate()
       for _,v in pairs(sq) do
        cells[v.x][v.y].group=4
        cells[v.x][v.y].type=v.c
+       cells[v.x][v.y].room=cells[x][y].room
       end
      end
     end
@@ -194,109 +160,55 @@ function generate()
      cell.type=10-index[si]
      cells[x+o[1]][y+o[2]].group=2
      cells[x+o[1]][y+o[2]].type=index[si]
+     cells[x+o[1]][y+o[2]].room=cell.room
     end
    end
   end
  end
-
- -- remove doors with no walls (due to cell merging)
+ -- post-processing
  for x,rows in pairs(cells) do
   for y,cell in pairs(rows) do
+   -- remove doors with no walls (due to cell merging)
    for i,d in pairs(lost_doors[cell.group][cell.type]) do
     cell.doors[d]=nil
    end
-  end
- end
- -- maybe don't remove these
- -- - maybe we could use these to ensure that there is a way to navigate through a room
- -- - so you can put stuff anywhere else but not on these doors
- -- - so you may have to exit a room to get to the other side of it
- -- on a side note, could have furniture arrangements according to group and index
- -- - so a design for index 1 (top left) in both a 2x2 and 3x3 room
-
-
- -- turn some doors into secret doors
- -- later we can merge these into one x,y loop
- for x,rows in pairs(cells) do
-  for y,cell in pairs(rows) do
+   -- turn some doors into secret doors
    if cell.group==1 and rnd()>0.5 then
-    if tcount(cell.doors)==1 then
+    if sizeof(cell.doors)==1 then
      for k,_ in pairs(cell.doors) do
       cells[x+diff_dir[k][1]][y+diff_dir[k][2]].doors[get_opposite_direction(k)]=2
       --cell.doors[k]=2 -- no, but leave for now
       cell.secret=true
-      printh("secret door!")
      end
     end
    end
+   -- create room array
+   if room[cell.room]==nil then room[cell.room]={} end
+   --add(room[cell.room],cell)
+   room[cell.room][cell.type]=cell
   end
  end
-
-
- for x,rows in pairs(cells) do
-  for y,cell in pairs(rows) do
-   local s=""
-   for d,_ in pairs(cell.doors) do
-    s=s..d.." "
-   end
-   printh("x,y: "..x..","..y.. " | doors: "..s.."| group: "..cell.group.." | type: "..cell.type)
-  end
- end
-
-
-
- --assert(false,"")
- --[[
- for x,rows in pairs(cells) do
-  for y,cell in pairs(rows) do
-   printh(x.."|"..y)
-  end
- end
- --]]
-
 end
 
---[[
-
-1 2 3    5    2    4 6    1 3
-4 5 6         8           7 9
-7 8 9
-
-]]
-
-
 function makeroom(x,y,exit)
- printh("--- makeroom -- "..x..", "..y.." "..exit)
-
  if cells[x]==nil then cells[x]={} end
-
+ -- if this room has already been created then just make sure we have an exit
  if cells[x][y]~=nil then
   cells[x][y].doors[get_opposite_direction(exit)]=1
   return
  end
-
- printh(count.."/"..total)
-
- ---[[
+ -- attempt to restrict the number of rooms generated
  if count>total*2 then
   cells[x-diff_dir[exit][1]][y-diff_dir[exit][2]].doors[exit]=nil
-  --if exit==1 then cells[x][y+1].doors[1]=nil end
-  --if exit==2 then cells[x-1][y].doors[2]=nil end
-  --if exit==3 then cells[x][y-1].doors[3]=nil end
-  --if exit==4 then cells[x+1][y].doors[4]=nil end
   return
  end
- --]]
-
- cells[x][y]={doors={},type=5,group=1,srand=rnd()}
-
+ -- initiate room
+ cells[x][y]={doors={},type=5,group=1,room=count+1,srand=rnd()}
+ -- initiate locals
  local exits=count<total and mrnd({count<(total/3) and 2 or 1,4}) or 1
  count=count+1
- printh("exits:"..exits)
- local doors={}
- local directions={1,2,3,4}
- local door_map={nil,1,nil,4,nil,2,nil,3,nil}
-
+ local doors,directions,door_map={},{1,2,3,4},{nil,1,nil,4,nil,2,nil,3,nil}
+ -- if adjacent rooms exist create doors to link to them
  for ty=-1,1 do
   for tx=-1,1 do
    local i=get_index(tx,ty)
@@ -308,55 +220,25 @@ function makeroom(x,y,exit)
    end
   end
  end
-
+ -- remove these from our pool
  for _,a in pairs(doors) do
   for _,b in pairs(directions) do
    if a==b then del(directions,a) end
   end
  end
-
+ -- randomly select doors from our random pool
  for i=#doors+1,exits do
   add(doors,del(directions,directions[mrnd({1,#directions})]))
  end
-
- if false then
-  while #doors<exits do
-   -- start off with a 1/4 chance of picking a direction
-   local directions={1,2,3,4}
-   -- add another chance to create an opposing door
-   for _,v in pairs(doors) do
-    add(directions,get_opposite_direction(v))
-   end
-   -- remove any directions we already have
-   for _,a in pairs(doors) do
-    for _,b in pairs(directions) do
-     if a==b then del(directions,a) end
-    end
-   end
-   -- pick a direction from our remaining pot
-   add(doors,directions[mrnd({1,#directions})])
-  end
- end
-
+ -- set door array in global cells variable
  cells[x][y].doors={}
  for _,v in pairs(doors) do
   cells[x][y].doors[v]=1
  end
-
- --local s="" for _,v in pairs(doors) do s=s..v.." " end printh("doors: "..s)
-
- --[[
- for k,_ in pairs(cells[x][y].doors) do
-  makeroom(x+diff_dir[k][1],y+diff_dir[k][2],k)
- end
- ]]
- -- use doors as its more random, otherwise 1 gets used more often
+ -- make rooms for all our doors, use local doors var as it's more randomly sorted
  for _,k in pairs(doors) do
   makeroom(x+diff_dir[k][1],y+diff_dir[k][2],k)
  end
-
- return
-
 end
 
 function drawcells()
@@ -425,21 +307,110 @@ function drawroom(x,y)
 
 end
 
+function maproom(x,y)
+ printh("maproom("..x..","..y..")")
+ -- clear the map
+ for y=0,15 do
+  for x=0,15 do
+   mset(0,0,0)
+  end
+ end
+ local cell=cells[x][y]
+ printh(" type:"..cell.type)
+ --local o=roomtl[cell.group][cell.type]
+ --local tl=cells[x+o[1]][y+o[2]]
+
+ local id=idx[cell.group]
+ if cell.group==2 then
+  if in_array({2,8},cell.type) then id=id[1] else id=id[2] end
+ end
+ dumptable(id)
+ for _,i in pairs(id) do
+  local o=roomtl[cell.group][i]
+  printh("i:"..i)
+  drawcell(x-o[1],y-o[2])
+ end
+
+
+ --[[
+ for k,v in pairs(roomtl[cell.group]) do
+  if type(v)=="table" then
+   drawcell(v[1],v[2])
+  end
+ end
+ ]]
+end
+
+function drawcell(x,y)
+ printh("drawcell: "..x..","..y)
+ local cell=cells[x][y]
+ printh("drawcell: "..x..","..y.." "..cell.type)
+ rectfill(x*8,y*8,x*8+6,y*8+6,2)
+end
+
+function dumptable(t,l)
+ l=l or 0
+ local p=""
+ for i=0,l do
+  p=p.."  "
+ end
+ local i=0
+ for k,v in pairs(t) do
+  i+=1
+  if type(v)=="table" then
+   printh(p..k.. " => (table)")
+   dumptable(v,l+1)
+  else
+   local t=type(v)
+   if v==nil then v="nil" end
+   if type(v)=="boolean" then v=v and "true" or "false" end
+   printh(p..k.. " => "..v.." ("..t..")")
+  end
+ end
+ if i==0 then printh(p.."(empty)") end
+end
+
+function getroom(x,y)
+ local cell=cells[x][y]
+ local o=roomtl[cell.group][cell.type]
+-- local tl=cells[x+o[1]][y+o[2]]
+
+end
+
 function _init()
  printh("==================")
- max=20
- t=max
+ generate()
+ dumptable(cells)
+ dumptable(room)
+
+ rx=1
+ for k,v in pairs(cells[1]) do
+  ry=k
+ end
+
+ p={room={x=rx,y=ry},x=32,y=32}
+ maproom(p.room.x,p.room.y)
 end
 
 function _update60()
- if t==max then
-  t=0
-  generate()
- end
- t=t+1
+
 end
 
 function _draw()
  cls(0)
- drawcells()
+ maproom(p.room.x,p.room.y)
 end
+
+--[[
+
+drawing rooms
+
+from cell x,y we need to work out what cells we need to draw
+the group will be used
+if we store these in another array what would we need to store?
+
+
+
+
+
+]]

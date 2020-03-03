@@ -19,7 +19,8 @@ end
 
 -- #include dungeon_attempt_1.lua
 -- #include dungeon_attempt_2.lua
-#include dungeon_attempt_3.lua
+-- #include dungeon_attempt_3.lua
+#include dungeon_attempt_4.lua
 
 __gfx__
 0000000077777776000000000000000099999999ccccccccaaaaaaa9000000001000000100000000000000001cc77cc1cccccccc00000000aaaaaaa900000000
