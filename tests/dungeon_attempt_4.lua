@@ -334,6 +334,20 @@ function mapfloor(tx,ty)
 end
 
 function mapwalls(tx,ty,walls)
+ local wallsizes={
+  {{0,13},{0,1}},
+  {{12,13},{0,13}},
+  {{0,13},{12,13}},
+  {{0,1},{0,13}}
+ }
+ for _,w in pairs(walls) do
+  for x=wallsizes[w][1][1],wallsizes[w][1][2] do
+   for y=wallsizes[w][2][1],wallsizes[w][2][2] do
+    mset(tx+x,ty+y,2)
+   end
+  end
+ end
+ --[[
  for _,w in pairs(walls) do
   if w==1 then
    for x=0,13 do
@@ -357,6 +371,7 @@ function mapwalls(tx,ty,walls)
    end
   end
  end
+ ]]
 end
 
 function mapdoors(tx,ty,doors)
