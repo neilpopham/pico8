@@ -21,6 +21,7 @@ roomtl={
  0,
  {{0,0},{1,0},{2,0},{0,1},{1,1},{2,1},{0,2},{1,2},{2,2}},
 }
+--[[
 idx={
  {5},
  {{2,8},{4,6}},
@@ -32,6 +33,16 @@ idx={
  0,
  {1,2,3,4,5,6,7,8,9}
 }
+]]
+
+function array_diff(a1,a2)
+ local t={}
+ for k,v in pairs(a1) do t[k]=v end
+ for _,v in pairs(a2) do
+  del(t,v)
+ end
+ return t
+end
 
 function sizeof(t)
  local i=0
@@ -63,13 +74,13 @@ function get_types(x,y)
 end
 
 function generate()
- local r=flr(rnd(32767)) -- #########################################################
- printh("srand: "..r) -- ##################################################
- srand(r) -- ##############################################################
+ --local r=flr(rnd(32767)) -- #########################################################
+ --printh("srand: "..r) -- ##################################################
+ --srand(r) -- ##############################################################
  count=0
  total=mrnd({20,30})
  cells={}
- room={}
+ --room={}
  local x,y=100,100
  makeroom(x,y,3)
  -- convert array to start from 1,1
@@ -183,9 +194,8 @@ function generate()
     end
    end
    -- create room array
-   if room[cell.room]==nil then room[cell.room]={} end
-   --add(room[cell.room],cell)
-   room[cell.room][cell.type]=cell
+   -- if room[cell.room]==nil then room[cell.room]={} end
+   -- room[cell.room][cell.type]=cell
   end
  end
 end
@@ -241,111 +251,138 @@ function makeroom(x,y,exit)
  end
 end
 
-function drawcells()
- pal(1,128,1)
- local s=7
- local os=flr(s/2)
- for x,rows in pairs(cells) do
-  for y,cell in pairs(rows) do
-
-   pset(os+x*s,os+y*s,7)
-
-   function drawline(s,x,y,index,col)
-    if index==2 then line(x*s,y*s,s-1+x*s,y*s,col) end
-    if index==6 then line(s-1+x*s,y*s,s-1+x*s,s-1+y*s,col) end
-    if index==8 then line(x*s,s-1+y*s,s-1+x*s,s-1+y*s,col) end
-    if index==4 then line(x*s,y*s,x*s,s-1+y*s,col) end
-   end
-
-   if cell.group==1 then
-    rect(x*s,y*s,s-1+x*s,s-1+y*s,6)
-   elseif cell.group==2 then
-    rect(x*s,y*s,s-1+x*s,s-1+y*s,cell.group)
-    if cell.type==2 then line(1+x*s,s-1+y*s,s-2+x*s,s-1+y*s,1) end
-    if cell.type==6 then line(x*s,1+y*s,x*s,s-2+y*s,1) end
-    if cell.type==8 then line(1+x*s,y*s,s-2+x*s,y*s,1) end
-    if cell.type==4 then line(s-1+x*s,1+y*s,s-1+x*s,s-2+y*s,1) end
-   elseif cell.group==4 then
-    rect(x*s,y*s,s-1+x*s,s-1+y*s,1)
-    if cell.type==1 then drawline(s,x,y,2,cell.group) drawline(s,x,y,4,cell.group) end
-    if cell.type==3 then drawline(s,x,y,2,cell.group) drawline(s,x,y,6,cell.group) end
-    if cell.type==7 then drawline(s,x,y,4,cell.group) drawline(s,x,y,8,cell.group) end
-    if cell.type==9 then drawline(s,x,y,6,cell.group) drawline(s,x,y,8,cell.group) end
-   elseif cell.group==9 then
-    rect(x*s,y*s,s-1+x*s,s-1+y*s,1)
-    if cell.type==1 then drawline(s,x,y,2,cell.group) drawline(s,x,y,4,cell.group) end
-    if cell.type==2 then drawline(s,x,y,2,cell.group) end
-    if cell.type==3 then drawline(s,x,y,2,cell.group) drawline(s,x,y,6,cell.group) end
-    if cell.type==4 then drawline(s,x,y,4,cell.group) end
-    if cell.type==6 then drawline(s,x,y,6,cell.group) end
-    if cell.type==7 then drawline(s,x,y,4,cell.group) drawline(s,x,y,8,cell.group) end
-    if cell.type==8 then drawline(s,x,y,8,cell.group) end
-    if cell.type==9 then drawline(s,x,y,6,cell.group) drawline(s,x,y,8,cell.group) end
-   else
-    asert(false,cell.group)
-   end
-
-   for d,dt in pairs(cell.doors) do
-    local dc,di=0,3
-    if dt==2 then dc=8 di=8 end
-    if d==1 then pset(os+x*s,y*s,dc) pset(os+x*s,os-1+y*s,di) end
-    if d==2 then pset(s-1+x*s,os+y*s,dc) pset(os+1+x*s,os+y*s,di) end
-    if d==3 then pset(os+x*s,s-1+y*s,dc) pset(os+x*s,os+1+y*s,di) end
-    if d==4 then pset(x*s,os+y*s,dc) pset(os-1+x*s,os+y*s,di) end
-   end
-   --print(cell.type,x*s,y*s,15)
-  end
- end
-end
-
-function drawroom(x,y)
- local offset={44,nil,nil,24,nil,nil,nil,nil,4}
- local cell=cells[x][y]
- local o=offset[cell.group]
- if cell.group==2 and (cell.type==2 or cell.type==8) then o=offset[1] end
- srand(cell.srand)
-
-end
-
 function maproom(x,y)
  printh("maproom("..x..","..y..")")
- -- clear the map
- for y=0,15 do
-  for x=0,15 do
-   mset(0,0,0)
-  end
- end
+ dumptable(cells[x][y])
+ -- clear the whole map
+ memset(0x2000,0,0x1000)
+
  local cell=cells[x][y]
- printh(" type:"..cell.type)
- --local o=roomtl[cell.group][cell.type]
- --local tl=cells[x+o[1]][y+o[2]]
+ local o=roomtl[cell.group][cell.type]
+ local tlx,tly=x-o[1],y-o[2]
+ local alldoors={1,2,3,4}
 
- local id=idx[cell.group]
- if cell.group==2 then
-  if in_array({2,8},cell.type) then id=id[1] else id=id[2] end
- end
- dumptable(id)
- for _,i in pairs(id) do
-  local o=roomtl[cell.group][i]
-  printh("i:"..i)
-  drawcell(x-o[1],y-o[2])
- end
-
-
- --[[
- for k,v in pairs(roomtl[cell.group]) do
-  if type(v)=="table" then
-   drawcell(v[1],v[2])
+ if cell.group==1 then
+  printh("draw single cell")
+  mapfloor(0,0)
+  mapwalls(0,0,alldoors)
+  mapdoors(0,0,cells[tlx][tly].doors)
+ elseif cell.group==2 then
+  if in_array({2,8},cell.type) then
+   printh("draw vertical 2 cell room")
+   for dy=0,1 do
+    --local cx,cy=tlx,tly+dy
+    --local c=cells[cx][cy]
+    local c=cells[tlx][tly+dy]
+    local walls=array_diff(alldoors,lost_doors[c.group][c.type])
+    local mx,my=0,dy*10
+    mapfloor(mx,my)
+    mapwalls(mx,my,walls)
+    mapdoors(mx,my,c.doors)
+   end
+  else
+   printh("draw horizontal 2 cell room")
+   for dx=0,1 do
+    --local cx,cy=tlx+dx,tly
+    --local c=cells[cx][cy]
+    local c=cells[lx+dx][tly]
+    local walls=array_diff(alldoors,lost_doors[c.group][c.type])
+    local mx,my=dx*10,0
+    mapfloor(mx,my)
+    mapwalls(mx,my,walls)
+    mapdoors(mx,my,c.doors)
+   end
+  end
+ elseif cell.group==4 then
+  printh("draw 4 cell room")
+  for dy=0,1 do
+   for dx=0,1 do
+    --local cx,cy=tlx+dx,tly+dy
+    --local c=cells[cx][cy]
+    local c=cells[tlx+dx][tly+dy]
+    local walls=array_diff(alldoors,lost_doors[c.group][c.type])
+    local mx,my=dx*10,dy*10
+    mapfloor(mx,my)
+    mapwalls(mx,my,walls)
+    mapdoors(mx,my,c.doors)
+   end
+  end
+ else
+  printh("draw 9 cell room")
+  for dy=0,2 do
+   for dx=0,2 do
+    --local cx,cy=tlx+dx,tly+dy
+    --local c=cells[cx][cy]
+    local c=cells[tlx+dx][tly+dy]
+    local walls=array_diff(alldoors,lost_doors[c.group][c.type])
+    local mx,my=dx*10,dy*10
+    mapfloor(mx,my)
+    mapwalls(mx,my,walls)
+    mapdoors(mx,my,c.doors)
+   end
   end
  end
- ]]
+
 end
 
-function drawcell(x,y)
- printh("drawcell: "..x..","..y)
- local cell=cells[x][y]
- printh("drawcell: "..x..","..y.." "..cell.type)
- rectfill(x*8,y*8,x*8+6,y*8+6,2)
+function mapfloor(tx,ty)
+ for x=0,13 do
+  for y=0,13 do
+   mset(tx+x,ty+y,1)
+  end
+ end
+end
+
+function mapwalls(tx,ty,walls)
+ for _,w in pairs(walls) do
+  if w==1 then
+   for x=0,13 do
+    mset(tx+x,ty+0,2)
+    mset(tx+x,ty+1,2)
+   end
+  elseif w==2 then
+   for y=0,13 do
+    mset(tx+12,ty+y,2)
+    mset(tx+13,ty+y,2)
+   end
+  elseif w==3 then
+   for x=0,13 do
+    mset(tx+x,ty+12,2)
+    mset(tx+x,ty+13,2)
+   end
+  elseif w==4 then
+   for y=0,13 do
+    mset(tx+0,ty+y,2)
+    mset(tx+1,ty+y,2)
+   end
+  end
+ end
+end
+
+function mapdoors(tx,ty,doors)
+ for d,_ in pairs(doors) do
+  if d==1 then
+   mset(tx+6,ty+0,1)
+   mset(tx+7,ty+0,1)
+   mset(tx+6,ty+1,1)
+   mset(tx+7,ty+1,1)
+  elseif d==2 then
+   mset(tx+12,ty+6,1)
+   mset(tx+13,ty+6,1)
+   mset(tx+12,ty+7,1)
+   mset(tx+13,ty+7,1)
+  elseif d==3 then
+   mset(tx+6,ty+12,1)
+   mset(tx+7,ty+12,1)
+   mset(tx+6,ty+13,1)
+   mset(tx+7,ty+13,1)
+  elseif d==4 then
+   mset(tx+0,ty+6,1)
+   mset(tx+0,ty+7,1)
+   mset(tx+1,ty+6,1)
+   mset(tx+1,ty+7,1)
+  end
+ end
 end
 
 function dumptable(t,l)
@@ -370,35 +407,55 @@ function dumptable(t,l)
  if i==0 then printh(p.."(empty)") end
 end
 
-function getroom(x,y)
- local cell=cells[x][y]
- local o=roomtl[cell.group][cell.type]
--- local tl=cells[x+o[1]][y+o[2]]
-
-end
-
 function _init()
  printh("==================")
  generate()
- dumptable(cells)
- dumptable(room)
+ --dumptable(cells)
+ --dumptable(room)
 
- rx=1
+ rx,ry=1,0
+
+ for x,a in pairs(cells) do
+  for y,c in pairs(a) do
+   if c.group==9 and ry==0 then rx=x ry=y end
+  end
+ end
+ if ry==0 then
+  for y,c in pairs(cells[1]) do
+   ry=y
+  end
+ end
+ printh("rx,ry: "..rx..","..ry)
+ assert(cells[rx]~=nil, "cells[rx] does not exist")
+ assert(cells[rx][ry]~=nil, "cells[rx][ry] does not exist")
+ --[[
+ rx,ry=1,0
  for k,v in pairs(cells[1]) do
   ry=k
  end
+ ]]
+
+
+
 
  p={room={x=rx,y=ry},x=32,y=32}
  maproom(p.room.x,p.room.y)
+ --cstore(0x2000,0x2000,0x1000)
+ cstore(0x1000,0x1000,0x2000)
+ map_x=0
+ map_y=0
 end
 
 function _update60()
-
+ if btn(0) then map_x-=1 end
+ if btn(1) then map_x+=1 end
+ if btn(2) then map_y-=1 end
+ if btn(3) then map_y+=1 end
 end
 
 function _draw()
  cls(0)
- maproom(p.room.x,p.room.y)
+ map(map_x,map_y)
 end
 
 --[[
