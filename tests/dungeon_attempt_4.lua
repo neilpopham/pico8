@@ -455,8 +455,7 @@ function _init()
 
  p={room={x=rx,y=ry},x=32,y=32}
  maproom(p.room.x,p.room.y)
- --cstore(0x2000,0x2000,0x1000)
- cstore(0x1000,0x1000,0x2000)
+ --cstore(0x1000,0x1000,0x2000)
  map_x=0
  map_y=0
 end
@@ -466,6 +465,7 @@ function _update60()
  if btn(1) then map_x+=1 end
  if btn(2) then map_y-=1 end
  if btn(3) then map_y+=1 end
+ if btnp(5) then maproom(p.room.x,p.room.y) map_x=0 map_y=0 end
 end
 
 function _draw()
