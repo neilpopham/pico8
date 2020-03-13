@@ -22,8 +22,8 @@ __lua__
 local particles={}
 
 function get_address(x,y)
- --return 0x6000+flr(x/2)+(y*64) -- screen
- return 0x4300+flr(x/2)+(y*64) -- user
+ return 0x6000+flr(x/2)+(y*64) -- screen
+ --return 0x4300+flr(x/2)+(y*64) -- user
 end
 
 function get_colour_pair(a)
@@ -60,7 +60,7 @@ end
 function create_particle(x,y,colour)
  local p={
   x=x,
-  y=-1,
+  y=-32,
   fy=y,
   colour=colour,
   force=rnd(2)+1,
@@ -78,13 +78,14 @@ function _init()
  print("- izumi shikibu",68,50,5)
  a1=get_address(2,31)
  a2=get_address(128,56)
- memcpy(0x4300,0x6000,a2-a1)
+ --memcpy(0x4300,0x6000,a2-a1)
  --cls()
  convert_to_particles(0,0,128,67)
  t=#particles--+600
 end
 
 function _update60()
+ ---[[
  for i=#particles,1,-1 do
   local p=particles[i]
   if p.y<p.fy and t<i then
@@ -96,12 +97,13 @@ function _update60()
   t=t-flr(rnd(3)+8)
   if t<0 then t=0 end
  end
+ --]]
 end
 
 function _draw()
  cls()
  for _,p in pairs(particles) do
-  pset(p.x+2,p.y+31,p.colour)
+  pset(p.x,p.y+31,p.colour)
  end
  --print(stat(0),0,0,10)
 end

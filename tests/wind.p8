@@ -116,7 +116,7 @@ function _init()
  print("- james arthur",56,91,5)
  a1=get_address(8,31)
  a2=get_address(120,98)
- memcpy(0x4300,0x6000,a2-a1)
+ --memcpy(0x4300,0x6000,a2-a1)
  --cls()
  convert_to_particles(8,31,112,67)
 end
