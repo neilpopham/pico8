@@ -21,6 +21,9 @@ roomtl={
  0,
  {{0,0},{1,0},{2,0},{0,1},{1,1},{2,1},{0,2},{1,2},{2,2}},
 }
+alldoors={1,2,3,4}
+door_map={0,1,0,4,0,2,0,3,0}
+
 --[[
 idx={
  {5},
@@ -35,9 +38,27 @@ idx={
 }
 ]]
 
+function extend(...)
+ local arg={...}
+ local o=del(arg,arg[1])
+ for _,a in pairs(arg) do
+  for k,v in pairs(a) do
+   o[k]=v
+  end
+ end
+ return o
+end
+
+function clone(o)
+ local c={}
+ for k,v in pairs(o) do
+  c[k]=v
+ end
+ return c
+end
+
 function array_diff(a1,a2)
- local t={}
- for k,v in pairs(a1) do t[k]=v end
+ local t=clone(a1)
  for _,v in pairs(a2) do
   del(t,v)
  end
@@ -217,12 +238,12 @@ function makeroom(x,y,exit)
  -- initiate locals
  local exits=count<total and mrnd({count<(total/3) and 2 or 1,4}) or 1
  count=count+1
- local doors,directions,door_map={},{1,2,3,4},{nil,1,nil,4,nil,2,nil,3,nil}
+ local doors,directions={},clone(alldoors)
  -- if adjacent rooms exist create doors to link to them
  for ty=-1,1 do
   for tx=-1,1 do
    local i=get_index(tx,ty)
-   if door_map[i] then
+   if door_map[i]>0 then
     local opposite=door_map[i] and get_opposite_direction(door_map[i]) or 0
     if cells[x+tx] and cells[x+tx][y+ty] and cells[x+tx][y+ty].doors[opposite] then
      add(doors,door_map[i])
@@ -260,7 +281,6 @@ function maproom(x,y)
  local cell=cells[x][y]
  local o=roomtl[cell.group][cell.type]
  local tlx,tly=x-o[1],y-o[2]
- local alldoors={1,2,3,4}
 
  if cell.group==1 then
   printh("draw single cell")
@@ -285,7 +305,7 @@ function maproom(x,y)
    for dx=0,1 do
     --local cx,cy=tlx+dx,tly
     --local c=cells[cx][cy]
-    local c=cells[lx+dx][tly]
+    local c=cells[tlx+dx][tly]
     local walls=array_diff(alldoors,lost_doors[c.group][c.type])
     local mx,my=dx*10,0
     mapfloor(mx,my)
@@ -328,7 +348,7 @@ end
 function mapfloor(tx,ty)
  for x=0,13 do
   for y=0,13 do
-   mset(tx+x,ty+y,1)
+   mset(tx+x,ty+y,3)
   end
  end
 end
@@ -341,10 +361,14 @@ function mapwalls(tx,ty,walls)
   {{0,1},{0,13}}
  }
  for _,w in pairs(walls) do
+  printh("wall: "..w)
   for x=wallsizes[w][1][1],wallsizes[w][1][2] do
    for y=wallsizes[w][2][1],wallsizes[w][2][2] do
     mset(tx+x,ty+y,2)
    end
+  end
+  if w==1 then
+   for x=0,13 do mset(tx+x,ty+2,1) end
   end
  end
  --[[
@@ -375,7 +399,29 @@ function mapwalls(tx,ty,walls)
 end
 
 function mapdoors(tx,ty,doors)
+ ---[[
+ local doorsizes={
+  {{6,7},{0,1}},
+  {{12,13},{6,7}},
+  {{6,7},{12,13}},
+  {{0,1},{6,7}}
+ }
  for d,_ in pairs(doors) do
+  for x=doorsizes[d][1][1],doorsizes[d][1][2] do
+   for y=doorsizes[d][2][1],doorsizes[d][2][2] do
+    mset(tx+x,ty+y,3)
+   end
+  end
+  if d==1 then
+   mset(tx+6,2,3)
+   mset(tx+7,2,3)
+  end
+ end
+
+ --]]
+ --[[
+ for d,_ in pairs(doors) do
+  printh(d)
   if d==1 then
    mset(tx+6,ty+0,1)
    mset(tx+7,ty+0,1)
@@ -398,6 +444,7 @@ function mapdoors(tx,ty,doors)
    mset(tx+1,ty+7,1)
   end
  end
+ --]]
 end
 
 function dumptable(t,l)
@@ -424,15 +471,14 @@ end
 
 function _init()
  printh("==================")
+ pal(15,129,1)
  generate()
- --dumptable(cells)
- --dumptable(room)
 
  rx,ry=1,0
 
  for x,a in pairs(cells) do
   for y,c in pairs(a) do
-   if c.group==9 and ry==0 then rx=x ry=y end
+   if c.group==4 and ry==0 then rx=x ry=y end
   end
  end
  if ry==0 then
@@ -470,7 +516,11 @@ end
 
 function _draw()
  cls(0)
- map(map_x,map_y)
+ camera(map_x,map_y)
+ map()
+ camera(0,0)
+ rectfill(56,56,71,71)
+ print(map_x..","..map_y,0,0,9)
 end
 
 --[[
