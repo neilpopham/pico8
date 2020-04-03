@@ -200,21 +200,39 @@ smoke={
 
 local sfxcache = {
  channel=1,   -- the channel to check (1-4)
- beats=8,     -- only fire on every nth beat (0, 4, 8, or 16)
+ beats=8,     -- fire on every nth beat (0, 4, 8, or 16)
  sfx={},
- played=false,
  play=function(self,n,c,o,l)
   add(self.sfx,{n,c and c or -1,o and o or 0,l and l or 0})
  end,
  check=function(self)
-  self.played=false
   if #self.sfx>0 and stat(19+self.channel)%self.beats==0 then
    for s in all(self.sfx) do
     sfx(s[1],s[2],s[3],s[4])
    end
-   self.played=true
    self.sfx={}
+   return true
   end
+  return false
+ end
+}
+
+local sfxcache = {
+ channel=1,   -- the channel to check (1-4)
+ beats=8,     -- fire on every nth beat (0, 4, 8, or 16)
+ sfx={},
+ play=function(self,...)
+  add(self.sfx,{...})
+ end,
+ check=function(self)
+  if #self.sfx>0 and stat(19+self.channel)%self.beats==0 then
+   for s in all(self.sfx) do
+    sfx(s[1],s[2] or -1,s[3] or 0,s[4] or 0)
+   end
+   self.sfx={}
+   return true
+  end
+  return false
  end
 }
 
@@ -232,19 +250,21 @@ function _update60()
   sfxcache:play(2)
   smoke:create(64,64,20,{col=2,size={20,30}})
  end
- sfxcache:check()
  particles:update()
 end
 
 function _draw()
  cls()
- c=3
- if sfxcache.played then
-  c=7
-  smoke:create(64,64,50,{col=7,size={30,40}})
+ if sfxcache:check() then
+  smoke:create(64,64,50,{col=9,size={30,40}})
  end
  particles:draw()
- print(lpad(stat(19+sfxcache.channel)),62,61,c)
+ print(
+  lpad(stat(19+sfxcache.channel)),
+  62,
+  61,
+  stat(19+sfxcache.channel)%sfxcache.beats==0 and 7 or 3
+ )
 end
 
 __sfx__

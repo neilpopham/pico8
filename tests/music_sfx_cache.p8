@@ -3,14 +3,8 @@ version 18
 __lua__
 
 function munpack(t,s,e)
-  s=s or 1
-  e=e or #t
   if s>e then return end
   return t[s],munpack(t,s+1,e)
-end
-
-function a(t)
- return t[1],t[2]
 end
 
 local sfxcache={
@@ -23,10 +17,7 @@ local sfxcache={
  check=function(self)
   if #self.sfx>0 and stat(19+self.channel)%self.beats==0 then
    for s in all(self.sfx) do
-    for k,v in pairs(s) do
-     print(k.." = "..v)
-    end
-    sfx(munpack(s))
+    sfx(munpack(s,1,#s))
    end
    self.sfx={}
   end
@@ -35,7 +26,7 @@ local sfxcache={
 
 local sfxcache = {
  channel=1,   -- the channel to check (1-4)
- beats=8,     -- only fire on every nth beat (0, 4, 8, or 16)
+ beats=8,     -- fire on every nth beat (0, 4, 8, or 16)
  sfx={},
  play=function(self,n,c,o,l)
   add(self.sfx,{n,c and c or -1,o and o or 0,l and l or 0})
@@ -46,13 +37,34 @@ local sfxcache = {
     sfx(s[1],s[2],s[3],s[4])
    end
    self.sfx={}
+   return true
   end
+  return false
  end
 }
 
+local sfxcache = {
+ channel=1,   -- the channel to check (1-4)
+ beats=8,     -- fire on every nth beat (0, 4, 8, or 16)
+ sfx={},
+ play=function(self,...)
+  add(self.sfx,{...})
+ end,
+ check=function(self)
+  if #self.sfx>0 and stat(19+self.channel)%self.beats==0 then
+   for s in all(self.sfx) do
+    sfx(s[1],s[2] or -1,s[3] or 0,s[4] or 0)
+   end
+   self.sfx={}
+   return true
+  end
+  return false
+ end
+}
+
+
 function _init()
  music(25)
- cls()
 end
 
 function _update60()
