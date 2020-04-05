@@ -221,20 +221,37 @@ local sfxcache = {
  channel=1,   -- the channel to check (1-4)
  beats=8,     -- fire on every nth beat (0, 4, 8, or 16)
  sfx={},
+ valid=true,
  play=function(self,...)
   add(self.sfx,{...})
  end,
  check=function(self)
-  if #self.sfx>0 and stat(19+self.channel)%self.beats==0 then
-   for s in all(self.sfx) do
-    sfx(s[1],s[2] or -1,s[3] or 0,s[4] or 0)
-   end
-   self.sfx={}
-   return true
+  if stat(19+self.channel)%self.beats==0 then
+    if #self.sfx>0 and self.valid then
+     for s in all(self.sfx) do
+      sfx(s[1],s[2] or -1,s[3] or 0,s[4] or 0)
+     end
+     self.sfx={}
+     self.valid=false
+     return true
+    end
+  else
+   self.valid=true
   end
   return false
  end
 }
+
+-- songs: by gruber
+-- 00 happy land
+-- 06 chill
+-- 12 scary dungeon
+-- 18 fight
+-- 21 evil
+-- 23 defeat
+-- 24 celebrate
+-- 25 puzzle
+-- 29 sand
 
 function _init()
  particles=collection:create()
@@ -244,11 +261,11 @@ end
 function _update60()
  if btnp(4) then
   sfxcache:play(1)
-  smoke:create(64,64,20,{col=1,size={20,30}})
+  smoke:create(32,64,20,{col=1,size={20,30}})
  end
  if btnp(5) then
   sfxcache:play(2)
-  smoke:create(64,64,20,{col=2,size={20,30}})
+  smoke:create(96,64,20,{col=2,size={20,30}})
  end
  particles:update()
 end
