@@ -41,9 +41,9 @@ stars={
  end,
  draw=function(self)
   -- if we're going fast draw a trail
-  if abs(p.force)>3 then
+  if abs(p.force)>1.5 then
    local i=1
-   local l={14,6,3}
+   local l={6,2,0.5}
    while self.items[i].depth>0.5 do
     for j=3,self.items[i].col,-1 do
      local f=abs(p.force)/l[j]

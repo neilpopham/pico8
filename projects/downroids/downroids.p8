@@ -20,27 +20,38 @@ pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 #include collection.lua
 #include entity.lua
 #include player.lua
+#include enemy.lua
 #include stars.lua
 #include particles.lua
 
 function _init()
+ printh("=======================")
  p=player:create()
  bullets=collection:create()
  stars:create()
  particles=collection:create()
+ enemies=collection:create()
 end
 
 function _update60()
+ p:update()
  bullets:update()
  particles:update()
- p:update()
  stars:update()
+ enemies:update()
+
+ if enemies.count<5 and rnd()<0.05 then
+  enemies:add(enemy:create())
+ end
 end
 
 function _draw()
  cls()
  stars:draw()
  bullets:draw()
- particles:draw()
+ enemies:draw()
  p:draw()
+ particles:draw()
+
+
 end

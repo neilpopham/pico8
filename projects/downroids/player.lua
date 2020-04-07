@@ -1,6 +1,6 @@
 player={
  create=function(self)
-  local o=entity.create(self,flr(screen.width/2),flr(screen.height/2),0.02,0.0125)
+  local o=entity.create(self,flr(screen.width/2),flr(screen.height/2),0,0.02,0.0125)
   o=extend(
    o,
    {
@@ -24,22 +24,11 @@ player={
 
   -- fire
   if btn(pad.btn1) then
-   self.df=self.df+4
+   self.df=self.df+0.1
    if self.shoot==0 then
     bullets:add(bullet:create(self.x,self.y,(self.angle+0.5)%1,self.weapon.bullet_type))
     smoke:create(self.x-cos(self.angle)*10,self.y+sin(self.angle)*10,10,{size={5,10},col=2})
     smoke:create(self.x-cos(self.angle)*10,self.y+sin(self.angle)*10,5,{size={2,5},col=4})
-
-    --[[
-    doublesmoke(
-     self.x-cos(self.angle)*10,
-     self.y+sin(self.angle)*10,
-     {10,5},
-     {{size={5,10},col=2},{size={2,5},col=4}}
-    )
-    ]]
-
-
     self.shoot=self.weapon.rate
    end
   else
@@ -53,6 +42,8 @@ player={
   end
 
   entity.update(self)
+
+  self:check_visibility()
 
  end,
  draw=function(self)
@@ -68,7 +59,7 @@ player={
   y2=self.y-sin(self.angle+0.25)*6
   line(x1,y1,x2,y2,5)
   circ(x1,y1,1,7)
-  circ(self.x-flr(cos(self.angle)*1.2),self.y+flr(sin(self.angle)*1.2),2,6)
+  circ(self.x+flr(cos(self.angle)*1.2),self.y-flr(sin(self.angle)*1.2),2,6)
   circ(self.x,self.y,4,11)
  end
-}
+} setmetatable(player,{__index=entity})

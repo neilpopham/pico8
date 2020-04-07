@@ -1,43 +1,32 @@
-weapon_types={
- {
-  bullet_type=1,
-  rate=10,
-  sfx=4
- }
-}
-
-bullet_types={
- {
-  force=3,
-  draw=function(self)
-   circ(self.x,self.y,2,8)
-  end
- }
-}
-
-
-bullet={
- create=function(self,x,y,angle,type)
-  local ttype=bullet_types[type]
+enemy={
+ create=function(self)
+  local angle=rnd()
+  local x=p.x+cos(angle)*screen.width/2
+  local y=p.y-sin(angle)*screen.height/2
+  angle=(angle+0.5+rnd()/10)%1
   local o=entity.create(self,x,y,angle,0.02,0.0125)
   o=extend(
    o,
    {
-    type=ttype,
-    ttl=40
+    force=1,
+    ttl=100,
+    shoot=0,
+    weapon=weapon_types[1],
+    health=100
    }
   )
   return o
  end,
  update=function(self)
+  --entity.update(self)
   if self.complete then return end
-  self.dx=cos(self.angle)*self.type.force
-  self.dy=-sin(self.angle)*self.type.force
+  self.dx=cos(self.angle)*self.force
+  self.dy=-sin(self.angle)*self.force
   self.dx=self.dx-p.dx
   self.dy=self.dy-p.dy
   self.x=self.x+self.dx
   self.y=self.y+self.dy
-  --[[
+
   if self.x<0 then
    self.x=screen.x2+self.x
   end
@@ -50,14 +39,20 @@ bullet={
   if self.y>screen.y2 then
    self.y=self.y-screen.y2
   end
-  ]]
+
+  --[[
   if self.ttl==0 then
-   self.complete=true
+   --self:check_visibility()
   else
    self.ttl=self.ttl-1
   end
+  if (abs(p.x-self.x)>screen.width*2) or (abs(p.y-self.y)>screen.height*2) then
+   self.complete=true
+  end
+  ]]
+
  end,
  draw=function(self)
-  self.type.draw(self)
+  circ(self.x,self.y,4,6)
  end
-} setmetatable(bullet,{__index=entity})
+} setmetatable(enemy,{__index=entity})
