@@ -4,6 +4,7 @@ pickup={
   local x=p.x+cos(angle)*screen.width/2
   local y=p.y-sin(angle)*screen.height/2
   angle=(angle+0.5+rnd()/7)%1
+  local type=mrnd({1,2})
   local o=entity.create(self,x,y,angle,0.02,0.0125)
   o=extend(
    o,
@@ -11,7 +12,10 @@ pickup={
     force=1,
     ttl=1000,
     size=4,
-    health=10
+    health=2,
+    score=100,
+    type=type,
+    colour=type==1 and 11 or 15
    }
   )
   return o
@@ -34,11 +38,11 @@ pickup={
 
  end,
  draw=function(self)
-  circ(self.x,self.y,4,8)
+  circ(self.x,self.y,4,self.colour)
  end,
  destroy=function(self)
   self.complete=true
-  smoke:create(self.x,self.y,10,{size={5,10},col=9})
-  smoke:create(self.x,self.y,5,{size={2,5},col=11})
+  smoke:create(self.x,self.y,10,{size={5,10},col=5})
+  smoke:create(self.x,self.y,5,{size={2,5},col=8})
  end
 } setmetatable(enemy,{__index=entity})

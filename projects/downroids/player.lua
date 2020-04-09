@@ -5,15 +5,18 @@ player={
    o,
    {
     shoot=0,
-    shield={on=false,health=10,size=11,colour=15},
+    shield={on=false,health=10,size=11,colour=15,max=10},
     weapon=weapon_types[1],
-    health=100
+    health=10,
+    max=10,
+    score=0
    }
   )
   --o.btn1=button:create(pad.btn1)
   return o
  end,
  update=function(self)
+  if self.complete then return end
 
   -- rotation
   if btn(pad.left) then
@@ -24,7 +27,7 @@ player={
   self.angle=self.angle%1
 
   -- shield
-  self.shield.on=btn(pad.btn2)
+  self.shield.on=btn(pad.btn2) and self.shield.health>0
 
   -- fire
   if not self.shield.on and btn(pad.btn1) then
@@ -60,10 +63,11 @@ player={
    local d=self:distance(k)
    if d<size+k.size then
     if not self.shield.on then
+     self.score=self.score+k.score
      if k.type==1 then
-      self.health=self.health+k.health
+      self.health=min(self.health+k.health,self.max)
      elseif k.type==2 then
-      self.shield.health=self.shield.health+k.health
+      self.shield.health=min(self.shield.health+k.health,self.shield.max)
      else
 
      end
@@ -74,6 +78,7 @@ player={
 
  end,
  draw=function(self)
+  if self.complete then return end
   local x1=self.x+cos(self.angle-0.4)*7
   local x2=self.x+cos(self.angle-0.25)*6
   local y1=self.y-sin(self.angle-0.4)*7
@@ -88,7 +93,6 @@ player={
   circ(x1,y1,1,7)
   circ(self.x+flr(cos(self.angle)*1.2),self.y-flr(sin(self.angle)*1.2),2,6)
   circ(self.x,self.y,4,11)
-
   if self.shield.on then
    if t%4==0 then
     self.shield.size=self.shield.size==12 and 11 or 12
@@ -96,5 +100,24 @@ player={
    end
    circ(self.x,self.y,self.shield.size,self.shield.colour)
   end
+ end,
+ destroy=function(self)
+  entity.destroy(self)
+  smoke:create(self.x,self.y,20,{size={20,30},col=11})
+  smoke:create(self.x+flr(cos(self.angle)*1.2),self.y-flr(sin(self.angle)*1.2),10,{size={10,20},col=6})
+  local x1=self.x+cos(self.angle-0.4)*7
+  local x2=self.x+cos(self.angle-0.25)*6
+  local y1=self.y-sin(self.angle-0.4)*7
+  local y2=self.y-sin(self.angle-0.25)*6
+  smoke:create(x1,y1,10,{size={5,10},col=5})
+  smoke:create(x2,y2,10,{size={5,10},col=5})
+  smoke:create(x1,y1,10,{size={10,20},col=7})
+  x1=self.x+cos(self.angle+0.4)*7
+  x2=self.x+cos(self.angle+0.25)*6
+  y1=self.y-sin(self.angle+0.4)*7
+  y2=self.y-sin(self.angle+0.25)*6
+  smoke:create(x1,y1,10,{size={5,10},col=5})
+  smoke:create(x2,y2,10,{size={5,10},col=5})
+  smoke:create(x1,y1,10,{size={10,20},col=7})
  end
 } setmetatable(player,{__index=entity})

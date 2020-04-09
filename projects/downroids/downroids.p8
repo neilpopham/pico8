@@ -67,11 +67,22 @@ function _draw()
  p:draw()
  particles:draw()
 
- print(p.health,0,0,11)
- print(p.shield.health,64,0,15)
+ --pset(63,0,2) pset(64,0,2)
+
+ rectfill(0,0,p.health*6,0,11)
+ --rectfill(0,1,p.health*6,1,9)
+ rectfill(127-p.shield.health*6,0,127,0,15)
+ --rectfill(127-p.shield.health*6,1,127,1,14)
+
+ print(lpad(p.score,6),52,4,2)
+ print(lpad(p.score,6),52,3,6)
+
+--[[
+ print(p.health,0,120,11)
+ print(p.shield.health,64,120,15)
  for k,v in pairs(pickups.items) do
   print(v.ttl,0,10+k*8,11)
  end
-
+]]
 
 end

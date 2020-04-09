@@ -13,7 +13,8 @@ enemy={
     shoot=0,
     size=4,
     weapon=weapon_types[1],
-    health=100
+    health=100,
+    score=10
    }
   )
   return o
@@ -53,6 +54,7 @@ enemy={
     b.complete=true
     smoke:create(self.x-cos(self.angle),self.y+sin(self.angle),10,{size={5,10},col=5})
     smoke:create(self.x-cos(self.angle),self.y+sin(self.angle),5,{size={2,5},col=7})
+    p.score=p.score+self.score
    end
   end
 
