@@ -9,7 +9,8 @@ entity={
    force=0,
    dx=0,
    dy=0,
-   df=0
+   df=0,
+   health=10
   }
   setmetatable(o,self)
   self.__index=self
@@ -28,7 +29,18 @@ entity={
  check_visibility=function(self)
   if self.x<8 or self.x>screen.width+8 or self.y<8 or self.y>screen.width+8 then
     self.complete=true
-    printh("cv")
   end
- end
+ end,
+ distance=function(self,target)
+  local dx=(target.x+4)/1000-(self.x+4)/1000
+  local dy=(target.y+4)/1000-(self.y+4)/1000
+  return sqrt(dx^2+dy^2)*1000
+ end,
+ damage=function(self,value)
+  self.health=self.health-value
+  if self.health<1 then self.health=0 self:destroy() end
+ end,
+ destroy=function(self)
+  self.complete=true
+ end,
 }

@@ -19,8 +19,10 @@ pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 #include button.lua
 #include collection.lua
 #include entity.lua
+#include bullet.lua
 #include player.lua
 #include enemy.lua
+#include pickup.lua
 #include stars.lua
 #include particles.lua
 
@@ -31,18 +33,29 @@ function _init()
  stars:create()
  particles=collection:create()
  enemies=collection:create()
+ pickups=collection:create()
+ t=0
 end
 
 function _update60()
+
+ if enemies.count<10 and rnd()<0.05 then
+  enemies:add(enemy:create())
+ end
+
+ if pickups.count<2 and rnd()<0.05 then
+  pickups:add(pickup:create())
+ end
+
  p:update()
  bullets:update()
  particles:update()
  stars:update()
  enemies:update()
+ pickups:update()
 
- if enemies.count<5 and rnd()<0.05 then
-  enemies:add(enemy:create())
- end
+ t=t+1
+ if t>79 then t=0 end
 end
 
 function _draw()
@@ -50,8 +63,15 @@ function _draw()
  stars:draw()
  bullets:draw()
  enemies:draw()
+ pickups:draw()
  p:draw()
  particles:draw()
+
+ print(p.health,0,0,11)
+ print(p.shield.health,64,0,15)
+ for k,v in pairs(pickups.items) do
+  print(v.ttl,0,10+k*8,11)
+ end
 
 
 end
