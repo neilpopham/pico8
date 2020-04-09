@@ -18,7 +18,7 @@ entity={
  end,
  update=function(self)
   self.force=self.force+self.df
-  if abs(self.force)<0.04 then self.force=0 end
+  if abs(self.force)<0.2 then self.force=0 end
   self.force=mid(-3,self.force,3)
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force

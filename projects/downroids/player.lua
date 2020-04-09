@@ -16,7 +16,13 @@ player={
   return o
  end,
  update=function(self)
-  if self.complete then return end
+
+  if self.complete then
+   self.df=0
+   self.force=self.force*0.98
+   entity.update(self)
+   return
+  end
 
   -- rotation
   if btn(pad.left) then
@@ -52,6 +58,7 @@ player={
    if d<size+e.size then
     if self.shield.on then
      self.shield.health=self.shield.health-1
+     self.score=self.score+e.score
     else
      self:damage(1)
     end
@@ -75,6 +82,7 @@ player={
     k:destroy()
    end
   end
+
 
  end,
  draw=function(self)
