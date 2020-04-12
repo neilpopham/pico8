@@ -39,6 +39,7 @@ pickup={
  end,
  draw=function(self)
   circ(self.x,self.y,4,self.colour)
+  circ(self.x,self.y,2,self.colour-2)
  end,
  destroy=function(self)
   self.complete=true

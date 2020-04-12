@@ -32,6 +32,13 @@ function lpad(x,n)
  return sub("0000000"..x,-n)
 end
 
+function dprint(s,x,y,c1,c2)
+ c1=c1 or 7
+ c2=c2 or 2
+ print(s,x,y+1,c2)
+ print(s,x,y,c1)
+end
+
 function dumptable(t,l)
  l=l or 0
  local p=""

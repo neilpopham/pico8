@@ -1,6 +1,7 @@
 player={
  create=function(self)
   local o=entity.create(self,flr(screen.width/2),flr(screen.height/2),0,0.02,0.0125)
+  --[[
   o=extend(
    o,
    {
@@ -12,7 +13,9 @@ player={
     score=0
    }
   )
+  ]]
   --o.btn1=button:create(pad.btn1)
+  o:reset()
   return o
  end,
  update=function(self)
@@ -21,6 +24,9 @@ player={
    self.df=0
    self.force=self.force*0.98
    entity.update(self)
+   if self.force==0 and btnp(pad.btn1) then
+    self:reset()
+   end
    return
   end
 
@@ -86,7 +92,16 @@ player={
 
  end,
  draw=function(self)
-  if self.complete then return end
+  if self.complete then
+   if self.force==0 then
+    dprint("press \142 to restart",28,61,8,2)
+    if btnp(pad.btn1) then
+     self:reset()
+    end
+   end
+   return
+  end
+  --if self.complete then return end
   local x1=self.x+cos(self.angle-0.4)*7
   local x2=self.x+cos(self.angle-0.25)*6
   local y1=self.y-sin(self.angle-0.4)*7
@@ -127,5 +142,19 @@ player={
   smoke:create(x1,y1,10,{size={5,10},col=5})
   smoke:create(x2,y2,10,{size={5,10},col=5})
   smoke:create(x1,y1,10,{size={10,20},col=7})
+ end,
+ reset=function(self)
+  self=extend(
+   self,
+   {
+    shoot=0,
+    shield={on=false,health=10,size=11,colour=15,max=10},
+    weapon=weapon_types[1],
+    health=10,
+    max=10,
+    score=0,
+    complete=false
+   }
+  )
  end
 } setmetatable(player,{__index=entity})

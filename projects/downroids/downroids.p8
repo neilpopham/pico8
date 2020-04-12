@@ -16,7 +16,7 @@ pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 #include functions.lua
 #include objects.lua
 #include counter.lua
-#include button.lua
+-- #include button.lua
 #include collection.lua
 #include entity.lua
 #include bullet.lua
@@ -43,7 +43,7 @@ function _update60()
   enemies:add(enemy:create())
  end
 
- if pickups.count<2 and rnd()<0.05 then
+ if pickups.count<3 and rnd()<0.005 then
   pickups:add(pickup:create())
  end
 
@@ -66,23 +66,7 @@ function _draw()
  pickups:draw()
  p:draw()
  particles:draw()
-
- --pset(63,0,2) pset(64,0,2)
-
- rectfill(0,0,p.health*6,0,11)
- --rectfill(0,1,p.health*6,1,9)
- rectfill(127-p.shield.health*6,0,127,0,15)
- --rectfill(127-p.shield.health*6,1,127,1,14)
-
- print(lpad(p.score,6),52,4,2)
- print(lpad(p.score,6),52,3,6)
-
---[[
- print(p.health,0,120,11)
- print(p.shield.health,64,120,15)
- for k,v in pairs(pickups.items) do
-  print(v.ttl,0,10+k*8,11)
- end
-]]
-
+ if p.health>0 then line(0,0,p.health*6,0,11) end
+ if p.shield.health>0 then line(127-p.shield.health*6,0,127,0,15) end
+ dprint(lpad(p.score,6),52,3,6,2)
 end
