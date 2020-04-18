@@ -15,42 +15,35 @@ function decompress()
   local c=shr(s-t,2)
   for i=1,c do
    row[x]=t
-   x=x+1
+   x+=1
   end
   if x>25 then
    room[y]=row
-   x=1
-   y=y+1
-   row={}
+   x,row=1,{}
+   y+=1
    if y>25 then
     add(collection,room)
-    x=1
-    y=1
-    room={}
+    y,room=1,{}
    end
   end
-  mx=mx+1
+  mx+=1
   if mx>127 then
    mx=0
-   my=my+1
+   my+=1
   end
   s=mget(mx,my)
  end
  return collection
 end
 
-function storeroom(room)
- memset(0x0000,0,0x2000)
- cols={3,4,11,12} -- {11,4,3,12}
- local x,y
+function storeroom(level)
+ --memset(0x0000,0,0x2000)
+ local cols={3,4,11,12}
  for y=1,25 do
   for x=1,25 do
-   tx=(x-1)*5+2
-   ty=(y-1)*5+2
-   col=cols[room[y][x]+1]
-   for i=0,4 do
-    for j=0,4 do
-     sset(tx+j,ty+i,col)
+   for py=2,6 do
+    for px=2,6 do
+     sset((x-1)*5+px,(y-1)*5+py,cols[rooms[level][y][x]+1])
     end
    end
   end
@@ -60,7 +53,8 @@ end
 
 function _init()
  rooms=decompress()
- storeroom(rooms[2])
+ level=1
+ storeroom(level)
  p={x=0,y=0,col=7}
 end
 
@@ -78,7 +72,6 @@ end
 function _draw()
  cls()
  sspr(0,0,128,128,0,0)
-
  rect(p.x*5+1,p.y*5+1,p.x*5+7,p.y*5+7,p.col)
 end
 
