@@ -1,0 +1,41 @@
+range
+power
+enemies have hp
+show range when placing
+towers on grass only, blockers on road only
+trees. cannot place on tree
+tree block line of sight
+show blocked circle when placing
+when placed store grid of visible cells to check each frame
+(don't calculated each time)
+
+pick from available items
+place item on grid
+select item to view data (health,range,etc) and upgrade/sell
+
+https://www.youtube.com/playlist?list=PLPV2KyIb3jR4u5jX8za5iU1cqnQPmbzG0
+https://en.wikipedia.org/wiki/Tower_defense
+https://www.giantbomb.com/tower-defense/3015-413/
+
+items
+=====
+health
+range
+strength
+buy price
+sell price
+size (1x1,2x2)
+
+tiles
+=====
+grass
+path
+tree (cannot pace, blocks visibility)
+water (Cannot place, does not block)
+
+rle
+===
+use 2 bits to store tile (0/1/2/3)
+use 6 bits to store repeat (0-31)
+128 64 32 16 8 4 2 1
+grid is 24x24 so could limit to
