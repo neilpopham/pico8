@@ -1,254 +1,179 @@
 pico-8 cartridge // http://www.pico-8.com
-version 16
+version 18
 __lua__
---particles tutorial
---christian williames
+-- Particles
+-- by Neil Popham
+-- 2020-04-15 Trying to streamline an extensible particle system
+-- I suppose it depends:
+--  * What can be shared in particle.create
+--  * Whether there will be multiple particles using pixel or circle
+--     * If not then pixel/bullet and circle/smoke could be merged
+--  * Whether affectors will be shared between particles (very likely)
+--  * Whether remove_offscreen affector could (depending on requirements) move
+--    into particle.update
+--  * Whether is_offscreen could be a particle object function, or even a core function or
+--    a function for a base object that particle extends
 
---begin with an empty table
---this will hold all existing particles
-smoke = {}
 
---[[
-this function creates a new
-'smoke' particle (another table)
-and adds that particle to the 'smoke' list
 
-call it whenever you want more smoke
---]]
-function make_smoke(startx, starty)
- 
- --this section holds all the properties of a particle
- --such as x,y,speed,duration,etc
- --you can add as many properties as you want
- local smoke_particle = {
-   --the location of the particle
-   x=startx,
-   y=starty,
-   --what percentage 'dead'is the particle
-   t = 0,
-   --how long before the particle fades
-   life_time=20+rnd(10),
-   --how big is the particle,
-   --and how large will it grow?
-   size = 1,
-   max_size = 1+rnd(3),
-   
-   --'delta x/y' is the movement speed,
-   --or the change per update in position
-   --randomizing it gives variety to particles
-   dy = rnd(0.7) * -1,
-   dx = rnd(0.4) - 0.2,
-   --'ddy' is a kind of acceleration
-   --increasing speed each step
-   --this makes the particle seem to float
-   ddy = -0.05,
-   --what color is the particle
-   col = 7
- }
- --after making the particle, add it to the list 'smoke'   
- add(smoke,smoke_particle)
+#include collection.lua
+#include functions.lua
+
+particle={
+ create=function(self,params)
+  params=params or {}
+  params.life=mrnd(params.life or {60,120})
+  params.angle=mrnd(params.angle or {0,1},false)
+  params.force=mrnd(params.force,false)
+  local o=setmetatable(
+   extend(
+    params,
+    {complete=false,dx=0,dy=0}
+   ),
+   self
+  )
+  self.__index=self
+  return o
+ end,
+ offscreen=function(self)
+  return (self.x<0 or self.x>127 or self.y<0 or self.y>127)
+ end,
+ update=function(self)
+  self.x+=self.dx
+  self.y+=self.dy
+  if self:offscreen() then self.complete=true end
+  self.life=self.life-1
+  if self.life==0 then self.complete=true end
+ end,
+ draw=function(self)
+  -- shared drawing
+ end
+}
+
+pixel={
+ draw=function(self)
+  pset(self.x,self.y,self.col)
+  particle.draw(self)
+ end
+} setmetatable(pixel,{__index=particle})
+
+circle={
+ draw=function(self)
+  circfill(self.x,self.y,self.size,self.col)
+  particle.draw(self)
+ end
+} setmetatable(circle,{__index=particle})
+
+function move_right(self)
+ self.dx+=0.1
+end
+
+function move_down(self)
+ self.dy+=0.1
+end
+
+-- if affectors tend to use angle and force this could be a shared core affector
+-- applied near the end, or *possibly* part of particle.update
+function set_diffs(self)
+ self.dx=cos(self.angle)*self.force
+ self.dy=-sin(self.angle)*self.force
+end
+
+function shrink_size(self)
+ self.size=self.size*.9
+ if self.size<1 then self.complete=true end
+end
+
+-- could be a particle object function, or even a core function or
+-- a function for a base object that particle extends
+function is_offscreen(self)
+ if self.x<0 or self.x>127 or self.y<0 or self.y>127 then return true end
+ return false
+end
+
+-- could (depending on requirements) move into particle.update
+-- or also be part of a base object
+function remove_offscreen(self)
+ if is_offscreen(self) then self.complete=true end
 end
 
 --[[
-this function needs to be called every update
-in order for the smoke to move
---]]
-function update_smoke()
-  --perform actions on every particle
-  for p in all(smoke) do
-    --move the smoke
-    p.y += p.dy
-    p.x += p.dx
-    p.dy+= p.ddy
-    --increase the smoke's life counter
-    --so that it lives the correct number of steps
-    p.t += 1/p.life_time
-    --grow the smoke particle over time
-    --(but not smaller than its starting size)
-    p.size = max(p.size, p.max_size * p.t )
-    --make fading smoke particles a darker color
-    --gives the impression of fading
-    --change color if over 70% of time passed
-    if p.t > 0.7  then
-      p.col = 6
-    end
-    if p.t > 0.9 then
-      p.col = 5
-    end
-    --if the particle has expired,
-    --remove it from the 'smoke' list
-    if p.t > 1 then
-      del(smoke,p)
-    end
+object={
+ create=function(self,x,y)
+  local o=setmetatable({x=x,y=y},self)
+  self.__index=self
+  return o
+ end,
+ offscreen=function(self)
+  if self.x<0 or self.x>127 or self.y<0 or self.y>127 then
+   return true
   end
+  return false
+ end,
+ clear=function(self)
+  if self:offscreen() then self.complete=true end
+ end
+}
+]]
+
+bullet={
+ update=function(self)
+  move_right(self)
+  move_down(self)
+  particle.update(self)
+  --remove_offscreen(self)
+ end
+} setmetatable(bullet,{__index=pixel})
+
+smoke={
+ update=function(self)
+  shrink_size(self)
+  move_down(self)
+  particle.update(self)
+  --remove_offscreen(self)
+ end
+} setmetatable(smoke,{__index=circle})
+
+
+function do_bullet()
+ particles:add(
+  bullet:create({
+   x=mrnd({0,127}),
+   y=mrnd({0,127}),
+   force={2,2},
+   col=mrnd({1,15})
+  })
+ )
 end
 
---call during draw function to
---draw the smoke
-function draw_smoke()
-  --draw each particle
-  for p in all(smoke) do
-    --draw a circle to be the smoke
-    --replace this with whatever you want
-    --your smoke to look like
-    circfill(p.x, p.y, p.size, p.col)
-  end
+function do_smoke()
+ particles:add(
+  smoke:create({
+   x=mrnd({0,127}),
+   y=mrnd({0,127}),
+   force={2,2},
+   col=mrnd({1,15}),
+   size=mrnd({10,20})
+  })
+ )
 end
 
---actually create particles
-function _update()
-  --random chance to make smoke
-  if rnd(2)<1 then
-    make_smoke(64,64)
-  end
-  update_smoke()
+function _init()
+ particles=collection:create()
 end
 
+function _update60()
+ particles:update()
+ if btnp(4) then
+  do_bullet()
+ end
+ if btnp(5) then
+  do_smoke()
+ end
+end
 
 function _draw()
-  --clear the screen
-  cls()
-  --draw torch sprite
-  spr(1,61,63)
-  --draw the smoke
-  draw_smoke()
+ cls()
+ particles:draw()
+ print(particles.count,0,0,7)
 end
-__gfx__
-00000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000010801000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700108980100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000018a81000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000101410100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700011411000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000101110100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000010001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-__label__
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddfdffdddddddddddddddddddfdfddddddddddddddddddddfdddddfddddfdddfddddddddddddddffdddddddfddfddddddfddddddd
-dddffddddddddddddddddddddddddddddfdddfdddddddddddddddddddddddddddddddddddddddfddddddfddddddddddddffdffdddddddddddddddddddffddfdd
-ddfdddddddddddffddddddddfdfddddddddddfddddddddfddfdddfdfddfdddfddfddffdfdfddddddddddddddddddddddddddddddddddddddddfddddddddddddd
-dddddddddddddddddddddddddfdfddddddddddddddffddddfdddddddddddddddddddddddddddfddddfdfddddfdddfdddddddddddddddddddddfdddddfddddfdd
-dddddddddddddddfdddfddddddfdddffdddddddfddddddddddddddfdfdfddfddddddfddfdfddddffdddddddddfddddfddddddfddfddfffddddddddddddfddfdd
-ddddddddfdfddddddfddddffdddfddddddddddfdfdddddfdffddddfdddfdffdffdddfdfddddddddfdddddddddddfdddddfddfddddddddddddddddfddfddfdfff
-dddddffdddddfdddddfdfdddfdddfdddddddddddddddddfddddfddddfddddddddddfdfdddddddddddddddddddfddddfdddddddfddddddfddfddffdddffdddddd
-fddddfdfdfdddddddddfdddfdfddddffddddfdffdfdfddfdddddddfdddddfddddddfdddfdfddfddfddddddddddddddddfddfdddfdddfdddddddddddddddfdfdd
-dddddfddddddddddddddddddddfddddfdfdddfdfddfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-
