@@ -8,29 +8,22 @@ local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 
 function decompress()
  local collection,room,row={},{},{}
- local mx,my,x,y,r=0,0,1,1,1
+ local mx,my=0,0
  local s=mget(mx,my)
  while s>0 do
   local t=band(s,3)
   local c=shr(s-t,2)
-  for i=1,c do
-   row[x]=t
-   x+=1
-  end
-  if x>25 then
-   room[y]=row
-   x,row=1,{}
-   y+=1
-   if y>25 then
+  for i=1,c do add(row,t) end
+  if #row==25 then
+   add(room,row)
+   row={}
+   if #room==25 then
     add(collection,room)
-    y,room=1,{}
+    room={}
    end
   end
   mx+=1
-  if mx>127 then
-   mx=0
-   my+=1
-  end
+  if mx==128 then mx=0 my+=1 end
   s=mget(mx,my)
  end
  return collection
@@ -53,7 +46,7 @@ end
 
 function _init()
  rooms=decompress()
- level=2
+ level=1
  storeroom(level)
  p={x=0,y=0,col=7}
 end
