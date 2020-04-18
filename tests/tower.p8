@@ -58,7 +58,7 @@ function _update60()
  if btnp(pad.down) then p.y=p.y+1 end
  p.x=p.x%25
  p.y=p.y%25
- local tile=rooms[2][p.y+1][p.x+1]
+ local tile=rooms[level][p.y+1][p.x+1]
  if tile==0 then p.col=7 else p.col=8 end
 end
 
