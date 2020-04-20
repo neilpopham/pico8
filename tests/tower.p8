@@ -4,6 +4,11 @@ __lua__
 --
 -- by Neil Popham
 
+-- btnp initial delay
+poke(0x5f5c,8)
+-- btnp repeat delay
+poke(0x5f5d,2)
+
 local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 
 function decompress()
@@ -34,11 +39,14 @@ function storeroom(level)
  local cols={3,4,11,12}
  for y=1,25 do
   for x=1,25 do
+   --[[
    for py=2,6 do
     for px=2,6 do
      sset((x-1)*5+px,(y-1)*5+py,cols[rooms[level][y][x]+1])
     end
    end
+   ]]
+   sset(x-1,y+99,cols[rooms[level][y][x]+1])
   end
  end
  --cstore(0x0000,0x0000,0x2000)
@@ -60,11 +68,15 @@ function _update60()
  p.y=p.y%25
  local tile=rooms[level][p.y+1][p.x+1]
  if tile==0 then p.col=7 else p.col=8 end
+
+ if btnp(pad.btn2) then level+=1 storeroom(level) end
+ if btnp(pad.btn1) then level-=1 storeroom(level) end
 end
 
 function _draw()
  cls()
- sspr(0,0,128,128,0,0)
+ --sspr(0,0,128,128,0,0)
+ sspr(0,100,25,25,2,2,125,125)
  rect(p.x*5+1,p.y*5+1,p.x*5+7,p.y*5+7,p.col)
 end
 
