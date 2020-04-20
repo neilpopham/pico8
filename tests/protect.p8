@@ -27,22 +27,33 @@ end
 
 function _draw()
  cls()
- circ(64,64,21,1)
+ --circ(64,64,21,1)
+
+for i=0,0.99,0.05 do
+ pset(64+cos(i)*21,64-sin(i)*21,1)
+end
+
+
  circ(64+p.x,64+p.y,2,2)
 
  local a1=(p.a-0.125)%1
  local a2=(p.a+0.125)%1
 
+
+ --if a1>a2 then a1=1-a1 end
+
  --printh(p.a..", "..a1..", "..a2)
+
+ --[[
  local x1=cos(a1)*92
  local y1=-sin(a1)*92
  local x2=cos(a2)*92
  local y2=-sin(a2)*92
  --printh(64+x1..","..64+y1.." and "..64+x2..","..64+y2)
-
  line(64,64,64+x1,64+y1,3)
  line(64,64,64+x2,64+y2,3)
 
+]]
  --pset(64+x1,64+y1,4)
  --pset(64+x2,64+y2,4)
 
@@ -55,9 +66,16 @@ function _draw()
   local a=atan2(d[1]-64,64-d[2])
   --printh(-(d[2]-64))
   --printh(a.." => "..a1.."-"..a2)
+
+  if a1>a2 then
+   if a>=a1 or a<=a2 then c=8 end
+  else
+    if a>=a1 and a<=a2 then c=8 end
+  end
+
   if a>=a1 and a<=a2 then c=8 end
   pset(d[1],d[2],c)
-  line(64,64,64+cos(a)*50,64-sin(a)*50)
+  --line(64,64,64+cos(a)*50,64-sin(a)*50)
  end
 
 
