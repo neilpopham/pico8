@@ -44,6 +44,7 @@ local function los(x0,y0,x1,y1,callback)
   return true
 end
 
+--[[
 local function line(x0,y0,x1,y1,callback)
   local points = {}
   local count = 0
@@ -55,3 +56,4 @@ local function line(x0,y0,x1,y1,callback)
   end)
   return points, result
 end
+]]

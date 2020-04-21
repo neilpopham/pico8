@@ -22,7 +22,7 @@ function decompress()
 end
 
 function storeroom(level)
- local cols={3,4,11,12,9,10}
+ local cols={3,6,11,12,9,10}
  for y=1,25 do
   for x=1,25 do
    sset(x-1,y+99,cols[rooms[level][y][x]+1])
