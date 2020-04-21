@@ -11,14 +11,14 @@ function minsky(y,x,r)
    if mn<data[x+ij].x1 then data[x+ij].x1=mn end
    if mx>data[x+ij].x2 then data[x+ij].x2=mx end
   end
-  if x-ij>1 then
+  if x-ij>-1 then
    if data[x-ij]==nil then data[x-ij]={x1=127,x2=0} end
    if mn<data[x-ij].x1 then data[x-ij].x1=mn end
    if mx>data[x-ij].x2 then data[x-ij].x2=mx end
   end
   ik=round(k)
   mn,mx=max(0,flr(y-j)),min(24,ceil(y+j))
-  if x+ik>1 then
+  if x+ik>-1 then
    if data[x+ik]==nil then data[x+ik]={x1=127,x2=0} end
    if mn<data[x+ik].x1 then data[x+ik].x1=mn end
    if mx>data[x+ik].x2 then data[x+ik].x2=mx end

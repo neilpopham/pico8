@@ -1,6 +1,10 @@
 function get_cell(x,y)
  if x<0 or y<0 or x>127 or y>127 then return nil end
- return 1+flr((x-2)/5),1+flr((y-2)/5)
+ return flr((x-2)/5),flr((y-2)/5)
+end
+
+function get_tile(x,y)
+ return room[y+1][x+1]
 end
 
 function mrnd(x,f)
