@@ -5,9 +5,9 @@ vec2={
   return o
  end,
  distance=function(self,target)
-  local dx=(target.x+4)/1000-(self.x+4)/1000
-  local dy=(target.y+4)/1000-(self.y+4)/1000
-  return sqrt(dx^2+dy^2)*1000
+  local dx=target.x-self.x
+  local dy=target.y-self.y
+  return sqrt(dx^2+dy^2)
  end,
  index=function(self)
   return self.y*25+self.x
