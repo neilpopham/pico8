@@ -1,0 +1,44 @@
+guns={
+ {
+  col=9,
+  credits=5,
+  sale=3,
+  range=3,
+  power=2,
+  speed=1,
+  name="mechead",
+  x=0,
+  y=0
+ },
+ {
+  col=8,
+  credits=10,
+  sale=6,
+  range=5,
+  power=4,
+  speed=3,
+  name="laser",
+  x=0,
+  y=1
+ },
+  {col=10,
+  credits=15,
+  sale=9,
+  range=4,
+  power=1,
+  speed=2,
+  name="glue gun",
+  x=1,
+  y=0
+ },
+  {col=14,
+  credits=20,
+  sale=12,
+  range=5,
+  power=3,
+  speed=4,
+  name="supermech",
+  x=1,
+  y=1
+ },
+}

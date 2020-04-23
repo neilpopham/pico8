@@ -4,21 +4,7 @@ stage_main_placing={
  end,
  update=function(self)
   -- move player selector
-  if btnp(pad.left) then p.x-=1 end
-  if btnp(pad.right) then p.x+=1 end
-  if btnp(pad.up) then p.y-=1 end
-  if btnp(pad.down) then p.y+=1 end
-  p.x=p.x%25
-  p.y=p.y%25
-  p:cache()
-  -- check current tile
-  if p.tile==0 then
-    p.col=7
-    p.valid=true
-  else
-   p.col=8
-   p.valid=false
-  end
+  p:move()
   -- calculate range
   self.mask={}
   local range=minsky(p.x,p.y,p.gun.range)
@@ -46,6 +32,7 @@ stage_main_placing={
    gun.mask=clone(self.mask)
    gun.px=p.px
    gun.py=p.py
+   gun.level=1
    p.gun=gun
    add(p.arsenal,gun)
    room[p.y+1][p.x+1]=2

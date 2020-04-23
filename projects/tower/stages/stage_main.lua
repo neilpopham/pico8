@@ -3,12 +3,6 @@ stage_main={
  init=function(self)
   level=2
   storeroom(level)
-  guns={
-   {col=9,credits=5,range=3,power=2,speed=1,name="mechead",x=0,y=0},
-   {col=8,credits=10,range=5,power=4,speed=3,name="laser",x=0,y=1},
-   {col=10,credits=15,range=4,power=1,speed=2,name="glue gun",x=1,y=0},
-   {col=14,credits=20,range=5,power=3,speed=4,name="supermech",x=1,y=1},
-  }
   p=extend(
    vec2:create(12,12),
    {
@@ -19,6 +13,24 @@ stage_main={
      self.tile=room[self.y+1][self.x+1]
      self.px=2+self.x*5
      self.py=2+self.y*5
+    end,
+    move=function(self)
+     -- move player selector
+     if btnp(pad.left) then self.x-=1 end
+     if btnp(pad.right) then self.x+=1 end
+     if btnp(pad.up) then self.y-=1 end
+     if btnp(pad.down) then self.y+=1 end
+     self.x=self.x%25
+     self.y=self.y%25
+     self:cache()
+     -- check current tile
+     if self.tile==0 then
+       self.col=7
+       self.valid=true
+     else
+      self.col=8
+      self.valid=false
+     end
     end,
     draw=function(self)
      rect(self.px-1,self.py-1,self.px+5,self.py+5,self.col)

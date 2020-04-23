@@ -3,10 +3,24 @@ stage_main_viewing = {
 
  end,
  update=function(self)
+  -- open ui
   if btnp(pad.btn2) then
-   stage:set_state(stage_main_ui)
+   stage:set_state(p.gun and stage_main_info or stage_main_ui)
    return
   end
+  -- move player selector
+  p:move()
+
+  p.gun=nil
+  for i,g in pairs(p.arsenal) do
+   if p.x==g.x and p.y==g.y then
+    p.gun=g
+    p.valid=true
+    p.col=12
+   end
+  end
+
+  --[[
   local btnpbm=btnp()
   if btnpbm and btnpbm>0 then
    local md,cg=1000,nil
@@ -55,12 +69,17 @@ stage_main_viewing = {
     end
    end
   end
+  ]]
  end,
  draw=function(self)
   -- draw mask for active gun
-  for k,v in pairs(p.gun.mask) do
-   rect(3+v.x*5,3+v.y*5,5+v.x*5,5+v.y*5,1)
+  if p.gun then
+   for k,v in pairs(p.gun.mask) do
+    --rect(3+v.x*5,3+v.y*5,5+v.x*5,5+v.y*5,1)
+    pset(4+v.x*5,4+v.y*5,1)
+   end
   end
+
   -- draw player selector
   p:draw()
  end
