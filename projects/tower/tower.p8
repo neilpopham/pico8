@@ -16,7 +16,7 @@ local pad={left=0,right=1,up=2,down=3,btn1=4,btn2=5}
 #include mapping.lua
 #include astar.lua
 #include bresenham.lua
-#include minsky.lua
+#include minsky-faux.lua
 #include guns.lua
 #include stages.lua
 #include stages/stage_intro.lua

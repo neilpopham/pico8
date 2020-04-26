@@ -75,8 +75,8 @@ stage_main_viewing = {
   -- draw mask for active gun
   if p.gun then
    for k,v in pairs(p.gun.mask) do
-    --rect(3+v.x*5,3+v.y*5,5+v.x*5,5+v.y*5,1)
-    pset(4+v.x*5,4+v.y*5,1)
+    rect(3+v.x*5,3+v.y*5,5+v.x*5,5+v.y*5,1)
+    --pset(4+v.x*5,4+v.y*5,1)
    end
   end
 
