@@ -64,8 +64,10 @@ affector={
  end,
 
  shells=function(self)
-  affector.gravity(self)
-  affector.bounce(self)
+  --affector.gravity(self)
+ -- affector.bounce(self)
+ self.dx=cos(self.angle)*self.force
+ self.dy=-sin(self.angle)*self.force
   affector.update(self)
  end,
 
@@ -90,11 +92,11 @@ shells={
      {
       x=x,
       y=y,
-      life={30,50},
-      force={1,2},
+      life={10,30},
+      force={2,5},
       g=0.2,
       b=0.7,
-      angle={0.6,0.9}
+      angle={0,1}
      },
      params
     )

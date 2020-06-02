@@ -2,7 +2,7 @@ weapon_types={
  {
   bullet_type=1,
   rate=10,
-  sfx=4
+  sfx=0
  }
 }
 
@@ -38,29 +38,6 @@ bullet={
   self.dy=self.dy-p.dy
   self.x=self.x+self.dx
   self.y=self.y+self.dy
-  --[[
-  for _,e in pairs(enemies) do
-   local d=self:distance(e)
-   if d<3 then
-    self.complete=true
-    e.complete=true
-   end
-  end
-  ]]
-  --[[
-  if self.x<0 then
-   self.x=screen.x2+self.x
-  end
-  if self.x>screen.x2 then
-   self.x=self.x-screen.x2
-  end
-  if self.y<0 then
-   self.y=screen.y2+self.y
-  end
-  if self.y>screen.y2 then
-   self.y=self.y-screen.y2
-  end
-  ]]
   if self.ttl==0 then
    self.complete=true
   else

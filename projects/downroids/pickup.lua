@@ -21,21 +21,13 @@ pickup={
   return o
  end,
  update=function(self)
-  --entity.update(self)
   if self.complete then return end
-  self.dx=cos(self.angle)*self.force
-  self.dy=-sin(self.angle)*self.force
-  self.dx=self.dx-p.dx
-  self.dy=self.dy-p.dy
-  self.x=self.x+self.dx
-  self.y=self.y+self.dy
-
+  entity.update(self,true)
   if self.ttl==0 then
    self.complete=true
   else
    self.ttl=self.ttl-1
   end
-
  end,
  draw=function(self)
   circ(self.x,self.y,4,self.colour)
@@ -43,7 +35,8 @@ pickup={
  end,
  destroy=function(self)
   self.complete=true
-  smoke:create(self.x,self.y,10,{size={5,10},col=5})
-  smoke:create(self.x,self.y,5,{size={2,5},col=8})
+  smoke:create(self.x,self.y,10,{size={10,20},col=self.colour})
+  smoke:create(self.x,self.y,5,{size={5,10},col=self.colour-2})
+  --shells:create(self.x,self.y,30,{col=self.colour,force={2,6}})
  end
-} setmetatable(enemy,{__index=entity})
+} setmetatable(pickup,{__index=entity})

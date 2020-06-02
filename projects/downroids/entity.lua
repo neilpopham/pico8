@@ -16,12 +16,18 @@ entity={
   self.__index=self
   return o
  end,
- update=function(self)
+ update=function(self,pos)
   self.force=self.force+self.df
   if abs(self.force)<0.2 then self.force=0 end
   self.force=mid(-3,self.force,3)
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force
+  if pos then 
+   self.dx=self.dx-p.dx
+   self.dy=self.dy-p.dy
+   self.x=self.x+self.dx
+   self.y=self.y+self.dy
+  end
  end,
  draw=function(self)
   circ(self.x,self.y,3,2)
