@@ -1,4 +1,4 @@
-local pane={
+pane={
  create=function(self,tx,ty,mx,my,sx,sy)
  local o={x=sx,y=sy,map={x=mx,y=my},tile={x=tx,y=ty},new={x=sx,y=sy},d=0.5}
   setmetatable(o,self)
@@ -57,7 +57,7 @@ local pane={
  end
 }
 
-local tile={
+tile={
  panes={},
  sliding=false,
  active=true,
@@ -69,10 +69,10 @@ local tile={
   self.dir=dir or self.dir
   self.index=index or self.index
   self.queued=true
-  printh("===")
-  printh("split "..self.dir.." "..self.index.." "..p.x..","..p.y)
+  --printh("===")
+  --printh("split "..self.dir.." "..self.index.." "..p.x..","..p.y)
   for _,entity in pairs(entities) do
-    printh(entity.paused and "paused" or "not paused")
+    --printh(entity.paused and "paused" or "not paused")
     if not entity.paused then return end
   end
   printh("start slide")

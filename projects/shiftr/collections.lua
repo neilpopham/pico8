@@ -28,6 +28,7 @@ collection={
  del=function(self,object)
   del(self.items,object)
   self.count=self.count-1
+  del(entities,object)
  end,
  reset=function(self)
   self.items={}

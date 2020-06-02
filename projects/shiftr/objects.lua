@@ -51,30 +51,30 @@ local movable={
  end,
  collide_object=function(self,object)
   if self.complete or object.complete then return false end
-  --if self==object then return false end
+  if self==object then return false end
   local x=(self.x+round(self.dx))%128
-  local y=self.y
+  local y=self.y+round(self.dy)
   local collided=self:collision(x,y,object.x,object.y)
   if x>120 then
    collided=collided or self:collision(x-128,y,object.x,object.y)
-   printh("x>120 "..x.." dx:"..self.dx)
-   printh((x-128)..","..y..","..object.x..","..object.y)
-   printh(collided and "collided" or "didnt collide")
+   --printh("x>120 "..x.." dx:"..self.dx)
+   --printh((x-128)..","..y..","..object.x..","..object.y)
+   --printh(collided and "collided" or "didnt collide")
   elseif x<0 then
    collided=collided or self:collision(x+128,y,object.x,object.y)
-   printh("x<0 "..x)
-   printh((x+128)..","..y..","..object.x..","..object.y)
-   printh(collided and "collided" or "didnt collide")
+   --printh("x<0 "..x)
+   --printh((x+128)..","..y..","..object.x..","..object.y)
+   --printh(collided and "collided" or "didnt collide")
   elseif object.x>120 then
    collided=collided or self:collision(x,y,object.x-128,object.y)
-   printh("x2>120 "..object.x)
-   printh(x..","..y..","..(object.x-128)..","..object.y)
-   printh(collided and "collided" or "didnt collide")
+   --printh("x2>120 "..object.x)
+   --printh(x..","..y..","..(object.x-128)..","..object.y)
+   --printh(collided and "collided" or "didnt collide")
   elseif object.x<0 then
    collided=collided or self:collision(x,y,object.x+128,object.y)
-   printh("x2<0 "..object.x)
-   printh(x..","..y..","..(object.x+128)..","..object.y)
-   printh(collided and "collided" or "didnt collide")
+   --printh("x2<0 "..object.x)
+   --printh(x..","..y..","..(object.x+128)..","..object.y)
+   --printh(collided and "collided" or "didnt collide")
   end
   return collided
  end,
@@ -149,6 +149,10 @@ local movable={
    end
   end
  end,
+ gettile=function(self)
+  local pane=self:get_pane()
+  return pane.map.x+self.x\8-pane.x/8,pane.map.y+self.y\8-pane.y/8
+ end,
  mapget=function(self,tx,ty)
   self.pane=self:get_pane(tx*8,ty*8)
   tx=tx-self.pane.x/8
@@ -171,8 +175,11 @@ local movable={
   self.dx=0
   self.still=true
   self.ox=x
-  printh("resetting to "..self.x)
+  --printh("resetting to "..self.x)
   --if (self.anim) self.anim.current:set("still")
+ end,
+ flip=function(self)
+  self.dx=self.dx*-1
  end,
  hit=function(self)
   -- do nothing
@@ -272,6 +279,10 @@ local animatable={
    end
   end
   return face.frames[current.frame]
+ end,
+ flip=function(self)
+  movable.flip(self)
+  self.anim.current.face=self.anim.current.face==dir.left and dir.right or dir.left
  end,
  draw=function(self)
   local sprite=self.animate(self)

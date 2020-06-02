@@ -1,0 +1,46 @@
+stages={
+ new=nil,
+ update=function(self,new)
+  self.new=new
+ end,
+ draw=function(self)
+  if self.new then
+   stage=self.new
+   self.new=nil
+   stage:init()
+  end
+ end
+}
+
+stage_main={
+ init=function(self)
+  --mapdata:decompress()
+  --mapdata:load(1)
+  tile:init()
+  placeholders()
+ end,
+ update=function(self)
+  tile:update()
+  portals:update()
+  p:update()
+  enemies:update()
+  b:update()
+  d:update()
+  lifts:update()
+  fryers:update()
+  particles:update()
+ end,
+ draw=function(self)
+  rectfill(0,0,63,63,1)
+  rectfill(64,64,127,127,1)
+  tile:draw()
+  d:draw()
+  b:draw()
+  portals:draw()
+  lifts:draw()
+  fryers:draw()
+  enemies:draw()
+  p:draw()
+  particles:draw()
+ end
+}
