@@ -1,6 +1,7 @@
 stage_main_viewing = {
+ t=0,
  init=function(self)
-
+  self.t=120
  end,
  update=function(self)
   -- open ui
@@ -9,8 +10,9 @@ stage_main_viewing = {
    return
   end
   -- move player selector
-  p:move()
-
+  if self.t>0 then self.t-=1 end
+  if p:move() then self.t=120 end
+  -- are we over a placed gun?
   p.gun=nil
   for i,g in pairs(p.arsenal) do
    if p.x==g.x and p.y==g.y then
@@ -78,8 +80,10 @@ stage_main_viewing = {
     rect(3+v.x*5,3+v.y*5,5+v.x*5,5+v.y*5,1)
     --pset(4+v.x*5,4+v.y*5,1)
    end
+   if self.t>0 then oprint("press \151 to upgrade",4,120,15,1) end
+  elseif p.valid then
+   if self.t>0 then oprint("press \151 to place",4,120,15,1) end
   end
-
   -- draw player selector
   p:draw()
  end

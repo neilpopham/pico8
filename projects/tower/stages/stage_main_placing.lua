@@ -35,7 +35,7 @@ stage_main_placing={
    gun.level=1
    p.gun=gun
    add(p.arsenal,gun)
-   room[p.y+1][p.x+1]=2
+   room[p.y+1][p.x+1]=1
    stage:set_state(stage_main_viewing)
   end
  end,
@@ -50,11 +50,11 @@ stage_main_placing={
     rect(3+v.x*5,3+v.y*5,5+v.x*5,5+v.y*5,2)
    end
    --fillp()
+   oprint("press \142 to place",4,120,15,1)
   end
   -- draw gun marker
   rectfill(p.px,p.py,4+p.px,4+p.py,p.gun.col)
   -- draw player selector
   p:draw()
-  --print(room[p.y+1][p.x+1],0,0,7)
  end
 }

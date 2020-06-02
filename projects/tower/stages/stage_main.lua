@@ -15,11 +15,12 @@ stage_main={
      self.py=2+self.y*5
     end,
     move=function(self)
+     local m=false
      -- move player selector
-     if btnp(pad.left) then self.x-=1 end
-     if btnp(pad.right) then self.x+=1 end
-     if btnp(pad.up) then self.y-=1 end
-     if btnp(pad.down) then self.y+=1 end
+     if btnp(pad.left) then self.x-=1 m=true end
+     if btnp(pad.right) then self.x+=1 m=true end
+     if btnp(pad.up) then self.y-=1 m=true end
+     if btnp(pad.down) then self.y+=1 m=true end
      self.x=self.x%25
      self.y=self.y%25
      self:cache()
@@ -31,6 +32,7 @@ stage_main={
       self.col=8
       self.valid=false
      end
+     return m
     end,
     draw=function(self)
      rect(self.px-1,self.py-1,self.px+5,self.py+5,self.col)
@@ -48,20 +50,14 @@ stage_main={
  draw=function(self)
   -- drap map
   sspr(0,100,25,25,2,2,125,125)
-  -- do state draw
-  self.state:draw()
   --draw placed turrets
   for k,g in pairs(p.arsenal) do
    rectfill(g.px,g.py,4+g.px,4+g.py,g.col)
   end
   -- player credits
-  local c=lpad(p.credits,3)
-  for y=-1,1 do
-   for x=-1,1 do
-    print(c,114+x,120+y,1)
-   end
-  end
-  print(c,114,120,10)
+  oprint(lpad(p.credits,3),114,120,10,1)
+  -- do state draw
+  self.state:draw()
  end,
  set_state=function(self,state)
   self.state=state

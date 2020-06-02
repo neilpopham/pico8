@@ -48,6 +48,15 @@ function dprint(s,x,y,c1,c2)
  print(s,x,y,c1)
 end
 
+function oprint(s,x,y,c,o)
+ for oy=-1,1 do
+  for ox=-1,1 do
+   print(s,ox+x,oy+y,o)
+  end
+ end
+ print(s,x,y,c)
+end
+
 function dumptable(t,l)
  l=l or 0
  if l==0 then printh("dumptable") end
