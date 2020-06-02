@@ -34,6 +34,12 @@ affector={
   elseif self.dy>1 then
    self.dy*=0.98
   end
+ end,
+ smoke=function(self)
+  self.x=self.x+1-rnd(2)
+  self.y-=self.dy
+  self.dy=self.dy*.97
+  if self.dy<0.2 then self.complete=true end
  end
 }
 
@@ -54,3 +60,21 @@ beam={
   end
  end
 }
+
+smoke={
+ create=function(self,x,y,cols,count)
+  for i=1,count do
+   local s=spark:create(
+    {
+     x=x+6-rnd(4),
+     y=y,
+     col=cols[mrnd({1,#cols})],
+     dy=1,
+     life={10,40}
+    }
+   )
+   s.update=affector.smoke
+   particles:add(s)
+  end
+ end
+ }
