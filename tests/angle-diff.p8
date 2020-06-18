@@ -28,6 +28,13 @@ function _update60()
  if da<0 then da=1+da end
  if da>0.5 then da=1-da end
 
+ ds=0
+ ra=(0.5-a1)%1
+ dra=sgn(((a2+0.5-a1)%1)-0.5)
+
+ if a2>a1 then ds=1 end
+ if a2<a1 then ds=-1 end
+
 end
 
 function _draw()
@@ -38,4 +45,5 @@ function _draw()
  print(a1,0,0,2)
  print(a2,30,0,3)
  print(da,60,0,7)
+ print(ra,0,10,8) print(dra,30,10,8)
 end
