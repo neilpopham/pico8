@@ -36,7 +36,8 @@ enemy={
   end
  end,
  draw=function(self)
-  circ(self.x,self.y,4,6)
+  --circ(self.x,self.y,4,6)
+  if self.visible then circ(self.x,self.y,4,6) else circ(self.x,self.y,4,2) end
  end,
  destroy=function(self)
   self.complete=true

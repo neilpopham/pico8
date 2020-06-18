@@ -10,7 +10,7 @@ pickup={
    o,
    {
     force=1,
-    ttl=1000,
+    ttl=1200,
     size=4,
     health=2,
     score=100,

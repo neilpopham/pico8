@@ -37,6 +37,7 @@ player={
    self.angle=self.angle+self.da
   end
   self.angle=self.angle%1
+  self.periphery={(self.angle-0.625)%1,(self.angle+0.625)%1}
 
   -- shield
   self.shield.on=btn(pad.btn2) and self.shield.health>0
@@ -66,6 +67,7 @@ player={
   entity.update(self)
 
   for _,e in pairs(enemies.items) do
+   e.visible=self:sees(e)
    local d=self:distance(e)
    if d<size+e.size then
     if shielding then
@@ -79,6 +81,7 @@ player={
   end
 
   for _,k in pairs(pickups.items) do
+   k.visible=self:sees(k)
    local d=self:distance(k)
    if d<size+k.size then
     if not shielding then
@@ -150,11 +153,21 @@ player={
     shoot=10,
     shield={on=false,health=10,size=11,colour=15,max=10},
     weapon=weapon_types[1],
-    health=1,
+    health=10,
     max=10,
     score=0,
     complete=false
    }
   )
+ end,
+ sees=function(self,o)
+  local a,a1,a2,v=atan2(o.x-self.y,self.y-o.y),(self.angle-0.625)%1,(self.angle+0.625)%1,false
+  if a1>a2 then
+   if a>=a1 or a<=a2 then v=true end
+  else
+    if a>=a1 and a<=a2 then v=true end
+  end
+  if a>=a1 and a<=a2 then v=true end
+  return v
  end
 } setmetatable(player,{__index=entity})

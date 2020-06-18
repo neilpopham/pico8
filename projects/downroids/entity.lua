@@ -22,7 +22,7 @@ entity={
   self.force=mid(-3,self.force,3)
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force
-  if pos then 
+  if pos then
    self.dx=self.dx-p.dx
    self.dy=self.dy-p.dy
    self.x=self.x+self.dx
@@ -32,15 +32,23 @@ entity={
  draw=function(self)
   circ(self.x,self.y,3,2)
  end,
+ --[[
  check_visibility=function(self)
   if self.x<8 or self.x>screen.width+8 or self.y<8 or self.y>screen.width+8 then
     self.complete=true
   end
  end,
+ ]]
  distance=function(self,target)
   local dx=(target.x+4)/1000-(self.x+4)/1000
   local dy=(target.y+4)/1000-(self.y+4)/1000
   return sqrt(dx^2+dy^2)*1000
+ end,
+ adiff=function(self,angle)
+  local da=self.angle-angle
+  if da<0 then da=1+da end
+  if da>0.5 then da=1-da end
+  return da
  end,
  damage=function(self,value)
   self.health=self.health-value
