@@ -28,13 +28,22 @@ function _init()
  end
  print("initial delay of "..id)
  print("repeat delay of "..rd)
+ cx=peek(0x5f26) cy=peek(0x5f27)
 end
 
 function _update60()
- if btnp(4) then print(t) end
+ color(7)
+ if btnp(4) then
+  cursor(cx,cy)
+  print(t)
+  cx=peek(0x5f26) cy=peek(0x5f27)
+ end
  t+=1
+ rectfill(100,0,127,7,0)
+ print(btn(),100,0,5)
 end
 
 function _draw()
+
 
 end
