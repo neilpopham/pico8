@@ -42,6 +42,9 @@ function compressdata()
     k,v=nil,nil
    end
  end
+ if k then
+  add(d,{k,mode.ends,v})
+ end
  return d
 end
 
@@ -105,16 +108,12 @@ mode={
       printh("btnp,"..k..","..v,log)
      end
      printh("",log)
-
      local cd=compressdata()
-
      for k,v in pairs(cd) do
       printh(k..","..v[1]..","..v[2]..","..v[3],log)
      end
      printh("",log)
-
      decompressdata(cd)
-
      for k,v in pairs(btnd) do
       printh("btn,"..k..","..v,log)
      end
