@@ -41,7 +41,6 @@ function minskycircfill(x,y,r)
  local a1=get_offset(flr(x-r),flr(y))
  local a2=get_offset(ceil(x+r),flr(y))
  memcpy(0x0+a1,0x6000+a1,a2-a1)
- cls(3)
  memcpy(0x6000,0x0,0x2000)
 end
 
@@ -96,7 +95,7 @@ function _draw()
  if v==1 then
   minskycircfill(64,64,r)
   print("memcpy",0,120,3)
- elseif v==2 then
+ else
   minskycircfilld(64,64,r,0)
   print("rectfill",0,120,3)
  end
