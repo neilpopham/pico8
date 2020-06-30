@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
---
+-- minsky test
 -- by Neil Popham
 
 function copy_range(x1,y,x2)
@@ -10,6 +10,9 @@ function copy_range(x1,y,x2)
  memcpy(0x0+a1,0x6000+a1,a2-a1) -- copy from screen to sprite memory
 end
 
+-- because a byte stores 2 pixels this still needs some work
+-- to clear some bits we don't want
+-- (if the byte covers one pixel we want and another we don't)
 function minskycircfill(x,y,r)
  x,y=x+0.5,y+0.5
  local j,k,rat=r,0,1/r
@@ -61,7 +64,7 @@ end
 function _update60()
  r+=i
  if r>54 then i=-1 r=54 end
- if r<1 then i=1 r=1 end
+ if r<1 then i=1 r=1 v=v==1 and 2 or 1 end
  if btnp(4) then v=v==1 and 2 or 1 end
  if btn(0) then x-=1 end
  if btn(1) then x+=1 end
