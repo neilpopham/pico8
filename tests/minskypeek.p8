@@ -5,8 +5,8 @@ __lua__
 -- by Neil Popham
 
 function copy_range(x1,y,x2)
- local a1=max(0,flr(x1/2)+(y*64))
- local a2=min(0x7fff,flr(x2/2)+(y*64))
+ local a1=max(0,flr(max(0,x1)/2)+(y*64))
+ local a2=min(0x7fff,flr(min(127,x2)/2)+(y*64))
  memcpy(0x0+a1,0x6000+a1,a2-a1) -- copy from screen to sprite memory
 end
 
@@ -22,12 +22,12 @@ function minskycircfill(x,y,r)
   j+=rat*k
   local tx={{flr(x+k),ceil(x-k)},{flr(x-j),ceil(x+j)}}
   local ty={{flr(y+j),flr(y-j)},{flr(y+k),flr(y-k)}}
-   copy_range(max(0,tx[1][1]),ty[1][1],min(127,tx[1][2]))
-   copy_range(max(0,tx[1][1]),ty[1][2],min(127,tx[1][2]))
-   copy_range(max(0,tx[2][1]),ty[2][1],min(127,tx[2][2]))
-   copy_range(max(0,tx[2][1]),ty[2][2],min(127,tx[2][2]))
+   copy_range(tx[1][1],ty[1][1],tx[1][2])
+   copy_range(tx[1][1],ty[1][2],tx[1][2])
+   copy_range(tx[2][1],ty[2][1],tx[2][2])
+   copy_range(tx[2][1],ty[2][2],tx[2][2])
  end
- copy_range(max(0,flr(x-r)),flr(y),min(127,ceil(x+r)))
+ copy_range(flr(x-r),flr(y),ceil(x+r))
  memcpy(0x6000,0x0,0x2000) -- copy sprite memory to screen
 end
 
@@ -64,7 +64,7 @@ end
 function _update60()
  r+=i
  if r>54 then i=-1 r=54 end
- if r<1 then i=1 r=1 v=v==1 and 2 or 1 end
+ if r<1 then i=1 r=1 end
  if btnp(4) then v=v==1 and 2 or 1 end
  if btn(0) then x-=1 end
  if btn(1) then x+=1 end
