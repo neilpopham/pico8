@@ -4,26 +4,9 @@ __lua__
 --
 -- by Neil Popham
 
-function round(x)
- return flr(x+0.5)
-end
-
-function get_address(x,y)
- return 0x6000+flr(x/2)+(y*64) -- screen
- --return 0x4300+flr(x/2)+(y*64) -- user
-end
-
 function get_offset(x,y)
  return flr(x/2)+(y*64)
 end
-
-function get_colour_pair(a)
- local b=peek(a)
- local l=b%16
- local r=(b-l)/16
- return {l,r}
-end
-
 
 function minskycircfill(x,y,r)
  x,y=x+0.5,y+0.5
