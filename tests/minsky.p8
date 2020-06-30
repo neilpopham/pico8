@@ -77,7 +77,7 @@ function _init()
  y=round(rnd(29)+2)
 end
 
-function _update()
+function _update60()
  --if t>1 then r+=i t=0 end
  t+=1
  r+=i
@@ -96,6 +96,7 @@ function _draw()
  print(r,0,0,7)
  print(stat(0),40,0,7)
  print(stat(1),80,0,7)
+ print(flr(stat(7)),120,0,7)
 end
 
 -- 1. Paste this at the very bottom of your PICO-8

@@ -88,10 +88,12 @@ end
 
 function _draw()
  cls(1)
+ --[[
  srand(65)
  for i=1,20 do
   circfill(rnd(127),rnd(127),rnd(40),rnd(11)+4)
  end
+ ]]
  if r>=0 then minskycircfilld(x,y,r) else rectfill(0,8,127,127,0) end
  print(r,0,0,7)
 end
