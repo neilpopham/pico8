@@ -5,30 +5,35 @@ __lua__
 -- by Neil Popham
 
 function copy_range(x1,y,x2)
- local a1=max(0,flr(max(0,x1)/2)+(y*64))
- local a2=min(0x7fff,flr(min(127,x2)/2)+(y*64))
- memcpy(0x0+a1,0x6000+a1,a2-a1) -- copy from screen to sprite memory
+ x1=max(0,x1)
+ x2=min(127,x2)
+ local a1=max(0,flr(x1/2)+(y*64))
+ local a2=min(0x7fff,flr(x2/2)+(y*64))
+ memcpy(a1,0x6000+a1,a2-a1+1) -- copy from screen to sprite memory
+ if x1%2==1 then
+  poke(a1,peek(a1)&240) -- clear left pixel
+ end
+ if x2%2==0 then
+  poke(a2,peek(a2)&15)  -- clear right pixel
+ end
 end
 
--- because a byte stores 2 pixels this still needs some work
--- to clear some bits we don't want
--- (if the byte covers one pixel we want and another we don't)
 function minskycircfill(x,y,r)
  x,y=x+0.5,y+0.5
  local j,k,rat=r,0,1/r
- memset(0x0,0,0x2000) -- clear the sprite memory
+ memset(0,0,0x2000) -- clear the sprite memory
  for i=1,r*0.786 do
   k-=rat*j
   j+=rat*k
   local tx={{flr(x+k),ceil(x-k)},{flr(x-j),ceil(x+j)}}
   local ty={{flr(y+j),flr(y-j)},{flr(y+k),flr(y-k)}}
-   copy_range(tx[1][1],ty[1][1],tx[1][2])
-   copy_range(tx[1][1],ty[1][2],tx[1][2])
-   copy_range(tx[2][1],ty[2][1],tx[2][2])
-   copy_range(tx[2][1],ty[2][2],tx[2][2])
+  copy_range(tx[1][1],ty[1][1],tx[1][2])
+  copy_range(tx[1][1],ty[1][2],tx[1][2])
+  copy_range(tx[2][1],ty[2][1],tx[2][2])
+  copy_range(tx[2][1],ty[2][2],tx[2][2])
  end
  copy_range(flr(x-r),flr(y),ceil(x+r))
- memcpy(0x6000,0x0,0x2000) -- copy sprite memory to screen
+ memcpy(0x6000,0,0x2000) -- copy sprite memory to screen
 end
 
 function minskycircfilld(x,y,r)
@@ -66,14 +71,24 @@ function _update60()
  if r>54 then i=-1 r=54 end
  if r<1 then i=1 r=1 end
  if btnp(4) then v=v==1 and 2 or 1 end
+ --[[
  if btn(0) then x-=1 end
  if btn(1) then x+=1 end
  if btn(2) then y-=1 end
  if btn(3) then y+=1 end
+ ]]
+ if btn(0) then r-=1 end
+ if btn(1) then r+=1 end
+ if btn(2) then r-=1 end
+ if btn(3) then r+=1 end
 end
 
 function _draw()
  cls(1)
+ srand(65)
+ for i=1,20 do
+  circfill(rnd(127),rnd(127),rnd(40),rnd(11)+4)
+ end
  color(6)
  print("rarely do we find men who willingly",0,41)
  print("engage in hard, solid thinking.",0,48)
