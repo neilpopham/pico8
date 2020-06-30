@@ -4,44 +4,36 @@ __lua__
 --
 -- by Neil Popham
 
-function get_offset(x,y)
- return flr(x/2)+(y*64)
+function copy_range(x1,y1,x2,y2)
+ local a1=flr(x1/2)+(y1*64)
+ local a2=flr(x2/2)+(y2*64)
+ memcpy(0x0+a1,0x6000+a1,a2-a1) -- copy from screen to sprite memory
 end
 
 function minskycircfill(x,y,r)
  x,y=x+0.5,y+0.5
  local j,k,rat=r,0,1/r
- memset(0x0,0,0x2000)
+ memset(0x0,0,0x2000) -- clear the sprite memory
  for i=1,r*0.786 do
   k-=rat*j
   j+=rat*k
   local tx={{flr(x+k),ceil(x-k)},{flr(x-j),ceil(x+j)}}
   local ty={{flr(y+j),flr(y-j)},{flr(y+k),flr(y-k)}}
   if ty[1][1]>=0 and ty[1][1]<=127 then
-   local a1=get_offset(tx[1][1],ty[1][1])
-   local a2=get_offset(tx[1][2],ty[1][1])
-   memcpy(0x0+a1,0x6000+a1,a2-a1)
+   copy_range(tx[1][1],ty[1][1],tx[1][2],ty[1][1])
   end
   if ty[1][2]>=0 and ty[1][2]<=127 then
-   local a1=get_offset(tx[1][1],ty[1][2])
-   local a2=get_offset(tx[1][2],ty[1][2])
-   memcpy(0x0+a1,0x6000+a1,a2-a1)
+   copy_range(tx[1][1],ty[1][2],tx[1][2],ty[1][2])
   end
   if ty[2][1]>=0 and ty[2][1]<=127 then
-   local a1=get_offset(tx[2][1],ty[2][1])
-   local a2=get_offset(tx[2][2],ty[2][1])
-   memcpy(0x0+a1,0x6000+a1,a2-a1)
+   copy_range(tx[2][1],ty[2][1],tx[2][2],ty[2][1])
   end
   if ty[2][2]>=0 and ty[2][2]<=127 then
-   local a1=get_offset(tx[2][1],ty[2][2])
-   local a2=get_offset(tx[2][2],ty[2][2])
-   memcpy(0x0+a1,0x6000+a1,a2-a1)
+   copy_range(tx[2][1],ty[2][2],tx[2][2],ty[2][2])
   end
  end
- local a1=get_offset(flr(x-r),flr(y))
- local a2=get_offset(ceil(x+r),flr(y))
- memcpy(0x0+a1,0x6000+a1,a2-a1)
- memcpy(0x6000,0x0,0x2000)
+ copy_range(flr(x-r),flr(y),ceil(x+r),flr(y))
+ memcpy(0x6000,0x0,0x2000) -- copy sprite memory to screen
 end
 
 function minskycircfilld(x,y,r,c)
