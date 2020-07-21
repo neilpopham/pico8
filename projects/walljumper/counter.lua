@@ -15,8 +15,7 @@ counter={
   end
  end,
  reset=function(self,value)
-  value=value or 0
-  self.tick=value
+  self.tick=value or 0
  end,
  valid=function(self)
   return self.tick>=self.min and self.tick<=self.max

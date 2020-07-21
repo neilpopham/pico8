@@ -21,6 +21,6 @@ stage_main={
  end,
  draw=function(self)
   map()
-  p:draw(2)
+  p:draw()
  end
 }
