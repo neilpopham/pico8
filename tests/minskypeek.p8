@@ -58,6 +58,36 @@ function minskycircfilld(x,y,r)
  rectfill(x,y+r,x,127)
 end
 
+function lerp(a,b,t)
+ return a*(1-t)+b*t
+end
+function smoothstep(t)
+ t=mid(t,0,1)
+ return t*t*(3-2*t)
+end
+--[[
+function freds72(r0,r1,i)
+ local r=lerp(r0,r1,1-smoothstep(i/90))
+ local r2=r*r
+ for j=0,127 do
+  local y=64-j
+  local x=sqrt(max(r2-y*y))
+  rectfill(0,j,64-x,j,0)
+  rectfill(64+x,j,127,j,0)
+ end
+ return true
+end
+]]
+function freds72(r)
+ r=r*r
+ for j=0,127 do
+  local y=64-j
+  local x=sqrt(max(r-y*y))
+  rectfill(0,j,64-x,j,0)
+  rectfill(64+x,j,127,j,0)
+ end
+end
+
 function _init()
  r=1
  i=1
@@ -71,7 +101,7 @@ function _update60()
  if a==1 then r+=i end
  if r>54 then i=-1 r=54 end
  if r<1 then i=1 r=1 end
- if btnp(4) then v=v==1 and 2 or 1 end
+ if btnp(4) then v=v+1 if v>3 then v=1 end end
  if btnp(5) then a=a==1 and 2 or 1 end
  --[[
  if btn(0) then x-=1 end
@@ -97,13 +127,19 @@ function _draw()
  print("solutions.",0,69)
  print("nothing pains some people more",0,76)
  print("than having to think.",0,83)
+
  if v==1 then
   minskycircfill(x,y,r)
   print("memcpy",0,120,3)
- else
+ elseif v==2 then
   minskycircfilld(x,y,r)
   print("rectfill",0,120,3)
+ else
+  freds72(r)
+  print("fred72",0,120,3)
  end
+
+
  print("\153 "..ceil(stat(0)),0,0,7)
  print("\150 "..ceil(stat(1)*100),60,0,7)
  print("\147 "..stat(7),109,0,7)
