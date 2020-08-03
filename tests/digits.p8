@@ -141,10 +141,59 @@ function drawnumber(n,x,y,c,w,h)
  end
 end
 
+
+function storedigits()
+ cls()
+ print("0123456789",0,0,7)
+ pixels={}
+ for n=0,9 do
+  pixels[n+1]={}
+  for x=1,3 do
+   pixels[n+1][x]={}
+   for y=1,7 do
+    if pget(x-1+n*4,y-1)==7 then pixels[n+1][x][y]=1 end
+   end
+  end
+ end
+end
+
+function drawstoreddigit(d,x,y,c,w,h)
+ w=w or 4
+ h=h or 4
+ for px,a in pairs(pixels[d+1]) do
+  for py,_ in pairs(a) do
+   local x1=x+(px-1)*w
+   local y1=y+(py-1)*h
+   rectfill(x1,y1,x1+w-1,y1+h-1,c)
+   --pset(x1,y1,9)
+  end
+ end
+ return w*3
+end
+
+function drawstorednumber(n,x,y,c,w,h)
+ w=w or 4
+ h=h or 4
+ local s=tostr(n)
+ for i=1,#s do
+  local w=drawstoreddigit(sub(s,i,i),x,y,c,w,h)
+  x+=w+2
+ end
+end
+
+
+
 function _init()
  dw=16
  dh=16
+
+ dsw=2
+ dsh=2
+
+ storedigits()
 end
+
+
 
 function _update60()
 
@@ -160,10 +209,10 @@ function _draw()
  --drawnumber(21378,4,41,8,flr((t()*32)%32),flr((t()*32)%32))
  --drawnumber(21378,4,40,7,flr((t()*32)%32),flr((t()*32)%32))
 
-if btnp(0) then dw-=1 end
-if btnp(1) then dw+=1 end
-if btnp(2) then dh-=1 end
-if btnp(3) then dh+=1 end
+if btnp(0) then dw-=1 dsw-=1 end
+if btnp(1) then dw+=1 dsw+=1 end
+if btnp(2) then dh-=1 dsh-=1 end
+if btnp(3) then dh+=1 dsh+=1 end
 
 local n=7819
 drawnumber(n,30,41,8,dw,dh)
@@ -175,4 +224,16 @@ drawnumber(n,30,40,7,dw,dh)
 
  --rectfill(0,40,7,47,15)
 
+ for x,a in pairs(pixels[5]) do
+  for y,p in pairs(a) do
+   pset(x,y,8)
+  end
+ end
+
+ drawstoreddigit(6,90,70,8)
+ drawstoreddigit(4,30,70,8)
+
+ local n=7819
+ drawstorednumber(n,30,91,8,dsw,dsh)
+ drawstorednumber(n,30,90,7,dsw,dsh)
 end
