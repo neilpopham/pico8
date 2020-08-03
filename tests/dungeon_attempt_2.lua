@@ -427,12 +427,12 @@ end
 
 function _init()
  printh("==================")
- max=20
+ max=1200
  t=max
 end
 
 function _update60()
- if t==max then
+ if t==max or btnp(5) then
   t=0
   generate()
  end
