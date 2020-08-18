@@ -5,13 +5,17 @@ __lua__
 -- by Neil Popham
 
 function _init()
-    poke(0x5f2d, 1)
+ poke(0x5f2d, 1)
 end
 
 function _draw()
-    cls()
-    spr(0,stat(32)-1,stat(33)-1)
-    print(stat(34))
+ cls(1)
+ local x,y=stat(32)-1,stat(33)-1
+
+ print(stat(34))
+ print(x)
+ print(y)
+ spr(0,x,y)
 end
 __gfx__
 01100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
