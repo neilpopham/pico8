@@ -2,6 +2,13 @@ pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
 
+--[[
+
+
+
+
+]]
+
 l = {
  {
   {{0,0,2,4,0},{2,1,3,3,0},{1,1,1,3},{2,2,2,2}},
@@ -49,7 +56,7 @@ function arrow(x,y,d,c)
  end
 end
 
-y=32
+y=43
 
 for i=0,11 do
 
@@ -77,8 +84,8 @@ for i=0,11 do
 end
 ]]
 
- rect(56,y-14,71,y,0)
- rectfill(57,y-13,70,y-1,2)
+ rect(56,y-15,71,y,0)
+ rectfill(57,y-14,70,y-1,2)
 
 
 rectfill(8,y,11,y+72,0)
@@ -96,6 +103,10 @@ pset(3,y+2,2)
 
 rect(1,y+10,3,y+14,0)
 rectfill(2,y+11,2,y+13,2)
+
+rectfill(2,2,125,10,7)
+
+print('colour? 99',4,4,8)
 
 
 --[[

@@ -13,24 +13,25 @@ local b=0.2
 local f=0
 
 function _init()
- poke(0x5f2d, 1)
+ poke(0x5f2d,1)
 end
 
 function _update60()
  mb,mx,my=stat(34),stat(32)-1,stat(33)-1
- local x = p2.x - p1.x
- f = (-k * x) - (b * p2.v)
- p2.v += f
- --if abs(p2.v) < 0.04 and abs(p1.x-p2.x) < 0.5 then p2.v = 0 p2.x=p1.x end
- p2.x += p2.v
+ local x=p2.x-p1.x
+ f=-k*x-b*p2.v
+ p2.v+=f
+ local v=flr(p2.v)
+ p2.x+=v
+ if abs(v)<1 then f=0 end
  if mb==1 then
-  p2.x = mx
+  p2.x=mx
   p2.v=0
  end
  if btnp(1) then k+=0.01 end
  if btnp(0) then k-=0.01 end
  if btnp(2) then b+=0.01 end
- if btnp(3) then b-=0.01 end 
+ if btnp(3) then b-=0.01 end
 end
 
 function _draw()

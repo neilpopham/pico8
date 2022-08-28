@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 --
--- by Neil Popham
+-- by neil popham
 
 function mrnd(x,f)
  if f==nil then f=true end
@@ -18,9 +18,9 @@ function in_array(a,i)
 end
 
 -- #include dungeon_attempt_1.lua
--- #include dungeon_attempt_2.lua
--- include dungeon_attempt_3.lua
 #include dungeon_attempt_2.lua
+-- include dungeon_attempt_3.lua
+-- #include dungeon_attempt_4.lua
 
 __gfx__
 00000000ffffffff777777771111111199999999ccccccccaaaaaaa9000000001000000100000000000000001cc77cc1cccccccc00000000aaaaaaa900000000

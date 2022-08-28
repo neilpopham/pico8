@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 --
--- by Neil Popham
+-- by neil popham
 
 function distance(x1,y1,x2,y2)
  return abs(x1-x2)+abs(y1-y2)
@@ -35,7 +35,7 @@ cls()
 printh("===")
 
 function adiff(a1,a2)
- --0.5-MOD(A26+0.5-$B$25,1)
+ --0.5-mod(a26+0.5-$b$25,1)
  return 0.5-(a1+0.5-a2)%1
 end
 
