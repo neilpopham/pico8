@@ -1,0 +1,78 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "adventure..tmx",
+    "expandedProjectPaths": [
+    ],
+    "fileStates": {
+        "C:/Users/neilp/Documents/Projects/Tiled/adventure2.tsx": {
+            "scaleInDock": 1
+        },
+        "C:/Users/neilp/Documents/Projects/Tiled/bak/adventure..tmj": {
+            "scale": 1.0353515625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 512.3863421995849,
+                "y": 256.43463497453314
+            }
+        },
+        "C:/Users/neilp/Documents/Projects/Tiled/bak/adventure.tsx": {
+            "scaleInDock": 1
+        },
+        "adventure..tmj": {
+            "scale": 1.0353515625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 512.3863421995849,
+                "y": 507.5570647047727
+            }
+        },
+        "adventure..tmx": {
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 485.33333333333326,
+                "y": 303.16666666666663
+            }
+        },
+        "adventure.tsx": {
+            "scaleInDock": 1
+        },
+        "alternative.tmx": {
+            "scale": 1.0919433593749999,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 511.93131511872286,
+                "y": 255.9656575593615
+            }
+        },
+        "spritesheet.tsx": {
+            "scaleInDock": 3,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/resources",
+    "map.height": 64,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 8,
+    "map.tileWidth": 8,
+    "map.width": 128,
+    "openFiles": [
+        "spritesheet.tsx",
+        "adventure..tmx"
+    ],
+    "project": "adventure.tiled-project",
+    "recentFiles": [
+        "spritesheet.tsx",
+        "adventure..tmx",
+        "C:/Users/neilp/Documents/Projects/Tiled/bak/adventure..tmj",
+        "adventure..tmj"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 8,
+        "width": 8
+    }
+}
