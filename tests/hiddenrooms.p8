@@ -4,6 +4,43 @@ __lua__
 --
 -- by neil popham
 
+--[[
+
+https://www.lexaloffle.com/dl/docs/pico-8_manual.html#Memory
+use other memory to store hidden rooms
+
+hidden rooms
+
+?? do we need to hide a room after it's been seen? maybe not - a lot easier not to
+
+room to left
+============
+
+OOOOOOO
+OOOOOOO
+OOOOOOO
+OOOOOOT 
+
+when left of player hits target room is visible
+room stays visible
+when moving right on trigger set exiting var to true, when moving left set to false
+if exiting is true and no longer on trigger hide room
+
+room to right
+=============
+
+OOOOOOO
+OOOOOOO
+OOOOOOO
+TOOOOO0
+
+when right of player hits target room is visible
+room stays visible
+when moving left on trigger set exiting var to true, when moving right set to false
+if exiting is true and no longer on trigger hide room
+
+]]
+
 local orig={}
 
 local hidden={
@@ -22,8 +59,9 @@ local hidden={
 }
 
 function _init()
-    px = 80
-    py = 48
+    px=80
+    py=48
+    exr=false
 end
 
 function _update60()
@@ -37,12 +75,16 @@ function _update60()
     if fget(tile, 7) then 
         -- check trigger against cx to determine the index of hidden
         room=hidden[1]
+        -- depending on room direction
+        if btn(0) then exr=false end
+        if btn(1) then exr=true end
+
         if room.visible == false then 
             orig={}
-            for r, col in pairs(room.spr) do
+            for r, row in pairs(room.spr) do
                 my = room.origin[2] + r - 1
                 orig[my]={}
-                for c, s in pairs(col) do
+                for c, s in pairs(row) do
                     mx = room.origin[1] + c - 1
                     orig[my][mx]=mget(mx,my)
                     printh(tostr(mx)..', '..tostr(my)..' '..tostr(s))
@@ -51,17 +93,29 @@ function _update60()
             end
             room.visible=true
         end
+    elseif exr then
+        for oy, row in pairs(orig) do
+            for ox, s in pairs(row) do
+                mset(ox,oy,s)
+            end
+        end
+        room.visible=false
+        exr=false
     end 
 end 
 
 function _draw()
     cls()
-    map(0, 0, 0, 0)
+    map(0,0,0,0)
     spr(4,px,py)
     print(tile,0,0,9)
     print(fget(tile),0,8,9)
-    print(fget(tile, 7),20,8,9)
-    print(tostr(hidden[1].visible),0, 100,11)
+    print(fget(tile, 7),60,100,9)
+    print(tostr(hidden[1].visible),0,100,11)
+    print(tostr(exr),30,100,12)
+    print('vsble', 0, 92, 3)
+    print('exitng', 30, 92, 3)
+    print('tle flg', 60, 92, 3)
 end 
 
 
