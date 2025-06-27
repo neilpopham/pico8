@@ -10,6 +10,8 @@ __lua__
 -- 2,1,1 should be lowest, so may need mapping according to volume 1-7
 -- if any volume reaches 0 the whole sound changes style
 -- setting a min of 1 kinda works but 1,1,1 sounds wrong
+-- if the volume is set to 0 in the cart we don't need to subtract then add, just add
+    -- or if we reset the sfx in code to 0,0,0 on init and any time it stops
 
 function _init()
     sfx(0)
@@ -20,6 +22,11 @@ end
 function _update()
     if (btnp(2)) v+=1
     if (btnp(3)) v-=1
+
+    -- stop the sfx
+    if (btnp(4)) sfx(0, -2)
+    -- start
+    if (btnp(5)) sfx(0)
     v=mid(0,v,7)
 end
 
