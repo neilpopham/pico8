@@ -84,12 +84,6 @@ particle={
  end
 }
 
-spark={
- _draw=function(self)
-  pset(self.x,round(self.y),self.col)
- end
-} setmetatable(spark,{__index=particle})
-
 circle={
  _draw=function(self)
   circfill(self.x,self.y,self.size,self.col)
@@ -97,78 +91,19 @@ circle={
 } setmetatable(circle,{__index=particle})
 
 affector={
-
- gravity=function(self)
-  local dx=cos(self.angle)*self.force
-  local dy=-sin(self.angle)*self.force
-  dy+=self.g
-  self.angle=atan2(dx,-dy)
-  self.force=sqrt(dx^2+dy^2)
-  self.dx=cos(self.angle)*self.force
-  self.dy=-sin(self.angle)*self.force
- end,
-
- bounce=function(self)
-  local x,y=self.x+self.dx,self.y
-  local tile=mget(flr(x/8),flr(y/8))
-  if fget(tile,0) then
-   self.force=self.force*self.b
-   self.angle=(0.5-self.angle)%1
-  end
-  x,y=self.x,self.y+self.dy
-  tile=mget(flr(x/8),flr(y/8))
-  if fget(tile,0) then
-   self.force=self.force*self.b
-   self.angle=(1-self.angle)%1
-  end
-  self.dx=cos(self.angle)*self.force
-  self.dy=-sin(self.angle)*self.force
- end,
-
  size=function(self)
   self.size=self.size*self.shrink
   if self.size<0.5 then self.complete=true end
  end,
-
- shells=function(self)
-  affector.gravity(self)
-  affector.bounce(self)
-  affector.update(self)
- end,
-
  smoke=function(self)
   self.dx=cos(self.angle)*self.force
   self.dy=-sin(self.angle)*self.force
   affector.size(self)
   affector.update(self)
  end,
-
  update=function(self)
   self.x+=self.dx
   self.y+=self.dy
- end
-}
-
-shells={
- create=function(self,x,y,count,params)
-  for i=1,count do
-   local s=spark:create(
-    extend(
-     {
-      x=x,
-      y=y,
-      life={30,50},
-      force={1,2},
-      g=0.2,
-      b=0.7,
-      angle={0.6,0.9}
-     },
-     params
-    )
-   )
-   s.update=affector.shells
-   particles:add(s)
-  end
  end
 }
 
@@ -195,25 +130,6 @@ smoke={
    s.update=affector.smoke
    particles:add(s)
   end
- end
-}
-
-local sfxcache = {
- channel=1,   -- the channel to check (1-4)
- beats=8,     -- fire on every nth beat (0, 4, 8, or 16)
- sfx={},
- play=function(self,n,c,o,l)
-  add(self.sfx,{n,c and c or -1,o and o or 0,l and l or 0})
- end,
- check=function(self)
-  if #self.sfx>0 and stat(19+self.channel)%self.beats==0 then
-   for s in all(self.sfx) do
-    sfx(s[1],s[2],s[3],s[4])
-   end
-   self.sfx={}
-   return true
-  end
-  return false
  end
 }
 
@@ -277,10 +193,10 @@ function _draw()
  end
  particles:draw()
  print(
-  lpad(stat(19+sfxcache.channel)),
+  lpad(stat(49+sfxcache.channel)),
   62,
   61,
-  stat(19+sfxcache.channel)%sfxcache.beats==0 and 7 or 3
+  stat(49+sfxcache.channel)%sfxcache.beats==0 and 7 or 3
  )
 end
 

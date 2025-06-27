@@ -89,7 +89,7 @@ world={
   for _,entity in pairs(self.entities.items) do
    for _,component in pairs(entity.components) do
     printh(component)
-    if component.draw then component:draw(entity) printh("bar") end
+    if component.draw then component:draw(entity) end
    end
   end
  end,

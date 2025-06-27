@@ -66,7 +66,7 @@ function _draw()
   -- create an array of spr data and increment counters
   sprinfo={}
   for i,item in pairs(ongoing) do
-    add(sprinfo,{frames[item.dir][item.step],pos[item.dir].x,pos[item.dir].y})
+    add(sprinfo,{frames[item.dir][item.step],pos[item.dir].x+item.step,pos[item.dir].y})
     item.t+=1
     if item.t==rate then 
       item.step+=1

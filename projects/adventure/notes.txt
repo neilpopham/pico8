@@ -1,0 +1,19 @@
+keys to open doors
+buttons to open barriers
+ladders
+sometimes you may have to take a different route back to get through
+tooltip indicator to show whether door is locked
+flies/moths that scitter around gradually following a path but with randomness
+frogs? or at least jumping blobs
+hidden rooms will have to be created using a table and rendered using spr()
+    - trigger cell (cell player walks into to trigger display)
+    - top left map position
+    - grid of sprites
+    - {trigger={12,34},origin={56,78},spr={{1,2,3,4},{5,6,7,8}}}
+    - maybe:
+        when trigger cell hit room is set in map
+        when trigger cell left room is removed
+        will need to store overwritten sprites
+        may need to know the direction of the room for knowing when to show/hide  
+when laser beam on screen play buzzing noise
+    - maybe volume related to distance

@@ -22,41 +22,39 @@ end
 function _update60()
  if btnp(4) then
   s=1
-  printh("26:"..stat(26))
+  printh("56:"..stat(56))
  end
  if btnp(5) then
 
  end
- if s and (stat(20)%8==0) then
+ if s and (stat(50)%8==0) then
   sfx(s)
   s=nil
-  printh("20:"..stat(20))
-  printh("26:"..stat(26))
+  printh("50:"..stat(50))
+  printh("56:"..stat(56))
  end
 end
 
 function _draw()
- cls ()
-
- --[[
- for i=0,10 do
-  print((i+16)..": "..stat(i+16),0,i*7,7)
+ local bg=1
+ if stat(50)%8==0 then 
+  bg=2
  end
- ]]
+ cls(bg)
 
- print("16. c1 sfx id:  "..stat(16),0,0,7)
- print("17. c2 sfx id:  "..stat(17),0,8,7)
- print("18. c3 sfx id:  "..stat(18),0,16,7)
- print("19. c4 sfx id:  "..stat(19),0,24,7)
+ print("46. c1 sfx id:  "..stat(46),0,0,7)
+ print("47. c2 sfx id:  "..stat(47),0,8,7)
+ print("48. c3 sfx id:  "..stat(48),0,16,7)
+ print("49. c4 sfx id:  "..stat(49),0,24,7)
 
- print("20. c1 note #:  "..stat(20),0,32,7)
- print("21. c2 note #:  "..stat(21),0,40,7)
- print("22. c3 note #:  "..stat(22),0,48,7)
- print("23. c4 note #:  "..stat(23),0,56,7)
+ print("50. c1 note #:  "..stat(50),0,32,7)
+ print("51. c2 note #:  "..stat(51),0,40,7)
+ print("52. c3 note #:  "..stat(52),0,48,7)
+ print("53. c4 note #:  "..stat(53),0,56,7)
 
- print("24. pattern id: "..stat(24),0,64,7)
- print("25. #patterns:  "..stat(25),0,72,7)
- print("26. #ticks:     "..stat(26),0,80,7)
+ print("54. pattern id: "..stat(54),0,64,7)
+ print("55. #patterns:  "..stat(55),0,72,7)
+ print("56. #ticks:     "..stat(56),0,80,7)
 end
 
 --[[
