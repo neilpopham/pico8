@@ -30,21 +30,99 @@ function _update()
     v=mid(0,v,7)
 end
 
+-- sets the volume of a single note in the given sfx
+function set_volume(sfxid, note, value)
+    -- find the address to peek
+    local address=0x3200+68*sfxid+value*2
+    -- get the bytes
+    local bytes=%address
+    -- clear the the volume bits
+    bytes=bytes&0xf1ff
+    -- shift the volume bits
+    value=mid(0,value,7)<<9
+    -- use them as a bitmask
+    bytes=bytes|value
+    -- save the bytes
+    poke2(address,bytes)
+end
+
+-- sets the volume for a range of notes in the given sfx
+function set_volumes(sfxid, start, values)
+    -- find the address to peek
+    local address=0x3200+68*sfxid+start*2
+    -- loop through the values
+    for _,value in ipairs(values) do
+        -- get the bytes
+        local bytes=%address
+        -- clear the the volume bits
+        bytes=bytes&0xf1ff
+        -- shift the volume bits
+        value=value<<9 
+        -- use them as a bitmask
+        bytes=bytes|value
+        -- save the bytes
+        poke2(address,bytes)
+        -- move to the next note 
+        address+=2       
+    end
+end
+
+-- returns the volume of a note in the given sfx
+function get_volume(sfxid, note)
+    -- find the address to peek
+    local address=0x3200+68*sfxid+note*2
+    -- get the bytes
+    local bytes=%address
+    -- get the volume bits
+    local value=0x0e00&bytes
+    -- return the shifted volume bits 
+    return value>>9
+end
+
 function _draw()
+    cls()
+    print(tostr(v), 0, 0, 7)
+    print(tostr(v << 9), 8, 0, 7)
+    -- set_volume(0, 0, mid(2, v, 7))
+    -- set_volume(0, 1, mid(1, v-3, 7))
+    -- set_volume(0, 2, mid(1, v-2, 7))
+
+    set_volumes(0, 0, {mid(2, v, 7), mid(1, v-3, 7), mid(1, v-2, 7)})
+
+    print(tostr(get_volume(0, 0)),0,20)
+    print(tostr(get_volume(0, 1)),0,30)
+    print(tostr(get_volume(0, 2)),0,40)
+end
+
+function _draw_old2()
     cls()
     print(tostr(v), 0, 0, 7)
     print(tostr(v << 9), 8, 0, 7)
     print("use ⬆️ ⬇️",64, 0, 2)
 
     local sfx_id=0
-    -- can get fixed value
+    -- can get fixed value 0x3200 == 12800
     local mem=0x3200+68*sfx_id
 
     for i=0,2 do
-        local s=peek2(mem)
+        local s=%mem -- s=peek2(mem)
+
+        -- printh(i)
+        -- printh(s)
+
+        -- 0e00 = 0000 1110 0000 0000
+        --        1111 11
+        --        5432 1098 7654 3210
+        -- bits 9-11 store volume
+        --        1111 0001 1111 1111
+        -- f1ff or 61951
+        -- s & 0xf1ff will zero volume
+        -- then s | (v << 9) will set volume
 
         local vr=0x0e00 & s
-        local vol=(0x0e00 & s) >> 9        
+        local vol=(0x0e00 & s) >> 9
+        -- local vol=0x0e00 & (s >> 9)     
+        -- local vol=(0x0e00 >> 9) & s    
         print(tostr(vol), 0, 8+i*8, 8)
         print(tostr(vr), 8, 8+i*8, 8)
 
