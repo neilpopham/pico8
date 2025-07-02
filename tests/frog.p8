@@ -58,7 +58,7 @@ function _update60()
         tx=flr((x+dx)/8)
         ty=flr((y+dy)/8)
         tile=mget(tx,ty)
-        if fget(tile,flag) then
+        if fget(tile,0) then
             t=t<tm and tm or t
             dx=0
             dy=0
