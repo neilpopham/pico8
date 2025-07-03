@@ -21,16 +21,6 @@ end
 
 _G=_ENV
 
-foo=123
-
--- function rootaccess(tbl,key)
---     if getmetatable(tbl) then
---         local v=getmetatable(tbl)[key]
---         if (v~=nil)	return v
---     end
---     return _ENV[key]
--- end
-
 pixel={
     create=function(self,x,y,dir)
         local o=setmetatable(
@@ -44,6 +34,9 @@ pixel={
         self.__index=self
         return o
     end,
+    fordir=function(_ENV,l,r)
+        return dir==1 and r or l
+    end,
     tile=function(p)
         return flr(p/8)
     end
@@ -53,17 +46,13 @@ frog={
     create=function(self,x,y,dir)
         local o=pixel.create(self,x,y,dir)
         o.c=3
-        o.reset(self)
+        o:reset()
         return o
     end,
     reset=function(_ENV)
-        printh('###################')
         t=0
         stage=0
         r=range(12,16)
-    end,
-    reverse=function(_ENV)
-        dir=dir==1 and -1 or 1
     end,
     update=function(_ENV)
         if stage==0 then return end
@@ -72,13 +61,6 @@ frog={
             dx=2*dir
             dy=-1
             if t==0 then sfx(0) end
-            -- check whether there is a gap to jump before trying
-            -- if t==0 then
-            --     tx=flr((x+(dir==1 and 8 or -8))/8)
-            --     ty=flr(y/8)
-            --     tile=mget(tx,ty)
-            --     if fget(tile,0) then self:turn() end
-            -- end
         else
             dx=stage==2 and dir or 0
             dy=1
@@ -89,10 +71,8 @@ frog={
         ty=tile(cy+dy)
         ti=mget(tx,ty)
         if fget(ti,0) then
-            printh('HIT')
             ti=mget(tile(cx),ty)
             if fget(ti,0) then
-                printh('V'..stage)
                 if stage==1 then
                     y=ty*8+8
                 else
@@ -100,15 +80,11 @@ frog={
                     cy=y
                     reset(_ENV)
                 end
-                printh('Y'..y)
             end
             ti=mget(tx,tile(cy))
             if fget(ti,0) then
-                printh('H'..stage)
-                printh('X'..x)
                 x=tx*8+(dir==1 and -3 or 10)
-                printh('X'..x)
-                if stage==1 and t<6 then dir=dir==1 and -1 or 1 end -- reverse() end
+                if stage==1 and t<6 then dir=dir==1 and -1 or 1 end
             end
             if stage>0 then stage=3 end
             dx=0
@@ -129,21 +105,21 @@ frog={
         if stage==0 then
             line(x,y,x+1,y,c)
             pset(x+(dir==1 and 1 or 0),y-1,c)
-        elseif stage==1 then
-            line(x,y,ex,y-2,c)
         else
-            line(x,y,ex,y+2,c)
+            line(x,y,ex,y+(stage==1 and -2 or 2),c)
         end
     end
 } setmetatable(frog,{__index=pixel})
 
--- entities={}
--- add(entities,frog:create(0,119))
+entities={}
+for i=1,10 do
+    add(entities,frog:create(rnd(100),rnd()>0.5 and 119 or 63,rnd()>0.5 and 1 or -1))
+end
 
 f=frog:create(0,63,1)
 
 function _init()
-
+    extcmd("rec")
 end
 
 function _update60()
@@ -164,20 +140,30 @@ function _update60()
         f.dir=f.dir==1 and -1 or 1
     end
 
-    if f.stage==0 then f.stage=1 end
+    -- if f.stage==0 then f.stage=1 end
 
     f:update()
+
+    for _,e in pairs(entities) do
+        e:update()
+        if e.stage==0 then
+            local r=rnd()
+            if r>0.995 then
+                e.stage=1
+            end
+        end
+    end
 end
 
 function _draw()
     cls()
     map(0,0)
-    print(foo,100,0,1)
-    print(f.x,0,0,7)
-    print(f.y,16,0,7)
-    print(f.stage,32,0,7)
     f:draw()
+    for _,e in pairs(entities) do
+        -- e:draw()
+    end
 end
+
 __gfx__
 00000000777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
