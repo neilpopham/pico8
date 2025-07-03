@@ -4,6 +4,11 @@ __lua__
 
 -- ⬅️➡️⬆️⬇️🅾️❎
 
+-- Using _𝘦𝘯𝘷 in PICO-8
+-- https://www.lexaloffle.com/bbs/?tid=49047
+-- https://www.lexaloffle.com/bbs/?tid=38894
+
+
 function mrnd(x,f)
     if f==nil then f=true end
     local r=x[1]+rnd((f and 1 or 0)+x[2]-x[1])
@@ -14,7 +19,17 @@ function range(n,m)
     return mrnd({n,m})
 end
 
-o={}
+_G=_ENV
+
+foo=123
+
+-- function rootaccess(tbl,key)
+--     if getmetatable(tbl) then
+--         local v=getmetatable(tbl)[key]
+--         if (v~=nil)	return v
+--     end
+--     return _ENV[key]
+-- end
 
 pixel={
     create=function(self,x,y,dir)
@@ -29,99 +44,95 @@ pixel={
         self.__index=self
         return o
     end,
-    tile=function(self,p)
+    tile=function(p)
         return flr(p/8)
     end
-}
+} setmetatable(pixel,{__index=_ENV})
 
 frog={
     create=function(self,x,y,dir)
         local o=pixel.create(self,x,y,dir)
         o.c=3
-        o:reset()
+        o.reset(self)
         return o
     end,
-    reset=function(self)
+    reset=function(_ENV)
         printh('###################')
-        self.t=0
-        self.stage=0
-        self.range=range(12,16)
+        t=0
+        stage=0
+        r=range(12,16)
     end,
-    turn=function(self)
-        self.dir=self.dir==1 and -1 or 1
+    reverse=function(_ENV)
+        dir=dir==1 and -1 or 1
     end,
-    update=function(self)
-        if self.stage==0 then return end
-        local dx,dy,x,y,tx,ty,tile
-        if self.stage==1 then
-            dx=2*self.dir
+    update=function(_ENV)
+        if stage==0 then return end
+        local dx,dy,cx,cy,tx,ty,ti
+        if stage==1 then
+            dx=2*dir
             dy=-1
-            if self.t==0 then sfx(0) end
+            if t==0 then sfx(0) end
             -- check whether there is a gap to jump before trying
-            -- if self.t==0 then
-            --     tx=flr((self.x+(self.dir==1 and 8 or -8))/8)
-            --     ty=flr(self.y/8)
+            -- if t==0 then
+            --     tx=flr((x+(dir==1 and 8 or -8))/8)
+            --     ty=flr(y/8)
             --     tile=mget(tx,ty)
             --     if fget(tile,0) then self:turn() end
             -- end
         else
-            dx=self.stage==2 and self.dir or 0
+            dx=stage==2 and dir or 0
             dy=1
         end
-        x=self.x+(2*self.dir)
-        y=self.y+(self.stage==1 and -2 or 2)
-        -- tx=flr((x+dx)/8)
-        -- ty=flr((y+dy)/8)
-        tx=self:tile(x+dx)
-        ty=self:tile(y+dy)
-        tile=mget(tx,ty)
-        if fget(tile,0) then
+        cx=x+(2*dir)
+        cy=y+(stage==1 and -2 or 2)
+        tx=tile(cx+dx)
+        ty=tile(cy+dy)
+        ti=mget(tx,ty)
+        if fget(ti,0) then
             printh('HIT')
-            -- tile=mget(flr(x/8),ty)
-            tile=mget(self:tile(x),ty)
-            if fget(tile,0) then
-                printh('V'..self.stage)
-                if self.stage==1 then
-                    self.y=ty*8+8
+            ti=mget(tile(cx),ty)
+            if fget(ti,0) then
+                printh('V'..stage)
+                if stage==1 then
+                    y=ty*8+8
                 else
-                    self.y=ty*8-1
-                    self:reset()
-                    y=self.y
+                    y=ty*8-1
+                    cy=y
+                    reset(_ENV)
                 end
-                printh('Y'..self.y)
+                printh('Y'..y)
             end
-            -- tile=mget(tx,flr(y/8))
-            tile=mget(tx,self:tile(y))
-            if fget(tile,0) then
-                printh('H'..self.stage)
-                printh('X'..self.x)
-                self.x=tx*8+(self.dir==1 and -3 or 10)
-                printh('X'..self.x)
-                if self.stage==1 and self.t<6 then self:turn() end
+            ti=mget(tx,tile(cy))
+            if fget(ti,0) then
+                printh('H'..stage)
+                printh('X'..x)
+                x=tx*8+(dir==1 and -3 or 10)
+                printh('X'..x)
+                if stage==1 and t<6 then dir=dir==1 and -1 or 1 end -- reverse() end
             end
-            if self.stage>0 then self.stage=3 end
+            if stage>0 then stage=3 end
             dx=0
             dy=0
         end
-        self.x+=dx
-        self.y+=dy
-        self.x=self.x%128
-        if self.stage==1 then
-            self.t+=1
-            if self.t==self.range then
-                self.stage=2
+        x+=dx
+        y+=dy
+        x=x%128
+        if stage==1 then
+            t+=1
+            if t==r then
+                stage=2
             end
         end
     end,
-    draw=function(self)
-        local ex=self.x+2*self.dir
-        if self.stage==0 then
-            line(self.x,self.y,self.x+1,self.y,self.c)
-            pset(self.x+(self.dir==1 and 1 or 0),self.y-1,self.c)
-        elseif self.stage==1 then
-            line(self.x,self.y,ex,self.y-2,self.c)
+    draw=function(_ENV)
+        local ex=x+2*dir
+        if stage==0 then
+            line(x,y,x+1,y,c)
+            pset(x+(dir==1 and 1 or 0),y-1,c)
+        elseif stage==1 then
+            line(x,y,ex,y-2,c)
         else
-            line(self.x,self.y,ex,self.y+2,self.c)
+            line(x,y,ex,y+2,c)
         end
     end
 } setmetatable(frog,{__index=pixel})
@@ -153,7 +164,7 @@ function _update60()
         f.dir=f.dir==1 and -1 or 1
     end
 
-    -- if f.stage==0 then f.stage=1 end
+    if f.stage==0 then f.stage=1 end
 
     f:update()
 end
@@ -161,6 +172,7 @@ end
 function _draw()
     cls()
     map(0,0)
+    print(foo,100,0,1)
     print(f.x,0,0,7)
     print(f.y,16,0,7)
     print(f.stage,32,0,7)
