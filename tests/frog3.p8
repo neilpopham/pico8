@@ -21,95 +21,102 @@ end
 
 _G=_ENV
 
-pixel={
-    create=function(self,x,y,dir)
-        local o=setmetatable(
-            {
-                x=x,
-                y=y,
-                dir=dir
-            },
-            self
-        )
-        self.__index=self
-        return o
-    end,
-    fordir=function(_ENV,l,r)
-        return dir==1 and r or l
-    end,
-    tile=function(p)
-        return flr(p/8)
-    end
-} setmetatable(pixel,{__index=_ENV})
-
-frog={
-    create=function(self,x,y,dir)
-        local o=pixel.create(self,x,y,dir)
-        o.c=3
-        o:reset()
-        return o
-    end,
-    reset=function(_ENV)
-        t=0
-        stage=0
-        r=range(12,16)
-    end,
-    update=function(_ENV)
-        if stage==0 then return end
-        local dx,dy,cx,cy,tx,ty,ti
-        if stage==1 then
-            dx=2*dir
-            dy=-1
-            if t==0 then sfx(0) end
-        else
-            dx=stage==2 and dir or 0
-            dy=1
+pixel=setmetatable(
+    {
+        create=function(self,x,y,d)
+            local o=setmetatable(
+                {
+                    x=x,
+                    y=y,
+                    d=d
+                },
+                self
+            )
+            self.__index=self
+            return o
+        end,
+        fordir=function(_ENV,l,r)
+            return d==1 and r or l
+        end,
+        tile=function(p)
+            return flr(p/8)
         end
-        cx=x+(2*dir)
-        cy=y+(stage==1 and -2 or 2)
-        tx=tile(cx+dx)
-        ty=tile(cy+dy)
-        ti=mget(tx,ty)
-        if fget(ti,0) then
-            ti=mget(tile(cx),ty)
+    },
+    {__index=_ENV}
+)
+
+frog=setmetatable(
+    {
+        create=function(self,x,y,d)
+            local o=pixel.create(self,x,y,d)
+            o.c=range(3,15)
+            o:reset()
+            return o
+        end,
+        reset=function(_ENV)
+            t=0
+            stage=0
+            local x=fordir(1)
+            r=range(12,16)
+        end,
+        update=function(_ENV)
+            if stage==0 then return end
+            local dx,dy,cx,cy,tx,ty,ti
+            if stage==1 then
+                dx=2*d
+                dy=-1
+                if t==0 then sfx(0) end
+            else
+                dx=stage==2 and d or 0
+                dy=1
+            end
+            cx=x+(2*d)
+            cy=y+(stage==1 and -2 or 2)
+            tx=tile(cx+dx)
+            ty=tile(cy+dy)
+            ti=mget(tx,ty)
             if fget(ti,0) then
-                if stage==1 then
-                    y=ty*8+8
-                else
-                    y=ty*8-1
-                    cy=y
-                    reset(_ENV)
+                ti=mget(tile(cx),ty)
+                if fget(ti,0) then
+                    if stage==1 then
+                        y=ty*8+8
+                    else
+                        y=ty*8-1
+                        cy=y
+                        reset(_ENV)
+                    end
+                end
+                ti=mget(tx,tile(cy))
+                if fget(ti,0) then
+                    x=tx*8+(d==1 and -3 or 10)
+                    if stage==1 and t<6 then d=d==1 and -1 or 1 end
+                end
+                if stage>0 then stage=3 end
+                dx=0
+                dy=0
+            end
+            x+=dx
+            y+=dy
+            x=x%128
+            if stage==1 then
+                t+=1
+                if t==r then
+                    stage=2
                 end
             end
-            ti=mget(tx,tile(cy))
-            if fget(ti,0) then
-                x=tx*8+(dir==1 and -3 or 10)
-                if stage==1 and t<6 then dir=dir==1 and -1 or 1 end
-            end
-            if stage>0 then stage=3 end
-            dx=0
-            dy=0
-        end
-        x+=dx
-        y+=dy
-        x=x%128
-        if stage==1 then
-            t+=1
-            if t==r then
-                stage=2
+        end,
+        draw=function(_ENV)
+            local ex=x+2*d
+            if stage==0 then
+                line(x,y,x+1,y,c)
+                pset(x+(d==1 and 1 or 0),y-1,c)
+            else
+                line(x,y,ex,y+(stage==1 and -2 or 2),c)
             end
         end
-    end,
-    draw=function(_ENV)
-        local ex=x+2*dir
-        if stage==0 then
-            line(x,y,x+1,y,c)
-            pset(x+(dir==1 and 1 or 0),y-1,c)
-        else
-            line(x,y,ex,y+(stage==1 and -2 or 2),c)
-        end
-    end
-} setmetatable(frog,{__index=pixel})
+    },
+    {__index=pixel}
+)
 
 entities={}
 for i=1,10 do
@@ -127,17 +134,17 @@ function _update60()
 
     if btn(⬅️) then
         f.x-=1
-        f.dir=-1
+        f.d=-1
     end
     if btn(➡️) then
         f.x+=1
-        f.dir=1
+        f.d=1
     end
     if btnp(🅾️) and f.stage==0 then
         f.stage=1
     end
     if btnp(❎) then
-        f.dir=f.dir==1 and -1 or 1
+        f.d=f.d==1 and -1 or 1
     end
 
     -- if f.stage==0 then f.stage=1 end
@@ -158,9 +165,9 @@ end
 function _draw()
     cls()
     map(0,0)
-    f:draw()
+    -- f:draw()
     for _,e in pairs(entities) do
-        -- e:draw()
+        e:draw()
     end
 end
 
