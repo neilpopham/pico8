@@ -35,9 +35,6 @@ pixel=setmetatable(
             self.__index=self
             return o
         end,
-        fordir=function(_ENV,l,r)
-            return d==1 and r or l
-        end,
         tile=function(p)
             return flr(p/8)
         end
@@ -49,14 +46,13 @@ frog=setmetatable(
     {
         create=function(self,x,y,d)
             local o=pixel.create(self,x,y,d)
-            o.c=range(3,15)
+            o.c=range(1,15)
             o:reset()
             return o
         end,
         reset=function(_ENV)
             t=0
             stage=0
-            local x=fordir(1)
             r=range(12,16)
         end,
         update=function(_ENV)
