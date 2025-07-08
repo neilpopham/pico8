@@ -22,16 +22,10 @@ function _init()
     s=0
     dx=0
     dy=0
-
-    x2=24
-    y2=100
-    j2=0
-    t2=0
 end
 
 function _update60()
     if (btnp(🅾️) and j==nil) j=1 tm=range(12,12) sfx(0)
-    if (btnp(❎)) j2=1
 
     if j==1 then
         if t<tm then
@@ -41,45 +35,16 @@ function _update60()
         elseif t>24 then
             j=nil
             t=0
-            -- y=119
             s=0
         else
             s=2
             dx=1
             dy=1
-            -- if y>=119 then
-            --     j=nil
-            --     t=0
-            --     y=119
-            --     s=0
-            -- end
-        end
-
-        tx=flr((x+dx)/8)
-        ty=flr((y+dy)/8)
-        tile=mget(tx,ty)
-        if fget(tile,0) then
-            t=t<tm and tm or t
-            dx=0
-            dy=0
-        end
-
-        if t<tm then
-            tx=flr((x+2+dx)/8)
-            ty=flr((y-2+dy)/8)
-            tile=mget(tx,ty)
-            if fget(tile,flag) then
-                t=t<tm and tm or t
-                dx=0
-                dy=0
-            end
-        else
-            tx=flr((x+2+dx)/8)
-            ty=flr((y+2+dy)/8)
-            tile=mget(tx,ty)
-            if fget(tile,flag) then
-                t=t<tm and tm or t
-                dx=0
+            if y+dx>=119 then
+                j=nil
+                t=0
+                y=119
+                s=0
                 dy=0
             end
         end
@@ -108,7 +73,7 @@ function _draw()
     print(tile,0,8,2)
     print(tx,32,8,2)
     print(ty,64,8,2)
-    map(0,0)
+    -- map(0,0)
     if s==0 then
         line(x,y,x+1,y,3)
         pset(x+1,y-1,3)

@@ -8,6 +8,25 @@ __lua__
 -- https://www.lexaloffle.com/bbs/?tid=49047
 -- https://www.lexaloffle.com/bbs/?tid=38894
 
+
+
+
+function s2t(s)
+    local t={}
+    local p=split(s)
+    for v in all(p) do 
+        local a=split(v,"=")
+        t[a[1]]=a[2]
+    end
+    return t
+end
+
+t=s2t"x=10,y=20"
+
+print(t.x)
+print(t.y)
+assert(false)
+
 _G=_ENV
 
 -- local core={
@@ -35,27 +54,86 @@ _G=_ENV
 class=setmetatable(
     {
         new=function(_ENV,tbl)
-            tbl=tbl or {}
-            setmetatable(tbl,{__index=_ENV})
-            return tbl
-        end,
+            return setmetatable(tbl or {},{__index=_ENV})
+        end
     },
     {__index=_ENV}
 )
 
-entity=class:new({x=1,y=2})
-print(entity.x,0,0)
+entity=class:new(
+    {
+        x=1,
+        y=2,
+        f1=function(_ENV,z)
+            return tostr(x)..","..tostr(y)..","..tostr(z)
+        end
+    }
+)
 
-pixel=class:new({
+pixel=entity:new({
     x=10,
     y=20,
-    update=function(_ENV)
-        x+=1
+    f2=function(_ENV)
+        return f1(_ENV,99)
     end,
-    draw=function(_ENV)
 
-    end
 })
+
+print(entity.x)
+print(pixel.x)
+print(entity:f1(3))
+print(pixel:f1(30))
+print(pixel:f2())
+
+--[[
+1
+10
+1,2,3
+10,20,30
+10,20,99
+]]
+
+assert(false)
+
+entity=setmetatable(
+    {
+        create=function(self,x,y)
+            local o=setmetatable(
+                {
+                    x=x,
+                    y=y,
+                },
+                self
+            )
+            self.__index=self
+            return o
+        end,
+        f1=function(_ENV,z)
+            return tostr(x)..","..tostr(y)..","..tostr(z)
+        end
+    },
+    {__index=_ENV}
+)
+
+pixel=setmetatable(
+    {
+        create=function(self,x,y)
+            local o=setmetatable(
+                {
+                    x=x,
+                    y=y,
+                },
+                self
+            )
+            self.__index=self
+            return o
+        end,
+        f1=function(_ENV,z)
+            return tostr(x)..","..tostr(y)..","..tostr(z)
+        end
+    },
+    {__index=_ENV}
+)
 
 -- =================================
 

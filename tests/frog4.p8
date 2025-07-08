@@ -2,13 +2,6 @@ pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
 
--- ⬅️➡️⬆️⬇️🅾️❎
-
--- Using _𝘦𝘯𝘷 in PICO-8
--- https://www.lexaloffle.com/bbs/?tid=49047
--- https://www.lexaloffle.com/bbs/?tid=38894
-
-
 function mrnd(x,f)
     if f==nil then f=true end
     local r=x[1]+rnd((f and 1 or 0)+x[2]-x[1])
@@ -19,139 +12,222 @@ function range(n,m)
     return mrnd({n,m})
 end
 
-_G=_ENV
+function s2t(s)
+    local t={}
+    for v in all(split(s)) do 
+        local a=split(v,"=")
+        t[a[1]]=a[2]
+    end
+    return t
+end
 
-pixel=setmetatable(
+function lerp(v0,v1,t)
+    return v0+t*(v1-v0);
+    -- return v0+(1-(1-t)^3)
+end
+
+class=setmetatable(
     {
-        create=function(self,x,y,d)
-            local o=setmetatable(
-                {
-                    x=x,
-                    y=y,
-                    d=d
-                },
-                self
-            )
-            self.__index=self
-            return o
-        end,
-        tile=function(p)
-            return p\8 -- flr(p/8)
-        end,
-        fromdir=function(_ENV,l,r)
-            return d==1 and r or l
+        new=function(_ENV,tbl)
+            return setmetatable(tbl or {},{__index=_ENV})
         end
     },
     {__index=_ENV}
 )
 
-frog=setmetatable(
-    {
-        create=function(self,x,y,d)
-            local o=pixel.create(self,x,y,d)
-            o.c=range(1,15)
-            o:reset()
-            return o
-        end,
-        reset=function(_ENV)
-            t=0
-            stage=0
-            r=range(12,16)
-        end,
-        update=function(_ENV)
-            if stage==0 then return end
-            local test=fromdir(_ENV,10,20)
-            assert(test==d==1 and 20 or 10,test)
-            local dx,dy,cx,cy,tx,ty,ti
-            if stage==1 then
-                dx=2*d
-                dy=-1
-                if t==0 then sfx(0) end
-            else
-                dx=stage==2 and d or 0
-                dy=1
-            end
-            cx=x+(2*d)
-            cy=y+(stage==1 and -2 or 2)
-            tx=tile(cx+dx)
-            ty=tile(cy+dy)
-            ti=mget(tx,ty)
+entity=class:new({
+    tile=function(p)
+        return p\8 -- flr(p/8)
+    end,
+    dirval=function(_ENV,l,r)
+        return d==1 and r or l
+    end
+})
+
+pixel=entity:new({
+
+})
+
+frog=entity:new({
+    reset=function(_ENV)
+        t=0
+        stage=0
+        r=range(12,16)
+    end,
+    update=function(_ENV)
+        if stage==0 then return end
+        -- local test=dirval(_ENV,10,20)
+        -- assert(test==d==1 and 20 or 10,test)
+        local dx,dy,cx,cy,tx,ty,ti
+        if stage==1 then
+            dx=2*d
+            dy=-1
+            if t==0 then sfx(0) end
+        else
+            dx=stage==2 and d or 0
+            dy=1
+        end
+        cx=x+(2*d)
+        cy=y+(stage==1 and -2 or 2)
+        tx=tile(cx+dx)
+        ty=tile(cy+dy)
+        ti=mget(tx,ty)
+        if fget(ti,0) then
+            ti=mget(tile(cx),ty)
             if fget(ti,0) then
-                ti=mget(tile(cx),ty)
-                if fget(ti,0) then
-                    if stage==1 then
-                        y=ty*8+8
-                    else
-                        y=ty*8-1
-                        cy=y
-                        reset(_ENV)
-                    end
-                end
-                ti=mget(tx,tile(cy))
-                if fget(ti,0) then
-                    x=tx*8+(d==1 and -3 or 10)
-                    if stage==1 and t<6 then d=d==1 and -1 or 1 end
-                end
-                if stage>0 then stage=3 end
-                dx=0
-                dy=0
-            end
-            x+=dx
-            y+=dy
-            x=x%128
-            if stage==1 then
-                t+=1
-                if t==r then
-                    stage=2
+                if stage==1 then
+                    y=ty*8+8
+                else
+                    y=ty*8-1
+                    cy=y
+                    reset(_ENV)
                 end
             end
-        end,
-        draw=function(_ENV)
-            local ex=x+2*d
-            if stage==0 then
-                line(x,y,x+1,y,c)
-                pset(x+(d==1 and 1 or 0),y-1,c)
-            else
-                line(x,y,ex,y+(stage==1 and -2 or 2),c)
+            ti=mget(tx,tile(cy))
+            if fget(ti,0) then
+                x=tx*8+(d==1 and -3 or 10)
+                if stage==1 and t<6 then d=d==1 and -1 or 1 end
+            end
+            if stage>0 then stage=3 end
+            dx=0
+            dy=0
+        end
+        x+=dx
+        y+=dy
+        x=x%128
+        if stage==1 then
+            t+=1
+            if t==r then
+                stage=2
             end
         end
-    },
-    {__index=pixel}
-)
+    end,
+    draw=function(_ENV)
+        local ex=x+2*d
+        if stage==0 then
+            line(x,y,x+1,y,3)
+            pset(x+(d==1 and 1 or 0),y-1,3)
+        else
+            line(x,y,ex,y+(stage==1 and -2 or 2),3)
+        end
+    end
+})
 
-entities={}
-for i=1,10 do
-    add(entities,frog:create(rnd(100),rnd()>0.5 and 119 or 63,rnd()>0.5 and 1 or -1))
+hoverfly=entity:new({
+    reset=function(_ENV)
+        t=0
+        stage=0
+        nx=(x+rnd(40)-20)%128 
+        ny=(y+rnd(40)-20)%128
+    end,
+    update=function(_ENV)
+        t+=1
+        if stage==0 then 
+            if rnd()>0.99 then stage=1 end
+        elseif stage==1 then 
+            local otx,oty=x,y
+            for i=1,20 do 
+                local lx=lerp(x,nx,i/20)
+                local ly=lerp(y,ny,i/20)
+                ti=mget(tile(lx),tile(ly))
+                if fget(ti,0) then 
+                    nx=otx
+                    ny=oty
+                    break
+                end 
+                otx=lx
+                oty=ly
+            end
+            t=1
+            stage=2
+        elseif stage==2 then 
+            x=lerp(x,nx,t/20)
+            y=lerp(y,ny,t/20)
+            x=x%128
+            y=y%128            
+            if t==20 then reset(_ENV) end
+        end
+    end,
+    draw=function(_ENV)
+        pset(x,y,9+t%2)
+    end
+})
+
+moth=entity:new({
+    reset=function(_ENV)
+        t=0
+        c=0
+        stage=0
+    end,
+    update=function(_ENV)
+        local dx,dy=0,0
+        t+=1
+        dx=d*0.5
+        x+=dx
+
+        
+        if t%30==0 then 
+            c=5
+        end
+        if rnd()>0.85 then c+=3 end
+
+        dy=c>0 and -0.5 or 0
+        c-=1
+
+        dy+=0.15
+
+        y+=dy
+
+        x%=128
+        y%=128
+    end,
+    draw=function(_ENV)
+        pset(x,y,9+t%2)
+    end
+})
+
+empty={}
+for tx=0,15 do
+    for ty=0,15 do 
+        local ti=mget(tx,ty)
+        if fget(ti)==0 then 
+            add(empty,{x=tx*8,y=ty*8})
+        end
+    end 
 end
 
-f=frog:create(0,63,1)
+entities={}
+for i=1,20 do
+    local emt
 
-function _init()
-    extcmd("rec")
+    local f=frog:new({
+        x=rnd(100),
+        y=rnd()<0.5 and 119 or 63,
+        d=rnd()<0.5 and 1 or -1
+    })
+    f:reset()
+    -- add(entities,f)
+
+    emt=rnd(empty)
+    local h=hoverfly:new({
+        x=emt.x,
+        y=emt.y
+    })
+    h:reset()
+    -- add(entities,h)
+
+    emt=rnd(empty)
+    local m=moth:new({
+        x=emt.x,
+        y=emt.y,
+        d=rnd()<0.5 and 1 or -1
+    })
+    m:reset()
+    add(entities,m)
+
 end
 
 function _update60()
-    -- ⬅️➡️⬆️⬇️🅾️❎
-
-    if btn(⬅️) then
-        f.x-=1
-        f.d=-1
-    end
-    if btn(➡️) then
-        f.x+=1
-        f.d=1
-    end
-    if btnp(🅾️) and f.stage==0 then
-        f.stage=1
-    end
-    if btnp(❎) then
-        f.d=f.d==1 and -1 or 1
-    end
-
-    -- if f.stage==0 then f.stage=1 end
-
-    f:update()
-
     for _,e in pairs(entities) do
         e:update()
         if e.stage==0 then
@@ -161,16 +237,15 @@ function _update60()
             end
         end
     end
-end
+end 
 
 function _draw()
     cls()
     map(0,0)
-    -- f:draw()
     for _,e in pairs(entities) do
         e:draw()
     end
-end
+end 
 
 __gfx__
 00000000777777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -202,4 +277,4 @@ __map__
 0000000000000000000000000001010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0101010101010101010101010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-000100000734007360093600a340147000200002000010001c0001d0001d00000000060001e3301c3501a35019320000000000000000020000000000000000000000000000042000320003200032000320003200
+000100000a5700d5700f57000200147000200002000010001c0001d0001d0000000006000185701b5701d570202002b1000000000000020000000000000000000000000000042000320003200032000320003200
