@@ -14,7 +14,7 @@ __lua__
 function s2t(s)
     local t={}
     local p=split(s)
-    for v in all(p) do 
+    for v in all(p) do
         local a=split(v,"=")
         t[a[1]]=a[2]
     end

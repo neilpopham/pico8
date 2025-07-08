@@ -143,9 +143,9 @@ player=entity:new({
             end
         else
             if dy>0 then -- have dyc counter that starts at 3 and counts down if falling
-                o1=-1
+                -- o1=1
             else
-                if jc>8 then o2=-1 else o2 = 0 end
+                if jc>7 then o2=1 else o2 = 0 end
             end
         end
 
@@ -165,7 +165,7 @@ player=entity:new({
 
 
         -- if y2-y1>5 then
-            rectfill(x,y1+5,x+7,y2+3,13)
+            rectfill(x,y1+5,x+7,y2+3,12) -- 12
         -- end
 
         spr(83,x,y2,1,1,flip) -- bottom
