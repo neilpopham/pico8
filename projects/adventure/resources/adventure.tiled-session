@@ -30,7 +30,7 @@
             "scale": 3,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 408,
+                "x": 143.66666666666663,
                 "y": 414.5
             }
         },
@@ -50,8 +50,8 @@
             "scale": 3,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 522.8333333333333,
-                "y": 256.16666666666663
+                "x": 457,
+                "y": 244.5
             }
         },
         "adventure.tsx": {
@@ -61,8 +61,8 @@
             "scale": 4,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 462.5,
-                "y": 255.125
+                "x": 766,
+                "y": 247.125
             }
         },
         "alternative.tsx": {
@@ -80,7 +80,7 @@
             "scale": 4,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 457.5,
+                "x": 109.5,
                 "y": 436.625
             }
         },
