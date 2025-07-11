@@ -10,7 +10,7 @@
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 3
+            "scaleInDock": 1
         },
         "C:/Users/neilp/Documents/Projects/Tiled/adventure2.tsx": {
             "scaleInDock": 1
@@ -89,10 +89,10 @@
             "scaleInEditor": 1
         }
     },
-    "last.exportedFilePath": "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/resources",
+    "last.exportedFilePath": "C:/Users/neilp/Documents/Projects/pico8/projects/adventure",
     "last.imagePath": "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/resources",
     "map.height": 64,
-    "map.lastUsedExportFilter": "PICO-8 Map Format (*.p8)",
+    "map.lastUsedExportFilter": "PICO-8 Cart (*.p8)",
     "map.lastUsedFormat": "PICO-8",
     "map.tileHeight": 8,
     "map.tileWidth": 8,
