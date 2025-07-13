@@ -10,7 +10,7 @@
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 1
+            "scaleInDock": 3
         },
         "C:/Users/neilp/Documents/Projects/Tiled/adventure2.tsx": {
             "scaleInDock": 1
@@ -38,6 +38,17 @@
             "scaleInDock": 3,
             "scaleInEditor": 1
         },
+        "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/player2.p8": {
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 570.5,
+                "y": 386.83333333333326
+            }
+        },
+        "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/player2.p8#PICO-8 Sprites": {
+            "scaleInDock": 1
+        },
         "adventure..tmj": {
             "scale": 1.0353515625,
             "selectedLayer": 0,
@@ -50,8 +61,8 @@
             "scale": 3,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 457,
-                "y": 244.5
+                "x": 512.1666666666666,
+                "y": 256.16666666666663
             }
         },
         "adventure.tsx": {
@@ -61,8 +72,8 @@
             "scale": 4,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 766,
-                "y": 247.125
+                "x": 512.125,
+                "y": 256.125
             }
         },
         "alternative.tsx": {
@@ -72,8 +83,8 @@
             "scale": 4,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 448.75,
-                "y": 409.125
+                "x": 512.125,
+                "y": 256.125
             }
         },
         "map1a.tmx": {
@@ -107,10 +118,10 @@
     "project": "adventure.tiled-project",
     "recentFiles": [
         "map1.tmx",
-        "spritesheet.tsx",
-        "adventure..tmx",
-        "alternative.tmx",
         "map1a.tmx",
+        "alternative.tmx",
+        "adventure..tmx",
+        "spritesheet.tsx",
         "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/adventure.p8",
         "C:/Users/neilp/Documents/Projects/Tiled/bak/adventure..tmj",
         "adventure..tmj"
