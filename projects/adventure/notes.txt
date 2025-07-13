@@ -14,6 +14,8 @@ hidden rooms will have to be created using a table and rendered using spr()
         when trigger cell hit room is set in map
         when trigger cell left room is removed
         will need to store overwritten sprites
-        may need to know the direction of the room for knowing when to show/hide  
+        may need to know the direction of the room for knowing when to show/hide
 when laser beam on screen play buzzing noise
     - maybe volume related to distance
+
+
