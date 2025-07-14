@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "map1a.tmx",
+    "activeFile": "",
     "expandedProjectPaths": [
     ],
     "exportAsImage.useCurrentScale": true,
@@ -42,7 +42,7 @@
             "scale": 3,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 570.5,
+                "x": 455.33333333333326,
                 "y": 386.83333333333326
             }
         },
@@ -109,14 +109,10 @@
     "map.tileWidth": 8,
     "map.width": 128,
     "openFiles": [
-        "spritesheet.tsx",
-        "adventure..tmx",
-        "alternative.tmx",
-        "map1a.tmx",
-        "map1.tmx"
     ],
     "project": "adventure.tiled-project",
     "recentFiles": [
+        "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/player2.p8",
         "map1.tmx",
         "map1a.tmx",
         "alternative.tmx",

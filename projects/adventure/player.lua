@@ -12,22 +12,38 @@ player=class:new({
         grounded=true
         jc=0
         cc=0
+        pjc=0
         button=false
     end,
     update=function(_ENV)
         if btn(❎) or btn(🅾️) then
-            if button==false and jc==0 and (grounded or cc>0) then
-                jc,o1=12,0
+            -- if button==false and jc==0 and (grounded or cc>0) then
+            if button==false then
+                -- if #o1c==0 and (grounded or cc>0) then
+                if grounded or cc>0 then
+                    jc,o1=12,0
+                    sfx(2)
+                elseif pjc==0 then
+                    pjc=8
+                end
             end
             button=true
         else
             jc,button=0,false
         end
 
+        -- jumping
         if jc>0 then
             dy-=1
             jc-=1
             grounded=false
+        end
+
+        -- jump input buffering
+        if pjc>0 then
+            pjc-=1
+            button=false
+            if pjc==0 then pjc=-1 end
         end
 
         dy+=0.5
@@ -45,20 +61,20 @@ player=class:new({
             if dy>0 then
                 if not grounded then
                     if rdy>1 then
-                        for i=0,rdy do add(o1c,i) end
-                        for i=rdy,0,-1 do add(o1c,i) end
+                        for i=1,rdy do add(o1c,i) end
+                        for i=rdy,1,-1 do add(o1c,i) end
                     end
-                    t=0
+                    t,pjc=0,0
+                    sfx(1)
                 end
-                grounded=true
                 local py=ty*8-8
-                p.y1,p.y2=py,py
+                p.y1,p.y2,grounded=py,py,true
             else
 
             end
             dy,rdy=0,0
         elseif grounded then
-            dy,rdy,cc,grounded=0,0,3,false
+            dy,rdy,cc,grounded=0,0,2,false
         elseif cc>0 then
             dy,rdy=0,0
             cc-=1
@@ -100,13 +116,15 @@ player=class:new({
 
         if #o1c>0 then
             o1=deli(o1c)
-        elseif btn(⬇️) then
+        elseif btn(⬇️) and grounded then
             o1c,o1={},3
         elseif grounded and rdx!=0 then
             if t%4==0 then o1=o1==0 and 1 or 0 end
         else
             o1=0
         end
+
+        if btn(⬆️) then extcmd("video") end
 
         t+=1
     end,
