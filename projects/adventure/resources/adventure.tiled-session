@@ -3,14 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "C:/Users/neilp/Documents/Projects/pico8/tests/fget2.p8",
     "expandedProjectPaths": [
     ],
     "exportAsImage.useCurrentScale": true,
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 3
+            "scaleInDock": 3,
+            "scaleInEditor": 1
         },
         "C:/Users/neilp/Documents/Projects/Tiled/adventure2.tsx": {
             "scaleInDock": 1
@@ -27,11 +28,14 @@
             "scaleInDock": 1
         },
         "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/adventure.p8": {
-            "scale": 3,
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.0919433593749999,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 143.66666666666663,
-                "y": 414.5
+                "x": 511.93131511872286,
+                "y": 201.47565174618796
             }
         },
         "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/adventure.p8#PICO-8 Sprites": {
@@ -48,6 +52,32 @@
         },
         "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/player2.p8#PICO-8 Sprites": {
             "scaleInDock": 1
+        },
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget.p8": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 3,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 78,
+                "y": 49.66666666666666
+            }
+        },
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget.p8#PICO-8 Sprites": {
+            "scaleInDock": 1
+        },
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget2.p8": {
+            "scale": 4,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 94.25,
+                "y": 83.375
+            }
+        },
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget2.p8#PICO-8 Sprites": {
+            "scaleInDock": 3,
+            "scaleInEditor": 1
         },
         "adventure..tmj": {
             "scale": 1.0353515625,
@@ -100,25 +130,28 @@
             "scaleInEditor": 1
         }
     },
-    "last.exportedFilePath": "C:/Users/neilp/Documents/Projects/pico8/projects/adventure",
+    "last.exportedFilePath": "C:/Users/neilp/Desktop",
     "last.imagePath": "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/resources",
     "map.height": 64,
-    "map.lastUsedExportFilter": "PICO-8 Cart (*.p8)",
+    "map.lastUsedExportFilter": "Lua files (*.lua)",
     "map.lastUsedFormat": "PICO-8",
     "map.tileHeight": 8,
     "map.tileWidth": 8,
     "map.width": 128,
     "openFiles": [
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget2.p8"
     ],
     "project": "adventure.tiled-project",
     "recentFiles": [
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget2.p8",
+        "C:/Users/neilp/Documents/Projects/pico8/tests/fget.p8",
+        "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/adventure.p8",
         "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/player2.p8",
         "map1.tmx",
         "map1a.tmx",
         "alternative.tmx",
         "adventure..tmx",
         "spritesheet.tsx",
-        "C:/Users/neilp/Documents/Projects/pico8/projects/adventure/adventure.p8",
         "C:/Users/neilp/Documents/Projects/Tiled/bak/adventure..tmj",
         "adventure..tmj"
     ],

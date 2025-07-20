@@ -17,5 +17,31 @@ hidden rooms will have to be created using a table and rendered using spr()
         may need to know the direction of the room for knowing when to show/hide
 when laser beam on screen play buzzing noise
     - maybe volume related to distance
+tile flags
+    - "-- tif__" identifier
+    - store data as string in "x:y:s:f,x:y:s:f,..." format (s=sprite f=flags)
+    - tget_init() function to extract table from string
+    - tget(x,y) function to get flags
+    - could
 
+local _tif,_tiftiles={},split(data)
+for tile in all(_tiftiles) do add(_tif,unpack(split(tile,":"))) end
+
+function tget(x,y)
+    for t in _tif do
+        if t[0]==x and t[1]==y then return t[3] end
+    end
+end
+
+__tif__="x:y:s:f,x:y:s:f,..."
+local _tif,_tiftiles={},split(__tif__)
+for tile in all(_tiftiles) do
+    local x,y,s,f=unpack(split(tile,":"))
+    if not _tif[x] then _tif[x]={} end
+    _tif[x][y]={s,f}
+end
+
+function tget(x,y)
+    return _tif[x][y][2]
+end
 

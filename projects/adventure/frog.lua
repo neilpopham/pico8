@@ -29,9 +29,9 @@ frog=entity:new({
         tx=tile(cx+dx)
         ty=tile(cy+dy)
         ti=mget(tx,ty)
-        if fget(ti,0) then
+        if fget(ti)&3>0 then
             ti=mget(tile(cx),ty)
-            if fget(ti,0) then
+            if fget(ti)&3>0 then
                 if stage==1 then
                     y=ty*8+8
                 else
@@ -41,8 +41,8 @@ frog=entity:new({
                 end
             end
             ti=mget(tx,tile(cy))
-            if fget(ti,0) then
-                if ti==63 then
+            if fget(ti)&3>0 then
+                if ti==47 then
                     sfx(3)
                     local e=del(entities,_ENV)
                     return

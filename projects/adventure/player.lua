@@ -9,6 +9,7 @@ player=class:new({
         o1=0
         o2=0
         o1c={}
+        o2c={}
         grounded=true
         jc=0
         cc=0
@@ -70,7 +71,12 @@ player=class:new({
                 local py=ty*8-8
                 p.y1,p.y2,grounded=py,py,true
             else
-
+                if -rdy>1 then
+                    for i=0,-rdy do add(o2c,i) end
+                end
+                t=0
+                local py=ty*8+8
+                p.y1,p.y2=py,py
             end
             dy,rdy=0,0
         elseif grounded then
@@ -78,12 +84,18 @@ player=class:new({
         elseif cc>0 then
             dy,rdy=0,0
             cc-=1
+        elseif #o2c>0 then
+            dy,rdy=0,0
         end
 
         y1+=rdy
         y2+=rdy
 
-        o2=rdy!=0 and abs(rdy) or 0
+        if rdy==0 then
+            o2=#o2c>0 and deli(o2c) or 0
+        else
+            o2=abs(rdy)
+        end
 
         if btn(⬅️) then dx-=.3 d=-1 end
         if btn(➡️) then dx+=.3 d=1 end
@@ -102,6 +114,7 @@ player=class:new({
             if hit then break end
             if flags & 2==2 then
                 printh('HIDDEN ROOM TRIGGER')
+                printh(hidden[tx][ty])
             end
         end
         if hit then
@@ -112,19 +125,19 @@ player=class:new({
             end
         end
 
-        x+=rdx
-
         if #o1c>0 then
             o1=deli(o1c)
         elseif btn(⬇️) and grounded then
-            o1c,o1={},3
+            rdx,o1c,o1=0,{},3
         elseif grounded and rdx!=0 then
             if t%4==0 then o1=o1==0 and 1 or 0 end
         else
             o1=0
         end
 
-        if btn(⬆️) then extcmd("video") end
+        x+=rdx
+
+        -- if btn(⬆️) then extcmd("video") end
 
         t+=1
     end,
