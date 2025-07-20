@@ -2,7 +2,7 @@ entities={}
 
 -- set Flag 7 to face right
 makefrog=function(x,y,flags)
-    local entity=frog:new({x=x*8+2,y=y*8+7,d=flags&128>0 and 1 or -1})
+    local entity=frog:new({x=x*8+2,y=y*8+7,d=right(flags) and 1 or -1})
     entity:reset()
     add(entities,entity)
 end
@@ -24,9 +24,7 @@ end
 
 -- set Flag 7 to face right
 makebutton=function(x,y,flags)
-    printh(flags&128)
-    printh(flags&128>0)
-    local entity=button:new({x=x*8,y=y*8,idx=flags&15,dx1=flags&128>0 and 0 or 4,dx2=flags&128>0 and 3 or 7})
+    local entity=button:new({x=x*8,y=y*8,idx=flags&15,dx1=right(flags) and 0 or 4,dx2=right(flags) and 3 or 7})
     entity:reset()
     add(entities,entity)
 end

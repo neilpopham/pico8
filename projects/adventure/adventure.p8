@@ -5,9 +5,9 @@ __lua__
 local __tif__="57:59:126:1,67:60:125:1,26:56:127:0,72:58:126:130,77:54:125:2,46:62:127:128"
 local _tif,_tiftiles={},split(__tif__)
 for tile in all(_tiftiles) do
- local x,y,s,f=unpack(split(tile,":"))
- if not _tif[x] then _tif[x]={} end
- _tif[x][y]={s,f}
+    local x,y,s,f=unpack(split(tile,":"))
+    if not _tif[x] then _tif[x]={} end
+    _tif[x][y]={s,f}
 end
 
 function tget(x,y,f)
