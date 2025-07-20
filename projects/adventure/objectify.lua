@@ -17,15 +17,16 @@ makebeam=function(x,y,flags)
     for i=y,y2 do
         mset(x,i,47)
     end
-    local entity=beam:new({tx=x,ty1=y,ty2=y2,idx=flags})
+    local entity=beam:new({tx=x,ty1=y,ty2=y2,idx=flags&15})
     entity:reset()
     add(entities,entity)
 end
 
+-- set Flag 7 to face right
 makebutton=function(x,y,flags)
     printh(flags&128)
     printh(flags&128>0)
-    local entity=button:new({x=x*8,y=y*8,idx=flags,dx1=flags&128>0 and 0 or 4,dx2=flags&128>0 and 3 or 7})
+    local entity=button:new({x=x*8,y=y*8,idx=flags&15,dx1=flags&128>0 and 0 or 4,dx2=flags&128>0 and 3 or 7})
     entity:reset()
     add(entities,entity)
 end
@@ -37,7 +38,6 @@ converters={
 }
 
 for tile in all(_tiftiles) do
-    printh(tile)
     local x,y,s,f=unpack(split(tile,":"))
     converters[s](x,y,f)
 end

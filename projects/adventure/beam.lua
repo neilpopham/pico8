@@ -26,7 +26,7 @@ beam=entity:new({
                 set_volumes(4,0,{v,v,v})
                 if not o then sfx(4) o=true end
             end
-            if peek(0x4300+idx&15)>0 then s=2 end
+            if peek(0x4300+idx)>0 then s=2 end
         elseif s==2 then
             sfx(4)
             s=3            --
