@@ -20,6 +20,8 @@ function lerp(v0,v1,t)
     return v0+t*(v1-v0)
 end
 
+function right(flags) return flags&128>0 end
+
 function set_volumes(sfxid, start, values)
     local address=0x3200+68*sfxid+start*2
     for _,value in ipairs(values) do

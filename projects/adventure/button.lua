@@ -13,7 +13,8 @@ button=entity:new({
             dx2=dx1==0 and 0 or 7
             s=2
             -- sfx(6)
-            entities[beam].s=2
+            -- entities[beam].s=2
+            poke(0x4300+idx,1)
 -- (x+hitbox.x<=object.x+object.hitbox.x2) and
 --    (object.x+object.hitbox.x<x+hitbox.w) and
 --    (y+hitbox.y<=object.y+object.hitbox.y2) and
