@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
 
-local __tif__="13:2:3:0,2:2:1:1,2:6:2:1,5:2:1:2,5:6:2:2,5:6:2:4,2:6:2:1,5:6:2:2,8:2:1:4,8:6:2:4"
+local __tif__="13:2:3:1,2:2:1:1,2:7:2:1,5:2:1:2,5:7:2:2,5:7:2:4,2:7:2:1,5:7:2:2,8:2:1:4,8:7:2:4"
 local _tif,_tiftiles={},split(__tif__)
 for tile in all(_tiftiles) do
  local x,y,s,f=unpack(split(tile,":"))

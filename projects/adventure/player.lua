@@ -18,9 +18,7 @@ player=class:new({
     end,
     update=function(_ENV)
         if btn(❎) or btn(🅾️) then
-            -- if button==false and jc==0 and (grounded or cc>0) then
             if button==false then
-                -- if #o1c==0 and (grounded or cc>0) then
                 if grounded or cc>0 then
                     jc,o1=12,0
                     sfx(2)
@@ -110,13 +108,14 @@ player=class:new({
             tx=tile(x+rdx+(dx>0 and 7 or 0))
             ti=mget(tx,ty)
             local flags=fget(ti)
-            hit=flags & 1==1
+            hit=flags&1>0
             if hit then break end
-            if flags & 2==2 then
+            if flags&2>0 then
                 printh('HIDDEN ROOM TRIGGER')
                 printh(hidden[tx][ty])
             end
         end
+
         if hit then
             x=(tx+(dx>0 and -1 or 1))*8
             dx,rdx=0,0
@@ -136,8 +135,6 @@ player=class:new({
         end
 
         x+=rdx
-
-        -- if btn(⬆️) then extcmd("video") end
 
         t+=1
     end,

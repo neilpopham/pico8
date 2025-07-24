@@ -1,4 +1,10 @@
+--  This may need to increase as we create more objects
+memset(0x4300, 0, 16)
+
 entities={}
+
+-- Holds the volumes of all beams and decides the currently played volume
+beam_volume=split("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 
 -- set Flag 7 to face right
 makefrog=function(x,y,flags)
@@ -35,7 +41,7 @@ converters={
     [125]=makebeam,
 }
 
-for tile in all(_tiftiles) do
+for tile in all(split(__tif__)) do
     local x,y,s,f=unpack(split(tile,":"))
     converters[s](x,y,f)
 end

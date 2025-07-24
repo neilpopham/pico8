@@ -15,33 +15,26 @@ hidden rooms will have to be created using a table and rendered using spr()
         when trigger cell left room is removed
         will need to store overwritten sprites
         may need to know the direction of the room for knowing when to show/hide
+
+tx:ty:ox:oy:d:c0r0|c1r0|c2r0|c0r1|c1r1|c2r1|c0r2|c1r2|c2r2,...
+trigger x
+   trigger y
+      origin x
+        origin y
+            direction
+              sprites
+
+TILE POSITION IS A UNIQUE ID...XXXYY 00101 12763
+
+Gonna need another plugin to export a second tile layer to the format above.
+
+
+
 when laser beam on screen play buzzing noise
     - maybe volume related to distance
 tile flags
-    - "-- tif__" identifier
+    - "-- tif__start" identifier
     - store data as string in "x:y:s:f,x:y:s:f,..." format (s=sprite f=flags)
-    - tget_init() function to extract table from string
-    - tget(x,y) function to get flags
-    - could
 
-local _tif,_tiftiles={},split(data)
-for tile in all(_tiftiles) do add(_tif,unpack(split(tile,":"))) end
-
-function tget(x,y)
-    for t in _tif do
-        if t[0]==x and t[1]==y then return t[3] end
-    end
-end
-
-__tif__="x:y:s:f,x:y:s:f,..."
-local _tif,_tiftiles={},split(__tif__)
-for tile in all(_tiftiles) do
-    local x,y,s,f=unpack(split(tile,":"))
-    if not _tif[x] then _tif[x]={} end
-    _tif[x][y]={s,f}
-end
-
-function tget(x,y)
-    return _tif[x][y][2]
-end
+https://discourse.mapeditor.org/t/objects-are-shown-at-the-wrong-position-in-tiled-map/1166
 
