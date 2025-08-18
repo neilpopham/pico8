@@ -21,7 +21,7 @@ beam=entity:new({
             if d>max then
                 beam_volume[idx]=0
             else
-                local v=round(mid(0,(max-d)/(max/7),7))
+                local v=ceil(mid(0,(max-d)/(max/7),7))
                 beam_volume[idx]=v
             end
             if peek(0x4300+idx)>0 then s=2 end
@@ -63,15 +63,19 @@ beam=entity:new({
         end
     end,
     draw=function(_ENV)
-        local v=0
-        for bv in all(beam_volume) do
-            if bv>v then v=bv end
+        local v,c=0,999
+        for i, bv in ipairs(beam_volume) do
+            if bv>v then v=bv c=i end
         end
-        if max==0 then
+        if c==999 then
             sfx(4,-2)
-        else
-            set_volumes(4,0,{v,v,v})
-            sfx(4)
+        elseif c==idx then
+            if v==0 then
+                sfx(4,-2)
+            else
+                set_volumes(4,0,{v,v,v})
+                sfx(4)
+            end
         end
         for px in all(particles) do
             pset(px.x,px.y,11)

@@ -6,6 +6,7 @@ frog=entity:new({
         -- dead=false
     end,
     update=function(_ENV)
+        if hide then return end
         if stage==0 then
             -- d=p.x>x and 1 or -1
             if manhattan(x,y,p.x,p.y2)<range(16,24) then
@@ -29,9 +30,9 @@ frog=entity:new({
         tx=tile(cx+dx)
         ty=tile(cy+dy)
         ti=mget(tx,ty)
-        if fget(ti)&3>0 then
+        if fget(ti)&1>0 then
             ti=mget(tile(cx),ty)
-            if fget(ti)&3>0 then
+            if fget(ti)&1>0 then
                 if stage==1 then
                     y=ty*8+8
                 else
@@ -41,7 +42,7 @@ frog=entity:new({
                 end
             end
             ti=mget(tx,tile(cy))
-            if fget(ti)&3>0 then
+            if fget(ti)&1>0 then
                 if ti==47 then
                     sfx(3)
                     local e=del(entities,_ENV)
@@ -62,6 +63,7 @@ frog=entity:new({
         end
     end,
     draw=function(_ENV)
+        if hide then return end
         local ex=x+2*d
         local c=11
         if stage==0 then

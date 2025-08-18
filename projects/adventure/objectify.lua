@@ -8,9 +8,7 @@ beam_volume=split("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 
 -- set Flag 7 to face right
 makefrog=function(x,y,flags)
-    local entity=frog:new({x=x*8+2,y=y*8+7,d=right(flags) and 1 or -1})
-    entity:reset()
-    add(entities,entity)
+    return frog:new({x=x*8+2,y=y*8+7,d=right(flags) and 1 or -1})
 end
 
 -- looks for a beam placeholder, finds the end and makes a beam entity
@@ -23,16 +21,12 @@ makebeam=function(x,y,flags)
     for i=y,y2 do
         mset(x,i,47)
     end
-    local entity=beam:new({tx=x,ty1=y,ty2=y2,idx=flags&15})
-    entity:reset()
-    add(entities,entity)
+    return beam:new({tx=x,ty1=y,ty2=y2,idx=flags&15})
 end
 
 -- set Flag 7 to face right
 makebutton=function(x,y,flags)
-    local entity=button:new({x=x*8,y=y*8,idx=flags&15,dx1=right(flags) and 0 or 4,dx2=right(flags) and 3 or 7})
-    entity:reset()
-    add(entities,entity)
+    return button:new({x=x*8,y=y*8,idx=flags&15,dx1=right(flags) and 0 or 4,dx2=right(flags) and 3 or 7})
 end
 
 converters={
@@ -41,7 +35,16 @@ converters={
     [125]=makebeam,
 }
 
+-- Flags 0-3 to store UID
+-- Flag 4 unused
+-- Flag 5 unused
+-- Flag 6 for visibility. 0: Visible; 1: Hidden
+-- Flag 7 for direction. 0: Left; 1: Right
+
 for tile in all(split(__tif__)) do
     local x,y,s,f=unpack(split(tile,":"))
-    converters[s](x,y,f)
+    local entity=converters[s](x,y,f)
+    entity:reset()
+    entity.hide=f&64==64
+    add(entities,entity)
 end

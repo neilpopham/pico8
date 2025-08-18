@@ -4,6 +4,7 @@ player=class:new({
         d=1
         s=0
         t=0
+        spd=0
         dx=0
         dy=0
         o1=0
@@ -58,25 +59,28 @@ player=class:new({
 
         if hit then
             if dy>0 then
+                local py=ty*8-8
                 if not grounded then
                     if rdy>1 then
                         for i=1,rdy do add(o1c,i) end
                         for i=rdy,1,-1 do add(o1c,i) end
+                        printh("hit at "..spd)
+                        create_dust(x-3,x+10,py+7,spd\4,spd\2)
+                        printh(#particles_fg)
                     end
                     t,pjc=0,0
                     sfx(1)
                 end
-                local py=ty*8-8
-                p.y1,p.y2,grounded=py,py,true
+                y1,y2,grounded=py,py,true
             else
                 if -rdy>1 then
                     for i=0,-rdy do add(o2c,i) end
                 end
                 t=0
                 local py=ty*8+8
-                p.y1,p.y2=py,py
+                y1,y2=py,py
             end
-            dy,rdy=0,0
+            dy,rdy,spd=0,0,0
         elseif grounded then
             dy,rdy,cc,grounded=0,0,2,false
         elseif cc>0 then
@@ -84,6 +88,8 @@ player=class:new({
             cc-=1
         elseif #o2c>0 then
             dy,rdy=0,0
+        elseif dy>0 then
+            spd+=1
         end
 
         y1+=rdy
@@ -107,13 +113,23 @@ player=class:new({
         for ty in all({tile(y1), tile(y1+4), tile(y2+7)}) do
             tx=tile(x+rdx+(dx>0 and 7 or 0))
             ti=mget(tx,ty)
-            local flags=fget(ti)
-            hit=flags&1>0
+
+            hit=fget(ti,0)
             if hit then break end
-            if flags&2>0 then
-                printh('HIDDEN ROOM TRIGGER')
-                printh(hidden[tx][ty])
-            end
+
+            -- local flags=fget(ti)
+            -- hit=flags&1>0
+            -- if hit then break end
+            -- if flags&2>0 then
+            --     printh('HIDDEN ROOM TRIGGER  '..tostr(e))
+            --     check_room(tx,ty,dx)
+            -- elseif exiting then
+            --     assert(false)
+            --     hide_room()
+            -- -- elseif room and room.visible then
+            -- --     assert(false)
+
+            -- end
         end
 
         if hit then
@@ -123,6 +139,24 @@ player=class:new({
                 sfx(3)
             end
         end
+
+        if rdx!=0 then
+            ty=tile(y2)
+            ti=mget(tx,ty)
+            if fget(ti,1) then
+                check_room(tx,ty,rdx)
+            elseif visible then
+                tx=tile(x+rdx+(dx>0 and 0 or 7))
+                ti=mget(tx,ty)
+                if fget(ti,1) then
+                    check_room(tx,ty,rdx)
+                elseif exiting then
+                    hide_room()
+                end
+            end
+        end
+
+
 
         if #o1c>0 then
             o1=deli(o1c)
