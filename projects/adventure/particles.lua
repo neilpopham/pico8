@@ -2,8 +2,7 @@ particles_fg,particles_bg={},{}
 
 dust=class:new({
     update=function(_ENV)
-        dy-=g
-        dy=mid(-2,dy,3)
+        dy=mid(-2,dy-g,3)
         y=y-dy
         if y>oy then
             del(col,_ENV)

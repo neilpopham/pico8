@@ -1,17 +1,12 @@
 frog=entity:new({
     reset=function(_ENV)
-        t=0
-        stage=0
-        r=range(12,16)
-        -- dead=false
+        t,stage,r=0,0,range(12,16)
     end,
     update=function(_ENV)
         if hide then return end
         if stage==0 then
-            -- d=p.x>x and 1 or -1
             if manhattan(x,y,p.x,p.y2)<range(16,24) then
                 stage=1
-                -- d=p.x<x and 1 or -1
             else
                 return
             end

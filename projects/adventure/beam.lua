@@ -1,14 +1,7 @@
 beam=entity:new({
     reset=function(_ENV)
-        x=tx*8
-        y=ty1*8
-        l=(ty2-ty1+1)*8
-        o=false
-        s=1
-        t=0
-        w=7
-        yl=y+l-1
-        particles={}
+        y,l=ty1*8,(ty2-ty1+1)*8
+        x,s,t,w,yl,particles=tx*8,1,0,7,y+l-1,{}
         for i=0,l\2 do
             add(particles,{x=x+rnd(w),y=y,d=1,s=range(2,5)})
             add(particles,{x=x+rnd(w),y=yl,d=-1,s=range(2,5)})
