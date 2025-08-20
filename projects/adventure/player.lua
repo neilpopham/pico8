@@ -65,7 +65,7 @@ player=class:new({
                         for i=1,rdy do add(o1c,i) end
                         for i=rdy,1,-1 do add(o1c,i) end
                         printh("hit at "..spd)
-                        create_dust(x-3,x+10,py+7,spd\4,spd\2)
+                        create_dust(x-5,x+12,py+7,spd\4,spd\2)
                         printh(#particles_fg)
                     end
                     t,pjc=0,0

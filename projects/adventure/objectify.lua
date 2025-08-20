@@ -29,10 +29,15 @@ makebutton=function(x,y,flags)
     return button:new({x=x*8,y=y*8,idx=flags&15,dx1=right(flags) and 0 or 4,dx2=right(flags) and 3 or 7})
 end
 
+makedrip=function(x,y,flags)
+    return drip:new({ox=x*8,oy=y*8})
+end
+
 converters={
     [127]=makefrog,
     [126]=makebutton,
     [125]=makebeam,
+    [124]=makedrip,
 }
 
 -- Flags 0-3 to store UID
