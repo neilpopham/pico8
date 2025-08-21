@@ -1,6 +1,6 @@
 drip=entity:new({
     reset=function(_ENV)
-        pause,t,x,y,dy,s,mdy,c=range(10,120),0,ox,oy,0,0,range(4,5),6
+        pause,t,x,y,dy,s,mdy,c=range(10,120),0,ox,oy,0,0,range(4,5),13
     end,
     update=function(_ENV)
         t+=1
