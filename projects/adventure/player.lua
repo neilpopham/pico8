@@ -64,6 +64,7 @@ player=class:new({
                     if rdy>1 then
                         for i=1,rdy do add(o1c,i) end
                         for i=rdy,1,-1 do add(o1c,i) end
+                        printh('speed'..spd)
                         create_dust(x-5,x+12,py+7,spd\4,spd\2)
                     end
                     t,pjc=0,0
@@ -102,7 +103,8 @@ player=class:new({
         if btn(⬅️) then dx-=.3 d=-1 end
         if btn(➡️) then dx+=.3 d=1 end
 
-        dx*=(grounded and .8 or .8)
+        -- dx*=(grounded and .8 or .8)
+        dx*=.8
         if abs(dx)<.05 then dx=0 end
         dx=mid(-3,dx,3)
         local rdx=round(dx)

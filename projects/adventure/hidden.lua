@@ -68,7 +68,7 @@ function hide_room()
 end
 
 function render_room()
-    local speed=1
+    local speed=1 -- if kept at 1 can just remove variable
     if room.showing then
         room.t+=1
         local hx,hy
