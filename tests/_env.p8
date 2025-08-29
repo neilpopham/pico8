@@ -55,6 +55,69 @@ class=setmetatable(
     {
         new=function(_ENV,tbl)
             return setmetatable(tbl or {},{__index=_ENV})
+        end,
+        foo=function(_ENV)
+          return x..','..y
+        end
+    },
+    {__index=_ENV}
+)
+
+entity=class:new(
+    {
+        x=1,
+        y=2,
+        f1=function(_ENV,z)
+            return tostring(x)..","..tostring(y)..","..tostring(z)
+        end
+    }
+)
+
+pixel=entity:new({
+    -- x=10,
+    y=20,
+    f2=function(_ENV)
+        return f1(_ENV,99)
+    end,
+    get_y=function(_ENV)
+      return y
+    end
+})
+
+print(entity.x)
+print(pixel.x)
+print(entity.y)
+print(pixel.y)
+
+print(entity:f1(3))
+print(pixel:f1(30))
+print(pixel:f2())
+
+print(entity:foo())
+print(pixel:foo())
+
+-- print(entity:get_y()) -- attempt to call a nil value (method 'get_y')
+print(pixel:get_y())
+
+--[[
+1
+1
+2
+20
+1,2,3
+1,20,30
+1,20,99
+1,2
+1,20
+20
+]]
+
+assert(false)
+
+class=setmetatable(
+    {
+        new=function(_ENV,tbl)
+            return setmetatable(tbl or {},{__index=_ENV})
         end
     },
     {__index=_ENV}
