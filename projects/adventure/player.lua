@@ -15,14 +15,22 @@ player=class:new({
         jc=0
         cc=0
         pjc=0
+        wd=0
         button=false
+        wj=0
     end,
     update=function(_ENV)
         if btn(❎) or btn(🅾️) then
             if button==false then
-                if grounded or cc>0 then
+                if grounded or cc>0 or wd!=0 then
                     jc,o1=12,0
                     sfx(2)
+                    if wd!=0 then
+                        d=-wd
+                        dy=0
+                        wj=16
+                        spd=0
+                    end
                 elseif pjc==0 then
                     pjc=8
                 end
@@ -70,7 +78,7 @@ player=class:new({
                     t,pjc=0,0
                     sfx(1)
                 end
-                y1,y2,grounded=py,py,true
+                y1,y2,wd,wj,grounded=py,py,0,0,true
             else
                 if -rdy>1 then
                     for i=0,-rdy do add(o2c,i) end
@@ -100,8 +108,13 @@ player=class:new({
             o2=abs(rdy)
         end
 
-        if btn(⬅️) then dx-=.3 d=-1 end
-        if btn(➡️) then dx+=.3 d=1 end
+        if wj>0 then
+            dx+=.3*d
+            wj-=1
+        else
+            if btn(⬅️) then dx-=.3 d=-1 end
+            if btn(➡️) then dx+=.3 d=1 end
+        end
 
         -- dx*=(grounded and .8 or .8)
         dx*=.8
@@ -116,26 +129,14 @@ player=class:new({
 
             hit=fget(ti,0)
             if hit then break end
-
-            -- local flags=fget(ti)
-            -- hit=flags&1>0
-            -- if hit then break end
-            -- if flags&2>0 then
-            --     printh('HIDDEN ROOM TRIGGER  '..tostr(e))
-            --     check_room(tx,ty,dx)
-            -- elseif exiting then
-            --     assert(false)
-            --     hide_room()
-            -- -- elseif room and room.visible then
-            -- --     assert(false)
-
-            -- end
         end
 
+        if rdx!=0 then wd=0 end
         if hit then
-            x=(tx+(dx>0 and -1 or 1))*8
+            wd=sgn(dx)
+            x=(tx-sgn(dx))*8
             dx,rdx=0,0
-            if ti==63 then
+            if ti==47 then
                 sfx(3)
             end
         end
