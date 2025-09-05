@@ -25,7 +25,8 @@ player=class:new({
                 if grounded or cc>0 or wd!=0 then
                     jc,o1=12,0
                     sfx(2)
-                    if wd!=0 then
+                    if grounded==false and wd!=0 then
+                        printh('dy '..dy)
                         d=-wd
                         dy=0
                         wj=16
