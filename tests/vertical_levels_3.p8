@@ -4,33 +4,31 @@ __lua__
 
 for l=0,4 do
     for r=0,15 do
-        memcpy(0x8000+(16*r)+(128*l),0x2000+(16*l)+(128*r),16)
+        memcpy(0x8000+(16*r)+(256*(4-l)),0x2000+(16*l)+(128*r),16)
     end
 end
 
--- memcpy(0x8000,0x2000,2048)
-poke(0x5f56,0x8000)
+poke(0x5f56,0x80)
 poke(0x5f57,16)
--- for i=0,1024 do poke(0x8000+i,i%3+1) end
 
 function _init()
     level=1
     x=60
-    y=88
+    y=600
     dx=0
     dy=0
     follow=true
 end
 
-function _update60xxx()
+function _update60()
     if btn(0) then dx-=1 end
     if btn(1) then dx+=1 end
     dx=mid(-4,dx,4)
     dx*=.7
     local hit=false
     local tx=(x+dx+(dx>0 and 7 or 0))\8
-    for ty in all({y%128\8,(y%128+7)\8}) do
-        local s=mget(tx+(level-1)*16,ty)
+    for ty in all({y\8,(y+7)\8}) do
+        local s=mget(tx,ty)
         if fget(s,0) then
             hit=true
             break
@@ -46,26 +44,22 @@ function _update60xxx()
     dy+=.3
     dy=mid(-4,dy,4)
     hit=false
-    local ty=(y%128+dy+(dy>0 and 7 or 0))\8
+    local ty=(y+dy+(dy>0 and 7 or 0))\8
     for tx in all({x\8,(x+7)\8}) do
-        local s=mget(tx+(level-1)*16,ty)
+        local s=mget(tx,ty)
         if fget(s,0) then
             hit=true
             break
         end
     end
     if hit then
-        y=ty*8+(level-1)*-128+(dy>0 and -8 or 8)
+        y=ty*8+(dy>0 and -8 or 8)
         dy=0
     end
     y+=dy
-    level=ceil(y/-128)+1
+    level=5-flr(y/128)
 
     if btnp(5) then follow=not follow end
-end
-
-function _update()
-    if btn(5) then y+=1 end
 end
 
 function _draw()
@@ -73,12 +67,12 @@ function _draw()
     if follow then
         camera(0,y-64)
     else
-        camera(0,(level-1)*-128)
+        camera(0,flr(y\128)*128)
     end
-    map(0,0,0,0)
-    -- spr(6,x,y)
-    -- camera(0,0)
-    -- print('l'..level,2,1,7)
+    map(0,0)
+    spr(6,x,y)
+    camera(0,0)
+    print('l'..level,2,1,7)
 end
 
 __gfx__
