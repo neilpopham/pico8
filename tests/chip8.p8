@@ -20,6 +20,18 @@ poke(0x5f2c,3)
 
 local pc,v,ps,dt,st,i,op1,op2,o,x,y,n,nn,nnn=512,{},{},60,60
 
+
+function dec2hex(v)
+  local s,l,r=tostr(v,true),3,11
+  while(ord(s,l)==48) l+=1
+  while(ord(s,r)==48) r-=1
+  return sub(s,min(l,6),r>7 and r or 6)
+end
+
+function hex2dec(v)
+    return tonum("0x"..v)
+end
+
 function cpoke(a,v)
     poke(0x4300+a,v)
 end
@@ -63,25 +75,24 @@ local data
 data="00 E0 A2 2A 60 0C 61 08 D0 1F 70 09 A2 39 D0 1F A2 48 70 08 D0 1F 70 04 A2 57 D0 1F 70 08 A2 66 D0 1F 70 08 A2 75 D0 1F 12 28 FF 00 FF 00 3C 00 3C 00 3C 00 3C 00 FF 00 FF FF 00 FF 00 38 00 3F 00 3F 00 38 00 FF 00 FF 80 00 E0 00 E0 00 80 00 80 00 E0 00 E0 00 80 F8 00 FC 00 3E 00 3F 00 3B 00 39 00 F8 00 F8 03 00 07 00 0F 00 BF 00 FB 00 F3 00 E3 00 43 E0 00 E0 00 80 00 80 00 80 00 80 00 E0 00 E0"
 
 -- https://github.com/Timendus/chip8-test-suite/blob/main/bin/1-chip8-logo.8o
--- data="00 E0 61 01 60 08 A2 50 D0 1F 60 10 A2 5F D0 1F 60 18 A2 6E D0 1F 60 20 A2 7D D0 1F 60 28 A2 8C D0 1F 60 30 A2 9B D0 1F 61 10 60 08 A2 AA D0 1F 60 10 A2 B9 D0 1F 60 18 A2 C8 D0 1F 60 20 A2 D7 D0 1F 60 28 A2 E6 D0 1F 60 30 A2 F5 D0 1F 12 4E 0F 02 02 02 02 02 00 00 1F 3F 71 E0 E5 E0 E8 A0 0D 2A 28 28 28 00 00 18 B8 B8 38 38 3F BF 00 19 A5 BD A1 9D 00 00 0C 1D 1D 01 0D 1D 9D 01 C7 29 29 29 27 00 00 F8 FC CE C6 C6 C6 C6 00 49 4A 49 48 3B 00 00 00 01 03 03 03 01 F0 30 90 00 00 80 00 00 00 FE C7 83 83 83 C6 FC E7 E0 E0 E0 E0 71 3F 1F 00 00 07 02 02 02 02 39 38 38 38 38 B8 B8 38 00 00 31 4A 79 40 3B DD DD DD DD DD DD DD DD 00 00 A0 38 20 A0 18 CE FC F8 C0 D4 DC C4 C5 00 00 30 44 24 14 63 F1 03 07 07 77 17 63 71 00 00 28 8E A8 A8 A6 CE 87 03 03 03 87 FE FC 00 00 60 90 F0 80 70"
+data="00 E0 61 01 60 08 A2 50 D0 1F 60 10 A2 5F D0 1F 60 18 A2 6E D0 1F 60 20 A2 7D D0 1F 60 28 A2 8C D0 1F 60 30 A2 9B D0 1F 61 10 60 08 A2 AA D0 1F 60 10 A2 B9 D0 1F 60 18 A2 C8 D0 1F 60 20 A2 D7 D0 1F 60 28 A2 E6 D0 1F 60 30 A2 F5 D0 1F 12 4E 0F 02 02 02 02 02 00 00 1F 3F 71 E0 E5 E0 E8 A0 0D 2A 28 28 28 00 00 18 B8 B8 38 38 3F BF 00 19 A5 BD A1 9D 00 00 0C 1D 1D 01 0D 1D 9D 01 C7 29 29 29 27 00 00 F8 FC CE C6 C6 C6 C6 00 49 4A 49 48 3B 00 00 00 01 03 03 03 01 F0 30 90 00 00 80 00 00 00 FE C7 83 83 83 C6 FC E7 E0 E0 E0 E0 71 3F 1F 00 00 07 02 02 02 02 39 38 38 38 38 B8 B8 38 00 00 31 4A 79 40 3B DD DD DD DD DD DD DD DD 00 00 A0 38 20 A0 18 CE FC F8 C0 D4 DC C4 C5 00 00 30 44 24 14 63 F1 03 07 07 77 17 63 71 00 00 28 8E A8 A8 A6 CE 87 03 03 03 87 FE FC 00 00 60 90 F0 80 70"
 
 -- https://github.com/Timendus/chip8-test-suite/blob/main/bin/3-corax%2B.8o
 data="12 0A 60 01 00 EE 60 02 12 A6 00 E0 68 32 6B 1A A4 F1 D8 B4 68 3A A4 F5 D8 B4 68 02 69 06 6A 0B 6B 01 65 2A 66 2B A4 B5 D8 B4 A4 ED D9 B4 A4 A5 36 2B A4 A1 DA B4 6B 06 A4 B9 D8 B4 A4 ED D9 B4 A4 A1 45 2A A4 A5 DA B4 6B 0B A4 BD D8 B4 A4 ED D9 B4 A4 A1 55 60 A4 A5 DA B4 6B 10 A4 C5 D8 B4 A4 ED D9 B4 A4 A1 76 FF 46 2A A4 A5 DA B4 7B 05 A4 CD D8 B4 A4 ED D9 B4 A4 A1 95 60 A4 A5 DA B4 7B 05 A4 AD D8 B4 A4 ED D9 B4 A4 A5 12 90 A4 A1 DA B4 68 12 69 16 6A 1B 6B 01 A4 B1 D8 B4 A4 ED D9 B4 60 00 22 02 A4 A5 40 00 A4 A1 DA B4 7B 05 A4 A9 D8 B4 A4 E1 D9 B4 A4 A5 40 02 A4 A1 30 00 DA B4 7B 05 A4 C9 D8 B4 A4 A9 D9 B4 A4 A1 65 2A 67 00 87 50 47 2A A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 AD D9 B4 A4 A1 66 0B 67 2A 87 61 47 2B A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 B1 D9 B4 A4 A1 66 78 67 1F 87 62 47 18 A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 B5 D9 B4 A4 A1 66 78 67 1F 87 63 47 67 A4 A5 DA B4 68 22 69 26 6A 2B 6B 01 A4 C9 D8 B4 A4 B9 D9 B4 A4 A1 66 8C 67 8C 87 64 47 18 A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 BD D9 B4 A4 A1 66 8C 67 78 87 65 47 EC A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 C5 D9 B4 A4 A1 66 78 67 8C 87 67 47 EC A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 C1 D9 B4 A4 A1 66 0F 86 66 46 07 A4 A5 DA B4 7B 05 A4 C9 D8 B4 A4 E1 D9 B4 A4 A1 66 E0 86 6E 46 C0 A4 A5 DA B4 7B 05 A4 E5 D8 B4 A4 C1 D9 B4 A4 9E F1 65 A4 A5 30 AA A4 A1 31 55 A4 A1 DA B4 68 32 69 36 6A 3B 6B 01 A4 E5 D8 B4 A4 BD D9 B4 A4 9E 60 00 61 30 F1 55 A4 9E F0 65 81 00 A4 9F F0 65 A4 A5 30 30 A4 A1 31 00 A4 A1 DA B4 7B 05 A4 E5 D8 B4 A4 B5 D9 B4 A4 9E 66 89 F6 33 F2 65 A4 A1 30 01 14 32 31 03 14 32 32 07 14 32 A4 9E 66 41 F6 33 F2 65 A4 A1 30 00 14 32 31 06 14 32 32 05 14 32 A4 9E 66 04 F6 33 F2 65 A4 A1 30 00 14 32 31 00 14 32 32 04 14 32 A4 A5 DA B4 7B 05 A4 E5 D8 B4 A4 E1 D9 B4 A4 A1 66 04 F6 1E DA B4 7B 05 A4 E9 D8 B4 A4 ED D9 B4 A4 A5 66 FF 76 0A 36 09 A4 A1 86 66 36 04 A4 A1 66 FF 60 0A 86 04 36 09 A4 A1 86 66 36 04 A4 A1 66 FF 86 6E 86 66 36 7F A4 A1 86 66 86 6E 36 7E A4 A1 66 05 76 F6 36 FB A4 A1 66 05 86 05 36 FB A4 A1 66 05 80 67 30 FB A4 A1 DA B4 14 9C AA 55 00 00 A0 40 A0 00 A0 C0 80 E0 A0 A0 E0 C0 40 40 E0 E0 20 C0 E0 E0 60 20 E0 A0 E0 20 20 E0 C0 20 C0 60 80 E0 E0 E0 20 40 40 E0 E0 A0 E0 E0 E0 20 C0 40 A0 E0 A0 C0 E0 A0 E0 E0 80 80 E0 C0 A0 A0 C0 E0 C0 80 E0 E0 80 C0 80 00 A0 A0 40 A0 40 A0 A0 0A AE A2 42 38 08 30 B8"
 
+-- https://github.com/Timendus/chip8-test-suite/blob/main/bin/4-flags.8o
+data="12 A0 60 00 E0 A1 12 04 70 01 40 10 00 EE 12 04 FC 65 22 76 41 00 00 EE 80 10 22 76 42 00 00 EE 80 20 22 76 43 00 00 EE 80 30 22 76 44 00 00 EE 80 40 22 76 45 00 00 EE 80 50 22 76 46 00 00 EE 80 60 22 76 47 00 00 EE 80 70 22 76 48 00 00 EE 80 80 22 76 49 00 00 EE 80 90 22 76 4A 00 00 EE 80 A0 22 76 4B 00 00 EE 80 B0 22 76 4C 00 00 EE 80 C0 22 76 00 EE A5 57 F0 1E DD E4 7D 04 00 EE A5 5B 8E D0 8E EE 8E EE FE 1E DA B4 7A 05 00 EE A5 58 92 C0 A5 55 7B 01 DA B3 7A 04 7B FF 00 EE 00 E0 6A 32 6B 1B A6 09 DA B4 6A 3A A6 0D DA B4 6D 00 6E 00 A5 F7 22 10 6A 16 6B 00 61 0F 6D 01 22 80 63 0F 6F 14 83 F1 6F 00 62 32 82 11 8E F0 6C 3F 22 90 82 E0 6C 00 22 90 82 30 6C 1F 22 90 7A 05 6D 02 22 80 63 0F 6F 14 83 F2 6F 00 62 32 82 12 8E F0 6C 02 22 90 82 E0 6C 00 22 90 82 30 6C 04 22 90 7B 05 6A 00 6D 03 22 80 63 0F 6F 14 83 F3 6F 00 62 32 82 13 8E F0 6C 3D 22 90 82 E0 6C 00 22 90 82 30 6C 1B 22 90 7A 05 6D 04 22 80 6F 14 8F 14 84 F0 63 0F 6F 14 83 F4 6F AA 62 32 82 14 8E F0 6C 41 22 90 82 E0 6C 00 22 90 82 30 6C 23 22 90 82 40 6C 00 22 90 7A 01 6D 05 22 80 6F 14 8F 15 84 F0 63 14 6F 0F 83 F5 65 0A 6F 0A 85 F5 85 F0 6F AA 62 32 82 15 35 01 6F 02 8E F0 6C 23 22 90 82 E0 6C 01 22 90 82 30 6C 05 22 90 82 40 6C 01 22 90 7B 05 6A 00 6D 06 22 80 6F 3C 8F F6 83 F0 6F AA 62 3C 82 26 8E F0 6C 1E 22 90 82 E0 6C 00 22 90 82 30 6C 00 22 90 7A 05 6D 07 22 80 6F 0A 8F 17 84 F0 63 0F 6F 14 83 F7 65 0A 6F 0A 85 F7 85 F0 6F AA 62 0F 61 32 82 17 35 01 6F 02 8E F0 6C 23 22 90 82 E0 6C 01 22 90 82 30 6C 05 22 90 82 40 6C 01 22 90 7A 01 6D 0E 22 80 6F 32 8F FE 83 F0 6F AA 62 32 82 2E 8E F0 6C 64 22 90 82 E0 6C 00 22 90 82 30 6C 00 22 90 6D 00 6E 10 A5 FD 22 10 6A 16 6B 10 61 64 6D 04 22 80 6F C8 8F 14 84 F0 63 64 6F C8 83 F4 6F AA 62 C8 82 14 8E F0 6C 2C 22 90 82 E0 6C 01 22 90 82 30 6C 2C 22 90 82 40 6C 01 22 90 7A 01 6D 05 22 80 6F 5F 8F 15 84 F0 63 5F 6F 64 83 F5 6F AA 62 5F 82 15 8E F0 6C FB 22 90 82 E0 6C 00 22 90 82 30 6C FB 22 90 82 40 6C 00 22 90 7B 05 6A 00 6D 06 22 80 6F 3D 8F F6 83 F0 6F AA 62 3D 82 26 8E F0 6C 1E 22 90 82 E0 6C 01 22 90 82 30 6C 01 22 90 7A 05 6D 07 22 80 6F 69 8F 17 84 F0 63 69 6F 64 83 F7 6F AA 62 69 82 17 8E F0 6C FB 22 90 82 E0 6C 00 22 90 82 30 6C FB 22 90 82 40 6C 00 22 90 7A 01 6D 0E 22 80 6F BC 8F FE 83 F0 6F AA 62 BC 82 2E 8E F0 6C 78 22 90 82 E0 6C 01 22 90 82 30 6C 01 22 90 6D 00 6E 1B A6 03 22 10 6A 16 6B 1B 6D 0F 22 80 7A FF 6D 0E 22 80 A5 44 61 10 F1 1E 60 AA F0 55 A5 54 F0 65 82 00 6C AA 22 90 A5 44 6F 10 FF 1E 60 55 F0 55 A5 54 F0 65 82 00 6C 55 22 90 15 42 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 A0 C0 80 A0 40 A0 E0 A0 A0 E0 C0 40 40 E0 E0 20 C0 E0 E0 60 20 E0 A0 E0 20 20 E0 C0 20 C0 E0 80 E0 E0 E0 20 20 20 E0 E0 A0 E0 E0 E0 20 E0 40 A0 E0 A0 C0 E0 A0 E0 E0 80 80 E0 C0 A0 A0 C0 E0 C0 80 E0 E0 80 C0 80 60 80 A0 60 A0 E0 A0 A0 E0 40 40 E0 60 20 20 C0 A0 C0 A0 A0 80 80 80 E0 E0 E0 A0 A0 C0 A0 A0 A0 E0 A0 A0 E0 C0 A0 C0 80 40 A0 E0 60 C0 A0 C0 A0 60 C0 20 C0 E0 40 40 40 A0 A0 A0 60 A0 A0 A0 40 A0 A0 E0 E0 A0 40 A0 A0 A0 A0 40 40 E0 60 80 E0 00 00 00 00 00 E0 00 00 00 00 00 40 48 2C 68 68 8C 00 34 2C 70 70 8C 00 64 78 48 3C 70 00 0A AE A2 42 38 08 30 B8"
+
 -- My first programme! Use FX29 to render a character (4th byte) to the screen
 -- data="00 E0 60 0D F0 29 D0 05 12 02"
 
--- Testing 8XYN operands
--- data="60 0d 61 05 80 06" -- 80 15
-
--- Write code to memory from 512 onward
-for k,v in ipairs(split(data," ")) do cpoke(0x1ff+k,tonum("0x"..v)) end
+-- Write code to memory from 512 (0x200) onward
+for k,v in ipairs(split(data," ")) do cpoke(0x1ff+k,hex2dec(v)) end
 
 function fetch()
-    printh('pc '..pc)
     op1=cpeek(pc)
     op2=cpeek(pc+1)
-    printh(op1..' '..op2)
+    printh('pc='..pc..' op1='..op1..' op2='..op2..' '..tostr(op1,1)..' '..tostr(op2,1))
     assert(op1+op2>0,op2)
     pc+=2
 end
@@ -98,10 +109,10 @@ end
 function execute()
     local tx,ty=x+1,y+1
 
-    if o==0x0 and nn==0xe0 then
+    if o==0x0 and nnn==0x0e0 then
         -- Clears the screen
         cls()
-    elseif o==0x0 and nn==0xee then
+    elseif o==0x0 and nnn==0x0ee then
         -- Returns from a subroutine
         pc=deli(ps)
     elseif o==0x0 then
@@ -145,22 +156,26 @@ function execute()
             -- Adds VY to VX. VF is set to 1 when there's an overflow, and to 0 when there is not
             v[tx]+=v[ty]
             if v[tx]>255 then v[tx]=v[tx]&0xff v[16]=1 else v[16]=0 end
-        elseif n==0x5 then -- FALING FALING FALING FALING FALING FALING FALING FALING FALING
+        elseif n==0x5 then
             -- VY is subtracted from VX. VF is set to 0 when there's an underflow, and 1 when there is not. (i.e. VF set to 1 if VX >= VY and 0 if not)
-            v[16]=v[tx]>=v[ty] and 1 or 0
-            v[tx]-=v[ty]
-        elseif n==0x6 then -- FALING FALING FALING FALING FALING FALING FALING FALING FALING
+            local vf=v[tx]>=v[ty] and 1 or 0
+            v[tx]=(v[tx]-v[ty])&0xff
+            v[16]=vf
+        elseif n==0x6 then
             -- Shifts VX to the right by 1, then stores the least significant bit of VX prior to the shift into VF
-            v[16]=v[tx]&1>0 and 1 or 0
+            local vf=v[tx]&1>0 and 1 or 0
             v[tx]=flr(v[tx]>>1)
-        elseif n==0x7 then -- FALING FALING FALING FALING FALING FALING FALING FALING FALING
+            v[16]=vf
+        elseif n==0x7 then
             -- Sets VX to VY minus VX. VF is set to 0 when there's an underflow, and 1 when there is not. (i.e. VF set to 1 if VY >= VX)
-            v[16]=v[ty]>=v[tx] and 1 or 0
-            v[tx]=v[ty]-v[tx]
-        elseif n==0xe then -- FALING FALING FALING FALING FALING FALING FALING FALING FALING
+            local vf=v[ty]>=v[tx] and 1 or 0
+            v[tx]=(v[ty]-v[tx])&0xff
+            v[16]=vf
+        elseif n==0xe then
             -- Shifts VX to the left by 1, then sets VF to 1 if the most significant bit of VX prior to that shift was set, or to 0 if it was unset.
-            v[16]=v[tx]&0x80>0 and 1 or 0
-            v[tx]=v[tx]<<1
+            local vf=v[tx]&0x80>0 and 1 or 0
+            v[tx]=(v[tx]<<1)&0xff
+            v[16]=vf
         end
     elseif o==0x9 and n==0 then
         -- Skips the next instruction if VX does not equal VY
@@ -185,9 +200,10 @@ function execute()
                 local mask=2^(7-w)
                 local bit=byte&mask
                 local px=sget(sx,sy)
+                local col=7
                 if bit>0 then
-                    sset(sx,sy,px>0 and 0 or 7)
-                    v[16]=px>0 and 1 or 0
+                    if px>0 then col=0 v[16]=1 end
+                    sset(sx,sy,col)
                 end
             end
         end
@@ -236,11 +252,11 @@ function execute()
         end
     end
 
-    s="registers: "
-    for k,val in pairs(v) do
-        s=s..tostr(k)..'='..tostr(val)..' '
-    end
-    printh(s)
+    -- s="registers: "
+    -- for k,val in pairs(v) do
+    --     s=s..tostr(k)..'='..tostr(val)..' '
+    -- end
+    -- printh(s)
 end
 
 function _update60()
