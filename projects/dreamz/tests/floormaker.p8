@@ -2,6 +2,8 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 
+extcmd('rec')
+
 local floormaker={
     cells={},
     rooms=0,
