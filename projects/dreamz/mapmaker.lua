@@ -18,7 +18,14 @@ function mapmaker()
         "02,02,02,99,02,02,02,"..
         "02,02,02,02,02,02,02,"..
         "02,02,02,02,02,02,02,"..
-        "02,04,04,02,02,02,02;"..
+        "02,04,04,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,99,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,04,04,02,04,04,02;"..
         "03,"..
         "01,01,02,02,02,01,01,"..
         "01,01,02,02,02,01,01,"..
@@ -275,6 +282,7 @@ function mapmaker()
             local tpl,tx,ty,rotated,s,nx,ny=rotations[room.mask],x-mn.x,y-mn.y,{}
             local type,rotation=unpack(tpl)
             -- pick a random template for the room type
+            printh('pick from '..#templates[type])
             local grid=templates[type][random(#templates[type])]
             for gy,_ in ipairs(grid) do rotated[gy]={} end
             -- set our grid sprites
