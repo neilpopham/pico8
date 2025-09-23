@@ -1,6 +1,11 @@
 function mapmaker()
     local cells,rooms,offsets,mx,my,sprites,templates,rotations={},0,{{x=0,y=-1},{x=1,y=0},{x=0,y=1},{x=-1,y=0}},0,0
 
+    local myrnd=flr(rnd(32000))+1
+    myrnd=20014
+    srand(myrnd)
+    printh('myrnd='..myrnd)
+
     -- format: i1,r1,r2,r3,r4,i2,r1,r2,r3,r4,...
     sprites=keywithfixedlength(
         "01,01,01,01,01,"..
@@ -277,12 +282,18 @@ function mapmaker()
     poke(0x5f57, 2*size*(mx.x-mn.x+1))
     memset(0x8000,0,0x4000)
 
+    --
+    rms={}
+    rif={}
+    for i=1,size*(mx.y-mn.y+1) do
+        add(rif,{})
+    end
+
     for x,cols in pairs(cells) do
         for y,room in pairs(cols) do
             local tpl,tx,ty,rotated,s,nx,ny=rotations[room.mask],x-mn.x,y-mn.y,{}
             local type,rotation=unpack(tpl)
             -- pick a random template for the room type
-            printh('pick from '..#templates[type])
             local grid=templates[type][random(#templates[type])]
             for gy,_ in ipairs(grid) do rotated[gy]={} end
             -- set our grid sprites
@@ -296,14 +307,19 @@ function mapmaker()
                         nx,ny=rotatoes[rotation](dx,dy)
                     end
                     -- if the index is optional then roll the dice
-                    -- if s<0 then s=choice(s) end
+                    if s<0 then s=choice(s) end
                     -- set the correct sprite for the rotation
                     rotated[ny][nx]=sprites[s][rotation]
                 end
             end
+            --
+            add(rms,{x=tx,y=ty,type=type,mask=room.mask})
             -- loop through each room cell
             for ox=0,size-1 do
                 for oy=0,size-1 do
+
+                    rif[ty*size+oy+1][tx*size+ox+1]=#rms
+
                     -- set the sprite
                     s=rotated[oy+1][ox+1]
 
