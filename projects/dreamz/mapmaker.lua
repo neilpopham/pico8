@@ -3,46 +3,55 @@ function mapmaker()
 
     -- format: i1,r1,r2,r3,r4,i2,r1,r2,r3,r4,...
     sprites=keywithfixedlength(
-        "01,16,17,18,19,"..
-        "02,17,18,19,16,"..
-        "03,18,19,16,17,"..
-        "04,19,16,17,18,"..
-        "11,01,01,01,01",
+        "01,01,01,01,01,"..
+        "02,02,02,02,02,"..
+        "04,04,06,08,10,"..
+        "99,99,99,99,99",
         4
     )
     -- format: bitmask,i,i,...
     templates=keywithfixedlengths(
         "01,"..
-        "11,01,01,01,11,"..
-        "11,11,11,11,11,"..
-        "11,11,11,11,11,"..
-        "11,11,11,11,11,"..
-        "11,11,11,11,11;"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,99,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,04,04,02,02,02,02;"..
         "03,"..
-        "11,01,01,01,11,"..
-        "11,11,11,11,02,"..
-        "11,11,11,11,02,"..
-        "11,11,11,11,02,"..
-        "11,11,11,11,11;"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,02,02,"..
+        "01,01,02,02,02,02,02,"..
+        "01,01,02,02,02,02,02,"..
+        "01,01,01,01,01,01,01,"..
+        "01,01,01,01,01,01,01;"..
         "05,"..
-        "11,01,01,01,11,"..
-        "11,11,11,11,11,"..
-        "11,11,11,11,11,"..
-        "11,11,11,11,11,"..
-        "11,03,03,03,11;"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01;"..
         "07,"..
-        "11,01,01,01,11,"..
-        "11,11,11,11,02,"..
-        "11,11,11,11,02,"..
-        "11,11,11,11,02,"..
-        "11,03,03,03,11;".."
-        15,"..
-        "11,01,01,01,11,"..
-        "04,11,11,11,02,"..
-        "04,11,11,11,02,"..
-        "04,11,11,11,02,"..
-        "11,03,03,03,11",
-        25
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,02,02,"..
+        "01,01,02,02,02,02,02,"..
+        "01,01,02,02,02,02,02,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01;"..
+        "15,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "02,02,02,02,02,02,02,"..
+        "01,01,02,02,02,01,01,"..
+        "01,01,02,02,02,01,01",
+        49
     )
     -- format: i1:type,rotation,i2,type,rotation,...
     rotations=keywithfixedlength(
@@ -65,7 +74,7 @@ function mapmaker()
     )
 
     -- room width and centre (size+1)/2
-    local size,c=5,3
+    local size,c=7,4
     --  functions to rotate a cell
     local rotatoes={
         [2]=function(x,y)
@@ -258,7 +267,7 @@ function mapmaker()
 
     -- create our map at 0x8000 now we know the width and empty it
     poke(0x5f56, 0x80)
-    poke(0x5f57, size*(mx.x-mn.x+1))
+    poke(0x5f57, 2*size*(mx.x-mn.x+1))
     memset(0x8000,0,0x4000)
 
     for x,cols in pairs(cells) do
@@ -279,7 +288,7 @@ function mapmaker()
                         nx,ny=rotatoes[rotation](dx,dy)
                     end
                     -- if the index is optional then roll the dice
-                    if s<0 then s=choice(s)
+                    -- if s<0 then s=choice(s) end
                     -- set the correct sprite for the rotation
                     rotated[ny][nx]=sprites[s][rotation]
                 end
@@ -289,20 +298,39 @@ function mapmaker()
                 for oy=0,size-1 do
                     -- set the sprite
                     s=rotated[oy+1][ox+1]
-                    if s==1 then
-                        if ox==2 and oy==2 then
-                            s=2
-                            if type==1 then s=6 end
-                            if type==3 then s=7 end
-                            if type==5 then s=10 end
-                            if type==7 then s=8 end
-                            if type==15 then s=9 end
-                            if x==start.x and y==start.y then s=4 end
-                            if x==exit.x and y==exit.y then s=5 end
+
+                    -- if s==1 then
+                    --     if ox==2 and oy==2 then
+                    --         s=2
+                    --         if type==1 then s=6 end
+                    --         if type==3 then s=7 end
+                    --         if type==5 then s=10 end
+                    --         if type==7 then s=8 end
+                    --         if type==15 then s=9 end
+                    --         if x==start.x and y==start.y then s=4 end
+                    --         if x==exit.x and y==exit.y then s=5 end
+                    --     end
+                    -- end
+
+                    if s==99 then
+                        s=2
+                        if x==start.x and y==start.y then
+                            p.x=(tx*size*2+ox*2)*8
+                            p.y=(ty*size*2+oy*2)*8
                         end
                     end
+
+                    if s==1 then
+                        ss={1,1,1,1}
+                    else
+                        ss={s,s+1,s+16,s+17}
+                    end
+
                     -- add the sprite to the map
-                    mset(tx*size+ox,ty*size+oy,s)
+                    mset(tx*size*2+ox*2,ty*size*2+oy*2,ss[1])
+                    mset(tx*size*2+ox*2+1,ty*size*2+oy*2,ss[2])
+                    mset(tx*size*2+ox*2,ty*size*2+oy*2+1,ss[3])
+                    mset(tx*size*2+ox*2+1,ty*size*2+oy*2+1,ss[4])
                 end
             end
         end
