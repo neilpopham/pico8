@@ -6,6 +6,8 @@ function mapmaker()
     srand(myrnd)
     printh('myrnd='..myrnd)
 
+    local empty=2
+
     -- format: i1,r1,r2,r3,r4,i2,r1,r2,r3,r4,...
     sprites=keywithfixedlength(
         "01,01,01,01,01,"..
@@ -32,37 +34,37 @@ function mapmaker()
         "02,02,02,02,02,02,02,"..
         "02,04,04,02,04,04,02;"..
         "03,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,02,02,"..
-        "01,01,02,02,02,02,02,"..
-        "01,01,02,02,02,02,02,"..
-        "01,01,01,01,01,01,01,"..
-        "01,01,01,01,01,01,01;"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,02,02,"..
+        "00,00,02,02,02,02,02,"..
+        "00,00,02,02,02,02,02,"..
+        "00,00,00,00,00,00,00,"..
+        "00,00,00,00,00,00,00;"..
         "05,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01;"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00;"..
         "07,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,02,02,"..
-        "01,01,02,02,02,02,02,"..
-        "01,01,02,02,02,02,02,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01;"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,02,02,"..
+        "00,00,02,02,02,02,02,"..
+        "00,00,02,02,02,02,02,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00;"..
         "15,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01,"..
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00,"..
         "02,02,02,02,02,02,02,"..
         "02,02,02,02,02,02,02,"..
         "02,02,02,02,02,02,02,"..
-        "01,01,02,02,02,01,01,"..
-        "01,01,02,02,02,01,01",
+        "00,00,02,02,02,00,00,"..
+        "00,00,02,02,02,00,00",
         49
     )
     -- format: i1:type,rotation,i2,type,rotation,...
@@ -101,8 +103,9 @@ function mapmaker()
     }
     -- for index -12.33 will have a 33/100 chance of returning 12
     function choice(n)
+        printh((-n%1)..' '..(-n&0xff))
         if rnd()<-n%1 then return -n&0xff end
-        return 11
+        return empty
     end
     -- returns the opposite direction (1-3, 2-4, 3-1, 4-2)
     function opposite(n)
@@ -309,7 +312,7 @@ function mapmaker()
                     -- if the index is optional then roll the dice
                     if s<0 then s=choice(s) end
                     -- set the correct sprite for the rotation
-                    rotated[ny][nx]=sprites[s][rotation]
+                    rotated[ny][nx]=s==0 and 0 or sprites[s][rotation]
                 end
             end
             --
@@ -321,40 +324,33 @@ function mapmaker()
                     rif[ty*size+oy+1][tx*size+ox+1]=#rms
 
                     -- set the sprite
-                    s=rotated[oy+1][ox+1]
+                    local s=rotated[oy+1][ox+1]
 
-                    -- if s==1 then
-                    --     if ox==2 and oy==2 then
-                    --         s=2
-                    --         if type==1 then s=6 end
-                    --         if type==3 then s=7 end
-                    --         if type==5 then s=10 end
-                    --         if type==7 then s=8 end
-                    --         if type==15 then s=9 end
-                    --         if x==start.x and y==start.y then s=4 end
-                    --         if x==exit.x and y==exit.y then s=5 end
-                    --     end
-                    -- end
+                    -- get map cell co-ordinates
+                    local cx,cy=tx*size*2+ox*2,ty*size*2+oy*2
 
+                    -- if this is a player start position
                     if s==99 then
-                        s=2
+                        s=empty
                         if x==start.x and y==start.y then
-                            p.x=(tx*size*2+ox*2)*8
-                            p.y=(ty*size*2+oy*2)*8
+                            p.x=cx*8
+                            p.y=cy*8
                         end
                     end
 
-                    if s==1 then
-                        ss={1,1,1,1}
+                    -- using same sprite?
+                    local s1,s2,s3,s4
+                    if s==0 then
+                        s1,s2,s3,s4=s,s,s,s
                     else
-                        ss={s,s+1,s+16,s+17}
+                        s1,s2,s3,s4=s,s+1,s+16,s+17
                     end
 
-                    -- add the sprite to the map
-                    mset(tx*size*2+ox*2,ty*size*2+oy*2,ss[1])
-                    mset(tx*size*2+ox*2+1,ty*size*2+oy*2,ss[2])
-                    mset(tx*size*2+ox*2,ty*size*2+oy*2+1,ss[3])
-                    mset(tx*size*2+ox*2+1,ty*size*2+oy*2+1,ss[4])
+                    -- add the sprites to the map
+                    mset(cx,cy,s1)
+                    mset(cx+1,cy,s2)
+                    mset(cx,cy+1,s3)
+                    mset(cx+1,cy+1,s4)
                 end
             end
         end

@@ -53,3 +53,5 @@ function fixedlength(data,l)
 end
 
 function random(n) return flr(rnd(n))+1 end
+
+function tile(v) return v\8 end
