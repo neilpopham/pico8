@@ -14,6 +14,11 @@ poke(0x5F34, 0x3)
 -- poke(0x5f2e,1)
 -- pal(15,0)
 
+local myrnd=flr(rnd(32000))+1
+-- myrnd=20014
+srand(myrnd)
+printh('myrnd='..myrnd)
+
 class=setmetatable(
     {
         new=function(_ENV,tbl)
@@ -48,14 +53,17 @@ function _draw()
     p:draw()
 
     camera(0,0)
+
     circfill(64,64,28,0b0001100100000000.0111111111011111)
     circfill(64,64,32,0b0001100100000000.0101111101011111)
     circfill(64,64,36,0b0001100100000000.0101101001011010)
     circfill(64,64,38,0b0001100100000000.0100101000011010)
     circfill(64,64,40,0b0001100100000000.0000000000000000)
+
     print(p.room,0,0,7)
-    print(rms[p.room].x,20,0,2)
-    print(rms[p.room].y,28,0,2)
+    -- print(rms[p.room].x,20,0,2)
+    -- print(rms[p.room].y,28,0,2)
+    print(myrnd,103,0,3)
 end
 
 __gfx__

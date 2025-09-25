@@ -55,3 +55,17 @@ end
 function random(n) return flr(rnd(n))+1 end
 
 function tile(v) return v\8 end
+
+function los(a,b,c,d)
+    local z,e,f,t=.5,a-c,b-d
+    local g,h=abs(e),abs(f)
+    g=max(1,max(g,h))
+    repeat
+        c+=e/g
+        d+=f/g
+        -- pset(c*8+3,d*8+3)
+        t=mget(c+z,d+z)
+        if t==0 or fget(mget(c+z,d+z),0) then return end
+    until a==(c+z)\1 and b==(d+z)\1
+    return true
+end

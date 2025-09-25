@@ -1,11 +1,6 @@
 function mapmaker()
     local cells,rooms,offsets,mx,my,sprites,templates,rotations={},0,{{x=0,y=-1},{x=1,y=0},{x=0,y=1},{x=-1,y=0}},0,0
 
-    local myrnd=flr(rnd(32000))+1
-    myrnd=20014
-    srand(myrnd)
-    printh('myrnd='..myrnd)
-
     local empty=2
 
     -- format: i1,r1,r2,r3,r4,i2,r1,r2,r3,r4,...
@@ -297,7 +292,11 @@ function mapmaker()
             local tpl,tx,ty,rotated,s,nx,ny=rotations[room.mask],x-mn.x,y-mn.y,{}
             local type,rotation=unpack(tpl)
             -- pick a random template for the room type
-            local grid=templates[type][random(#templates[type])]
+            local tindex=random(#templates[type])
+            -- we may want to pick a specific template for the exit
+            -- or not pick from the pool but pick a unique grid
+            if x==exit.x and y==exit.y then tindex=1 end
+            local grid=templates[type][tindex]
             for gy,_ in ipairs(grid) do rotated[gy]={} end
             -- set our grid sprites
             for gy,rows in ipairs(grid) do
