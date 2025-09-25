@@ -13,6 +13,14 @@ function mapmaker()
     )
     -- format: bitmask,i,i,...
     templates=keywithfixedlengths(
+        "99,"..
+        "00,00,99,99,99,00,00,"..
+        "00,00,99,99,99,00,00,"..
+        "00,00,00,00,00,00,00,"..
+        "00,00,00,00,00,00,00,"..
+        "00,00,00,00,00,00,00,"..
+        "00,00,00,00,00,00,00,"..
+        "00,00,00,00,00,00,00;"..
         "01,"..
         "02,02,02,02,02,02,02,"..
         "02,02,02,02,02,02,02,"..
@@ -290,12 +298,14 @@ function mapmaker()
     for x,cols in pairs(cells) do
         for y,room in pairs(cols) do
             local tpl,tx,ty,rotated,s,nx,ny=rotations[room.mask],x-mn.x,y-mn.y,{}
-            local type,rotation=unpack(tpl)
-            -- pick a random template for the room type
-            local tindex=random(#templates[type])
-            -- we may want to pick a specific template for the exit
-            -- or not pick from the pool but pick a unique grid
-            if x==exit.x and y==exit.y then tindex=1 end
+            local type,rotation,tindex=unpack(tpl)
+            -- pick a specific template for the exit
+            if x==exit.x and y==exit.y then
+                type,tindex=99,1
+            else
+                -- pick a random template for the room type
+                tindex=random(#templates[type])
+            end
             local grid=templates[type][tindex]
             for gy,_ in ipairs(grid) do rotated[gy]={} end
             -- set our grid sprites
@@ -334,6 +344,9 @@ function mapmaker()
                         if x==start.x and y==start.y then
                             p.x=cx*8
                             p.y=cy*8
+                        end
+                        if x==exit.x and y==exit.y then
+                            s=34
                         end
                     end
 
