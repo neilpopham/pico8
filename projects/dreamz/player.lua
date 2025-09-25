@@ -49,43 +49,55 @@ player=class:new({
         prms.hidden=false
         rx=prms.x*112
         ry=prms.y*112
-        local md,mr=999
+        -- local md,mr=999
+
+        local rs={}
 
         if prms.mask&1==1 then
             local d=abs(x-rx-48)+abs(y-ry)
-            if d<md then md=d mr=1 end
+            -- printh('m=1 d='..d..' x='..abs(x-rx-48)..' y='..abs(y-ry))
+            -- if d<md then md=d mr=1 end
+            if d<48 then add(rs,1) end
         end
         if prms.mask&2==2 then
-            local d=abs(rx+128-x)+abs(y-ry-48)
-            if d<md then md=d mr=2 end
+            local d=abs(rx+96-x)+abs(y-ry-48)
+            -- printh('m=2 d='..d..' x='..abs(rx+96-x)..' y='..abs(y-ry-48))
+            -- if d<md then md=d mr=2 end
+            if d<48 then add(rs,2) end
         end
         if prms.mask&4==4 then
-            local d=abs(x-rx-48)+abs(ry+128-y)
-            if d<md then md=d mr=4 end
+            local d=abs(x-rx-48)+abs(ry+96-y)
+            -- printh('m=4 d='..d)
+            -- if d<md then md=d mr=4 end
+            if d<48 then add(rs,4) end
         end
         if prms.mask&8==8 then
             local d=abs(x-rx)+abs(y-ry-48)
-            if d<md then md=d mr=8 end
+            -- printh('m=8 d='..d)
+            -- if d<md then md=d mr=8 end
+            if d<48 then add(rs,8) end
         end
 
-        for k,o in ipairs(rms) do
-            if o.x==prms.x then
-                if mr==1 and o.y==prms.y-1 then
-                    o.hidden=false
-                end
-                if mr==4 and o.y==prms.y+1 then
-                    o.hidden=false
-                end
-            elseif o.y==prms.y then
-                if mr==2 and o.x==prms.x+1 then
-                    o.hidden=false
-                end
-                if mr==8 and o.x==prms.x-1 then
-                    o.hidden=false
+        for mr in all(rs) do
+
+            for k,o in ipairs(rms) do
+                if o.x==prms.x then
+                    if mr==1 and o.y==prms.y-1 then
+                        o.hidden=false
+                    end
+                    if mr==4 and o.y==prms.y+1 then
+                        o.hidden=false
+                    end
+                elseif o.y==prms.y then
+                    if mr==2 and o.x==prms.x+1 then
+                        o.hidden=false
+                    end
+                    if mr==8 and o.x==prms.x-1 then
+                        o.hidden=false
+                    end
                 end
             end
         end
-
 
 
 
