@@ -1,9 +1,11 @@
 function mapmaker()
-    local cells,rooms,offsets,mx,my,sprites,templates,rotations={},0,{{x=0,y=-1},{x=1,y=0},{x=0,y=1},{x=-1,y=0}},0,0
+    local cells,rooms,offsets,mx,my,sprites,tiles,templates,rotations={},0,{{x=0,y=-1},{x=1,y=0},{x=0,y=1},{x=-1,y=0}},0,0
 
     local empty=2
 
     -- format: i1,r1,r2,r3,r4,i2,r1,r2,r3,r4,...
+    -- i is the index used in the template
+    -- r1-r4 are the tiles to use for the four rotations
     sprites=keywithfixedlength(
         "01,01,01,01,01,"..
         "02,02,02,02,02,"..
@@ -11,7 +13,23 @@ function mapmaker()
         "99,99,99,99,99",
         4
     )
+    -- format: s1,t1,t2,t3,t4,s2,t1,t2,t3,t4,...
+    -- s is the index references in the sprites data
+    -- t1-t4 are the sprite indexes used to draw the item
+    tiles=keywithfixedlength(
+        "01,01,01,01,01,"..
+        "02,02,03,03,02,"..
+        "04,04,04,06,06,"..
+        "06,06,07,06,07,"..
+        "08,06,06,24,24,"..
+        "10,10,06,10,06,"..
+        "34,34,35,50,51,"..
+        "99,99,99,99,99",
+        4
+    )
     -- format: bitmask,i,i,...
+    -- bitmask denotes the exits to indentify the room
+    -- i is the index from the sprites data
     templates=keywithfixedlengths(
         "99,"..
         "00,00,99,99,99,00,00,"..
@@ -71,6 +89,9 @@ function mapmaker()
         49
     )
     -- format: i1:type,rotation,i2,type,rotation,...
+    -- i is the bitmask
+    -- type is the room type bitmask as used in templates
+    -- rotation indicates the rotation of type for i (6 is type 3 at rotation 2 (90`))
     rotations=keywithfixedlength(
         "1,1,1,"..
         "2,1,2,"..
@@ -89,24 +110,21 @@ function mapmaker()
         "15,15,1",
         2
     )
-
     -- room width and centre (size+1)/2
     local size,c=7,4
     --  functions to rotate a cell
     local rotatoes={
         [2]=function(x,y)
-            return flr(-y+c),flr(x+c)
-        end,
+            return flr(-y+c),flr(x+c) end,
         [3]=function(x,y)
             return flr(-x+c),flr(-y+c)
         end,
-        [4]=function(x,y,mx,my)
+        [4]=function(x,y)
             return flr(y+c),flr(-x+c)
         end
     }
     -- for index -12.33 will have a 33/100 chance of returning 12
     function choice(n)
-        printh((-n%1)..' '..(-n&0xff))
         if rnd()<-n%1 then return -n&0xff end
         return empty
     end
@@ -207,8 +225,7 @@ function mapmaker()
 
     -- start at 20,20 with a random exit and its opposite
     local d1=random(4)
-    local d2=opposite(d1)
-    room={exits=0,exit={}}
+    local d2,room=opposite(d1),{exits=0,exit={}}
     set(20,20,room)
     -- loop through exits, set them in our room and create a worker for each
     for d in all({d1,d2}) do
@@ -288,9 +305,10 @@ function mapmaker()
     poke(0x5f57, 2*size*(mx.x-mn.x+1))
     memset(0x8000,0,0x4000)
 
-    --
-    rms={}
-    rif={}
+    -- create global tables to store
+    -- a collection of rooms
+    -- a y,x grid of cells recording the room id for each
+    rms,rif={},{}
     for i=1,size*(mx.y-mn.y+1) do
         add(rif,{})
     end
@@ -351,18 +369,25 @@ function mapmaker()
                     end
 
                     -- using same sprite?
-                    local s1,s2,s3,s4
+                    -- local s1,s2,s3,s4
+                    local img
                     if s==0 then
-                        s1,s2,s3,s4=s,s,s,s
+                        -- s1,s2,s3,s4=s,s,s,s
+                        img={s,s,s,s}
                     else
-                        s1,s2,s3,s4=s,s+1,s+16,s+17
+                        -- s1,s2,s3,s4=s,s+1,s+16,s+17
+                        img=tiles[s]
                     end
 
                     -- add the sprites to the map
-                    mset(cx,cy,s1)
-                    mset(cx+1,cy,s2)
-                    mset(cx,cy+1,s3)
-                    mset(cx+1,cy+1,s4)
+
+                    -- more tokens!!
+                    -- local off={{x=0,y=0},{x=1,y=0},{x=0,y=1},{x=1,y=1}}
+                    -- for k, of in ipairs(off) do mset(cx+of.x,cy+of.y,img[k]) end
+                    mset(cx,cy,img[1])
+                    mset(cx+1,cy,img[2])
+                    mset(cx,cy+1,img[3])
+                    mset(cx+1,cy+1,img[4])
                 end
             end
         end
