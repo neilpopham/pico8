@@ -1,0 +1,10 @@
+__pycache__
+.vscode
+tmp
+test_output
+test_temp
+test_bbs
+private_*
+orig
+dist
+build

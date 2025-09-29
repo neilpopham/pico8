@@ -1,0 +1,34 @@
+picotron cartridge // www.picotron.net
+version 2
+
+:: a.lua
+--[[const]] A = 1
+include"b.lua"
+include"c.lua"
+--[[const]] D = A+B+C
+print(D)
+:: b.lua
+--[[const]] B = 2
+print(B)
+:: c.lua
+--[[const]] C = 4
+include"b.lua"
+print(B+C)
+:: main.lua
+include"a.lua"
+include"last.lua"
+include"circle.lua"
+print(A+B+C)
+:: circle.lua
+--TODO: should gracefully ignore cycles...
+--include"main.lua"
+:: last.lua
+--[[const]] E = A+B+C
+print(A+B+C+E)
+:: unrelated.lua
+print"hi"
+v = {
+    1, -- comment1
+    0x1|0x2, -- comment2
+}
+:: [eoc]
