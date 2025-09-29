@@ -6,6 +6,7 @@ player=class:new({
     end,
     update=function(_ENV)
         -- ⬅️➡️⬆️⬇️🅾️❎
+        -- stationary
         if s==0 then
             if btn(⬅️) then dx=-1
             elseif btn(➡️) then dx=1
@@ -32,6 +33,7 @@ player=class:new({
                     -- printh('nx='..nx..' ny='..ny)
                 end
             end
+        -- moving
         else
             x+=dx
             y+=dy
@@ -42,105 +44,59 @@ player=class:new({
         end
 
         room=rif[y\16+1][x\16+1]
-        local prms=rms[room]
-        for k,o in ipairs(rms) do
+        local proom=rooms[room]
+        for k,o in ipairs(rooms) do
             o.hidden=true
         end
-        prms.hidden=false
-        rx=prms.x*112
-        ry=prms.y*112
-        -- local md,mr=999
-
+        proom.hidden=false
+        rx=proom.x*112
+        ry=proom.y*112
         local rs={}
 
-        if prms.mask&1==1 then
+        if proom.mask&1==1 then
             local d=abs(x-rx-48)+abs(y-ry)
-            -- printh('m=1 d='..d..' x='..abs(x-rx-48)..' y='..abs(y-ry))
-            -- if d<md then md=d mr=1 end
-            if d<48 then add(rs,1) end
+            if d<56 then add(rs,1) end
         end
-        if prms.mask&2==2 then
+        if proom.mask&2==2 then
             local d=abs(rx+96-x)+abs(y-ry-48)
-            -- printh('m=2 d='..d..' x='..abs(rx+96-x)..' y='..abs(y-ry-48))
-            -- if d<md then md=d mr=2 end
-            if d<48 then add(rs,2) end
+            if d<56 then add(rs,2) end
         end
-        if prms.mask&4==4 then
+        if proom.mask&4==4 then
             local d=abs(x-rx-48)+abs(ry+96-y)
-            -- printh('m=4 d='..d)
-            -- if d<md then md=d mr=4 end
-            if d<48 then add(rs,4) end
+            if d<56 then add(rs,4) end
         end
-        if prms.mask&8==8 then
+        if proom.mask&8==8 then
             local d=abs(x-rx)+abs(y-ry-48)
-            -- printh('m=8 d='..d)
-            -- if d<md then md=d mr=8 end
-            if d<48 then add(rs,8) end
+            if d<56 then add(rs,8) end
         end
 
         for mr in all(rs) do
-
-            for k,o in ipairs(rms) do
-                if o.x==prms.x then
-                    if mr==1 and o.y==prms.y-1 then
+            for k,o in ipairs(rooms) do
+                if o.x==proom.x then
+                    if mr==1 and o.y==proom.y-1 then
                         o.hidden=false
                     end
-                    if mr==4 and o.y==prms.y+1 then
+                    if mr==4 and o.y==proom.y+1 then
                         o.hidden=false
                     end
-                elseif o.y==prms.y then
-                    if mr==2 and o.x==prms.x+1 then
+                elseif o.y==proom.y then
+                    if mr==2 and o.x==proom.x+1 then
                         o.hidden=false
                     end
-                    if mr==8 and o.x==prms.x-1 then
+                    if mr==8 and o.x==proom.x-1 then
                         o.hidden=false
                     end
                 end
             end
         end
-
-
-
-        -- for k,o in ipairs(rms) do
-        --     if o.x==prms.x then
-        --         if prms.mask&1==1 and o.y==prms.y-1 then
-        --             o.hidden=false
-        --         end
-        --         if prms.mask&4==4 and o.y==prms.y+1 then
-        --             o.hidden=false
-        --         end
-        --     elseif o.y==prms.y then
-        --         if prms.mask&2==2 and o.x==prms.x+1 then
-        --             o.hidden=false
-        --         end
-        --         if prms.mask&8==8 and o.x==prms.x-1 then
-        --             o.hidden=false
-        --         end
-        --     end
-        -- end
     end,
     draw=function(_ENV)
         spr(32,x,y,2,2)
-        for k,o in ipairs(rms) do
+        for k,o in ipairs(rooms) do
             if o.hidden then
                 rectfill(o.x*112,o.y*112,o.x*112+111,o.y*112+111,0)
             end
         end
-
-        -- local tx,ty=tile(x),tile(y)
-        -- sx=max(0,tx-8)
-        -- sy=max(0,ty-8)
-        -- ex=tx+9
-        -- ey=ty+9
-        -- for cy=sy,ey do
-        --     for cx=sx,ex do
-        --         if not los(tx,ty,cx,cy) then
-        --         rectfill(cx*8,cy*8,cx*8+7,cy*8+7,0)
-        --         end
-        --     end
-        -- end
-
-
     end,
 })
 

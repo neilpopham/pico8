@@ -1,5 +1,5 @@
 function mapmaker()
-    local cells,rooms,offsets,mx,my,sprites,tiles,templates,rotations={},0,{{x=0,y=-1},{x=1,y=0},{x=0,y=1},{x=-1,y=0}},0,0
+    local cells,total,offsets,mx,my,sprites,tiles,templates,rotations={},0,{{x=0,y=-1},{x=1,y=0},{x=0,y=1},{x=-1,y=0}},0,0
 
     local empty=2
 
@@ -10,6 +10,7 @@ function mapmaker()
         "01,01,01,01,01,"..
         "02,02,02,02,02,"..
         "04,04,06,08,10,"..
+        "34,34,34,34,34,"..
         "99,99,99,99,99",
         4
     )
@@ -32,8 +33,8 @@ function mapmaker()
     -- i is the index from the sprites data
     templates=keywithfixedlengths(
         "99,"..
-        "00,00,99,99,99,00,00,"..
-        "00,00,99,99,99,00,00,"..
+        "00,00,34,34,34,00,00,"..
+        "00,00,34,34,34,00,00,"..
         "00,00,00,00,00,00,00,"..
         "00,00,00,00,00,00,00,"..
         "00,00,00,00,00,00,00,"..
@@ -115,7 +116,8 @@ function mapmaker()
     --  functions to rotate a cell
     local rotatoes={
         [2]=function(x,y)
-            return flr(-y+c),flr(x+c) end,
+            return flr(-y+c),flr(x+c)
+        end,
         [3]=function(x,y)
             return flr(-x+c),flr(-y+c)
         end,
@@ -123,7 +125,7 @@ function mapmaker()
             return flr(y+c),flr(-x+c)
         end
     }
-    -- for index -12.33 will have a 33/100 chance of returning 12
+    -- index -12.33 will have a 33/100 chance of returning 12
     function choice(n)
         if rnd()<-n%1 then return -n&0xff end
         return empty
@@ -145,7 +147,7 @@ function mapmaker()
     function set(x,y,room)
         if not cells[x] then cells[x]={} end
         cells[x][y]=room
-        rooms+=1
+        total+=1
     end
     -- checks whether a cell has already been taken
     function taken(x,y)
@@ -163,7 +165,7 @@ function mapmaker()
         -- set this new rooms entrance from it's predecessor's exit
         room.exit[entrance]={px,py}
         -- if we are straying too far from the centre end the worker here
-        if abs(20-cx)>5 or abs(20-cy)>5 then
+        if abs(20-cx)>3 or abs(20-cy)>3 then
             set(cx,cy,room)
             return
         end
@@ -173,28 +175,26 @@ function mapmaker()
         -- if we've come from a straight corridor
         if previous.line then
             local ds={}
+            -- for de in all({-1,1}) do if rnd()<.2 then add(ds,de) end end
             -- turn anticlockwise?
             if rnd()<.2 then add(ds,-1) end
-            -- turn clockwise?
+            -- -- turn clockwise?
             if rnd()<.2 then add(ds,1) end
             for de in all(ds) do
                 local d=safe(entrance-de)
-                if test(cx,cy,d) then
-                    add(exits,d)
-                end
+                if test(cx,cy,d) then add(exits,d) end
             end
         end
         -- if not turned
         if #exits==0 then
             -- if we can still create rooms make this a corridor
-            -- if rooms<8 and rnd()>(rooms/20) then
-            if rooms<4 and rnd()>(rooms/10) then
+            if total<4 and rnd()>(total/10) then
                 room.line=1
                 add(exits,exit)
             end
             -- otherwise turn into a room
         end
-        -- ensure we reserve this cell
+        -- ensure we reserve this cell so children are aware of it
         set(cx,cy,room)
         -- loop through exits, set them in our room and create a worker for each
         for d in ipairs(exits) do
@@ -292,15 +292,14 @@ function mapmaker()
         end
     end
     -- set the start and exit rooms ensuring they are not the same
-    local start=random(#options)
-    local exit=random(#options)
-    while exit==start do
+    local start,exit=random(#options)
+    repeat
         exit=random(#options)
-    end
+    until exit!=start
     start=options[start]
     exit=options[exit]
 
-    -- create our map at 0x8000 now we know the width and empty it
+    -- create our map at 0x8000 now we know the width, and empty it
     poke(0x5f56, 0x80)
     poke(0x5f57, 2*size*(mx.x-mn.x+1))
     memset(0x8000,0,0x4000)
@@ -308,7 +307,7 @@ function mapmaker()
     -- create global tables to store
     -- a collection of rooms
     -- a y,x grid of cells recording the room id for each
-    rms,rif={},{}
+    rooms,rif={},{}
     for i=1,size*(mx.y-mn.y+1) do
         add(rif,{})
     end
@@ -342,15 +341,15 @@ function mapmaker()
                     rotated[ny][nx]=s==0 and 0 or sprites[s][rotation]
                 end
             end
-            --
-            add(rms,{x=tx,y=ty,type=type,mask=room.mask})
+            -- record the basics of each room in a global table
+            add(rooms,{x=tx,y=ty,type=type,mask=room.mask})
             -- loop through each room cell
             for ox=0,size-1 do
                 for oy=0,size-1 do
+                    -- record the room id for each cell, starting at 1,1
+                    rif[ty*size+oy+1][tx*size+ox+1]=#rooms
 
-                    rif[ty*size+oy+1][tx*size+ox+1]=#rms
-
-                    -- set the sprite
+                    -- set the sprite for this cell and rotation
                     local s=rotated[oy+1][ox+1]
 
                     -- get map cell co-ordinates
@@ -363,19 +362,13 @@ function mapmaker()
                             p.x=cx*8
                             p.y=cy*8
                         end
-                        if x==exit.x and y==exit.y then
-                            s=34
-                        end
                     end
 
                     -- using same sprite?
-                    -- local s1,s2,s3,s4
                     local img
                     if s==0 then
-                        -- s1,s2,s3,s4=s,s,s,s
                         img={s,s,s,s}
                     else
-                        -- s1,s2,s3,s4=s,s+1,s+16,s+17
                         img=tiles[s]
                     end
 
