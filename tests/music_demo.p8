@@ -142,7 +142,7 @@ local sfxcache = {
   add(self.sfx,{...})
  end,
  check=function(self)
-  if stat(19+self.channel)%self.beats==0 then
+  if stat(50+self.channel)%self.beats==0 then
     if #self.sfx>0 and self.valid then
      for s in all(self.sfx) do
       sfx(s[1],s[2] or -1,s[3] or 0,s[4] or 0)
@@ -193,10 +193,10 @@ function _draw()
  end
  particles:draw()
  print(
-  lpad(stat(49+sfxcache.channel)),
+  lpad(stat(50+sfxcache.channel)),
   62,
   61,
-  stat(49+sfxcache.channel)%sfxcache.beats==0 and 7 or 3
+  stat(50+sfxcache.channel)%sfxcache.beats==0 and 7 or 3
  )
 end
 
