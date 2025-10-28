@@ -2,46 +2,20 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 
-
--- px9 data compression v10
--- by zep & co.
+-- px9 data compression v6
+-- by zep
 --
 -- changelog:
 --
--- v11:
---  @felice: removed unneeded
---  brackets -> 214 tokens
---
--- v10:
---  @pancelor
---  ★ remove cruft
---  ★ clever getval() tricks
---  ★ fix low-entropy bug
---  215 tokens
---  @zep: added tests tab 3
---
--- v9:
---  @pancelor
---  ★ redo bitstream order
---  234 tokens (but ~4% slower)
---
--- v8:
---  @pancelor
---  ★ smaller vlist initialization
---  241 tokens
---
--- v7:
---  smaller vlist_val by @felice
---  7b -> 254 tokens (fastest)
---  7a -> 247 tokens (smallest)
---
 -- v6:
---  smaller vlist_val by @p01
---  -> 258 tokens
+--  @felice
+--  ★ fix decomp var name bug
 --
 -- v5:
---  fixed bug found by @icegoat
---  262 tokens (the bug was caused by otherwise redundant code!)
+--  @felice
+--  ★ px9_decomp (mem/str) 320t
+--  ★ px9_mdecomp (memory) 273t
+--  ★ px9_sdecomp (string) 283t
 --
 -- v4:
 --  @catatafish
@@ -65,7 +39,10 @@ __lua__
 --[[
 
     features:
-    ★ 273 token decompress
+    ★ small decompressor(s):
+        320 tokens (mem or str)
+        273 tokens (mem only)
+        283 tokens (str only)
     ★ handles any bit size data
     ★ no manual tuning required
     ★ decent compression ratios
@@ -75,22 +52,36 @@ __lua__
 
     1. compress your data
 
-        px9_comp(source_x, source_y,
+        px9_comp(src_x, src_y,
             width, height,
-            destination_memory_addr,
+            dst_addr_or_nil_for_str,
             read_function)
 
         e.g. to compress the whole
-        spritesheet to the map:
+        spritesheet to map memory
+        space (0x2000):
 
-        px9_comp(0,0,128,128,
-            0x2000, sget)
+            bytes_written = px9_comp(
+                0,0,
+                128,128,
+                0x2000,
+                sget)
+
+        e.g. to compress the whole
+        screen to a string:
+
+            snapshot_str = px9_comp(
+                0,0,
+                128,128,
+                nil,
+                pget)
+            bytes_written = #snapshot_str
 
     …………………………………
     2. decompress
 
         px9_decomp(dest_x, dest_y,
-            source_memory_addr,
+            source_mem_addr_or_str,
             read_function,
             write_function)
 
@@ -98,50 +89,73 @@ __lua__
         memory space back to the
         screen:
 
-        px9_decomp(0,0,0x2000,
-            pget,pset)
+            px8_decomp(
+                0,0,
+                0x2000,
+                pget,
+                pset)
 
-        …………………………………
+        e.g. to decompress from a
+        string into the spritesheet:
+
+            px8_decomp(
+                0,64,
+                snapshot_str,
+                pget,
+                sset)
 
         (see example below)
 
-        note: only the decompress
-        code (tab 1) is needed in
-        your release cart after
-        storing compressed data.
+        …………………………………
+
+        note: only *one* of the
+        decompress functions is
+        needed in your release cart
+        after storing compressed
+        data. choose the tab that
+        suits your needs:
+
+        tab 1:
+            -- mem or str, 320 tokens
+            px9_decomp()
+
+        tab 2:
+            -- mem only, 273 tokens
+            px9_mdecomp()
+
+        tab 3:
+            -- str only, 283 tokens
+            px9_sdecomp()
 
 ]]
 
 function old_init()
 
-    -- test: compress from
+    -- src info (spritesheet)
+    local w,h=128,128
+    local raw_size=(w*h+1)\2 -- bytes
+
+    -- test 1: compress from
     -- spritesheet to map, and
     -- then decomp back to screen
 
     cls()
+    print("test #1",6)
+    print("")
     print("compressing..",5)
     flip()
-
-    w=128 h=128
-    raw_size=(w*h+1)\2 -- bytes
-
-    ctime=stat(1)
 
     -- compress spritesheet to map
     -- area (0x2000) and save cart
 
-    clen = px9_comp(
+    local clen = px9_comp(
         0,0,
         w,h,
         0x2000,
         sget)
 
-    ctime=stat(1)-ctime
-
     --cstore() -- save to cart
 
-    -- show compression stats
-    print("                 "..(ctime/30).." seconds",0,0)
     print("")
     print("compressed spritesheet to map",6)
     ratio=tostr(clen/raw_size*100)
@@ -150,90 +164,137 @@ function old_init()
         .." ("..sub(ratio,1,4).."%)"
         ,12)
     print("")
+    print("")
     print("press ❎ to decompress",14)
 
     memcpy(0x7000,0x2000,0x1000)
 
-    -- wait for user
     repeat until btn(❎)
-
-    print("")
-    print("decompressing..",5)
-    flip()
-
-    -- save stats screen
-    local cx,cy=cursor()
-    local sdata={}
-    for a=0x6000,0x7ffc do
-        sdata[a]=peek4(a)
-    end
-
-    dtime=stat(1)
 
     -- decompress data from map
     -- (0x2000) to screen
 
+    cls()
+    --px9_mdecomp(0,0,0x2000,pget,pset)
     px9_decomp(0,0,0x2000,pget,pset)
 
-    dtime=stat(1)-dtime
-
-    -- wait for user
     repeat until btn(❎)
 
-    -- restore stats screen
-    for a,v in pairs(sdata) do
-        poke4(a,v)
+    ----------------------------
+
+    -- test 2: compress from
+    -- spritesheet to str, and
+    -- then decomp back to screen
+
+    cls()
+    print("test #2",6)
+    print("")
+    print("compressing..",5)
+    flip()
+
+    -- compress spritesheet to map
+    -- area (0x2000) and save cart
+
+    image = px9_comp(
+        0,0,
+        w,h,
+        nil,--0x2000,
+        sget)
+    clen = #image
+
+    --cstore() -- save to cart
+
+    print("")
+    print("compressed spritesheet to string",6)
+    ratio=tostr(clen/raw_size*100)
+    print("bytes: "
+        ..clen.." / "..raw_size
+        .." ("..sub(ratio,1,4).."%)"
+        ,12)
+    print("")
+    print("")
+    print("press ❎ to decompress",14)
+
+    for i=1,clen do
+        poke(0x6fff+i,ord(sub(image,i,i)))
     end
 
-    -- add decompression stats
-    print("                 "..(dtime/30).." seconds",cx,cy-6,5)
-    print("")
+    repeat until btn(❎)
 
+    -- decompress data from map
+    -- (0x2000) to screen
+
+    cls()
+    --px9_sdecomp(0,0,image,pget,pset)
+    px9_decomp(0,0,image,pget,pset)
+
+    repeat until btn(❎)
+
+    ----------------------------
+
+    cls()
+    print("done",6)
+    print("")
 end
 
 -->8
--- px9 decompress
+-- px9 decompress, mem or str
+-- 320 tokens
 
--- x0,y0 where to draw to
--- src   compressed data address
--- vget  read function (x,y)
--- vset  write function (x,y,v)
-
-function
-    px9_decomp(x0,y0,src,vget,vset)
-
+function px9_decomp
+(
+    x0,y0, -- where to draw to
+    src,   -- compressed data
+    vget,  -- read fn (x,y)
+    vset   -- write fn (x,y,v)
+)
     local function vlist_val(l, val)
-        -- find position and move
-        -- to head of the list
-
---[ 2-3x faster than block below
-        local v,i=l[1],1
-        while v!=val do
-            i+=1
-            v,l[i]=l[i],v
-        end
-        l[1]=val
---]]
-
---[[ 7 tokens smaller than above
-        for i,v in ipairs(l) do
-            if v==val then
-                add(l,deli(l,i),1)
-                return
+        -- find position
+        for i=1,#l do
+            if l[i]==val then
+                for j=i,2,-1 do
+                    l[j]=l[j-1]
+                end
+                l[1] = val
+                return i
             end
         end
---]]
     end
 
-    -- read an m-bit num from src
-    local function getval(m)
-        -- $src: 4 bytes at flr(src)
-        -- >>src%1*8: sub-byte pos
-        -- <<32-m: zero high bits
-        -- >>>16-m: shift to int
-        local res=$src >> src%1*8 << 32-m >>> 16-m
-        src+=m>>3 --m/8
-        return res
+    -- bit cache is between 16 and
+    -- 31 bits long with the next
+    -- bit always aligned to the
+    -- lsb of the fractional part.
+    local cache,cache_bits,i,cachemore=0,0,1
+    if type(src)=="string" then
+        cachemore=function()
+            -- cache next 7 bits
+            cache|=(((ord(sub(src,i,i))) or 0)&127)>>>16-cache_bits
+            cache_bits+=7
+            i+=1
+        end
+    else
+        cachemore=function()
+            -- cache next 16 bits
+            cache|=%src>>>16-cache_bits
+            cache_bits+=16
+            src+=2
+        end
+    end
+
+    local function getval(bits)
+        while cache_bits<16 do
+            cachemore()
+        end
+        -- clip out the bits we
+        -- want and shift to
+        -- integer bits
+        local val=cache<<32-bits>>>16-bits
+        -- now shift those bits
+        -- out of the cache
+        cache=cache>>>bits
+        cache_bits-=bits
+        return val
     end
 
     -- get number plus n
@@ -250,13 +311,15 @@ function
     -- header
 
     local
-        w_1,h_1,      -- w-1,h-1
+        w,h_1,      -- w,h-1
         eb,el,pr,
+        x,y,
         splen,
         predict
         =
-        gnp"0",gnp"0",
+        gnp"1",gnp"0",
         gnp"1",{},{},
+        0,0,
         0
         --,nil
 
@@ -264,18 +327,24 @@ function
         add(el,getval(eb))
     end
     for y=y0,y0+h_1 do
-        for x=x0,x0+w_1 do
+        for x=x0,x0+w-1 do
             splen-=1
 
-            if splen<1 then
+            if(splen<1) then
                 splen,predict=gnp"1",not predict
             end
 
             local a=y>y0 and vget(x,y-1) or 0
 
             -- create vlist if needed
-            local l=pr[a] or {unpack(el)}
-            pr[a]=l
+            local l=pr[a]
+            if not l then
+                l={}
+                for e in all(el) do
+                    add(l,e)
+                end
+                pr[a]=l
+            end
 
             -- grab index from stream
             -- iff predicted, always 1
@@ -288,6 +357,241 @@ function
 
             -- set
             vset(x,y,v)
+
+            -- advance
+            x+=1
+            y+=x\w
+            x%=w
+        end
+    end
+end
+
+-->8
+-- px9 decompress, memory-only
+-- 273 tokens
+
+function px9_mdecomp
+(
+    x0,y0, -- where to draw to
+    src,   -- compressed data
+    vget,  -- read fn (x,y)
+    vset   -- write fn (x,y,v)
+)
+    local function vlist_val(l, val)
+        -- find position
+        for i=1,#l do
+            if l[i]==val then
+                for j=i,2,-1 do
+                    l[j]=l[j-1]
+                end
+                l[1] = val
+                return i
+            end
+        end
+    end
+
+    -- bit cache is between 16 and
+    -- 31 bits long with the next
+    -- bit always aligned to the
+    -- lsb of the fractional part
+    local cache,cache_bits=0,0
+    local function getval(bits)
+        if cache_bits<16 then
+            -- cache next 16 bits
+            cache+=%src>>>16-cache_bits
+            cache_bits+=16
+            src+=2
+        end
+        -- clip out the bits we want
+        -- and shift to integer bits
+        local val=cache<<32-bits>>>16-bits
+        -- now shift those bits out
+        -- of the cache
+        cache=cache>>>bits
+        cache_bits-=bits
+        return val
+    end
+
+    -- get number plus n
+    local function gnp(n)
+        local bits=0
+        repeat
+            bits+=1
+            local vv=getval(bits)
+            n+=vv
+        until vv<(1<<bits)-1
+        return n
+    end
+
+    -- header
+
+    local
+        w,h_1,      -- w,h-1
+        eb,el,pr,
+        x,y,
+        splen,
+        predict
+        =
+        gnp"1",gnp"0",
+        gnp"1",{},{},
+        0,0,
+        0
+        --,nil
+
+    for i=1,gnp"1" do
+        add(el,getval(eb))
+    end
+    for y=y0,y0+h_1 do
+        for x=x0,x0+w-1 do
+            splen-=1
+
+            if(splen<1) then
+                splen,predict=gnp"1",not predict
+            end
+
+            local a=y>y0 and vget(x,y-1) or 0
+
+            -- create vlist if needed
+            local l=pr[a]
+            if not l then
+                l={}
+                for e in all(el) do
+                    add(l,e)
+                end
+                pr[a]=l
+            end
+
+            -- grab index from stream
+            -- iff predicted, always 1
+
+            local v=l[predict and 1 or gnp"2"]
+
+            -- update predictions
+            vlist_val(l, v)
+            vlist_val(el, v)
+
+            -- set
+            vset(x,y,v)
+
+            -- advance
+            x+=1
+            y+=x\w
+            x%=w
+        end
+    end
+end
+
+-->8
+-- px9 decompress, string-only
+-- 283 tokens
+
+function px9_sdecomp
+(
+    x0,y0, -- where to draw to
+    src,   -- compressed data
+    vget,  -- read fn (x,y)
+    vset   -- write fn (x,y,v)
+)
+    local function vlist_val(l, val)
+        -- find position
+        for i=1,#l do
+            if l[i]==val then
+                for j=i,2,-1 do
+                    l[j]=l[j-1]
+                end
+                l[1] = val
+                return i
+            end
+        end
+    end
+
+    -- bit cache is between 16 and
+    -- 22 bits long with the next
+    -- bit always aligned to the
+    -- lsb of the fractional part
+    local cache,cache_bits,i=0,0,1
+    local function getval(bits)
+        while cache_bits<16 do
+            -- cache next 7 bits
+            cache|=(((ord(sub(src,i,i))) or 0)&127)>>>16-cache_bits
+            cache_bits+=7
+            i+=1
+        end
+        -- clip out the bits we want
+        -- and shift to integer bits
+        local val=cache<<32-bits>>>16-bits
+        -- now shift those bits out
+        -- of the cache
+        cache=cache>>>bits
+        cache_bits-=bits
+        return val
+    end
+
+    -- get number plus n
+    local function gnp(n)
+        local bits=0
+        repeat
+            bits+=1
+            local vv=getval(bits)
+            n+=vv
+        until vv<(1<<bits)-1
+        return n
+    end
+
+    -- header
+
+    local
+        w,h_1,      -- w,h-1
+        eb,el,pr,
+        x,y,
+        splen,
+        predict
+        =
+        gnp"1",gnp"0",
+        gnp"1",{},{},
+        0,0,
+        0
+        --,nil
+
+    for i=1,gnp"1" do
+        add(el,getval(eb))
+    end
+    for y=y0,y0+h_1 do
+        for x=x0,x0+w-1 do
+            splen-=1
+
+            if(splen<1) then
+                splen,predict=gnp"1",not predict
+            end
+
+            local a=y>y0 and vget(x,y-1) or 0
+
+            -- create vlist if needed
+            local l=pr[a]
+            if not l then
+                l={}
+                for e in all(el) do
+                    add(l,e)
+                end
+                pr[a]=l
+            end
+
+            -- grab index from stream
+            -- iff predicted, always 1
+
+            local v=l[predict and 1 or gnp"2"]
+
+            -- update predictions
+            vlist_val(l, v)
+            vlist_val(el, v)
+
+            -- set
+            vset(x,y,v)
+
+            -- advance
+            x+=1
+            y+=x\w
+            x%=w
         end
     end
 end
@@ -300,49 +604,58 @@ end
 -- dest  address to store
 -- vget  read function (x,y)
 
-function
-    px9_comp(x0,y0,w,h,dest,vget)
+function px9_comp
+(
+    x0,y0,
+    w,h,
+    dest,
+    vget
+)
 
     local dest0=dest
+    local bit=1
+    local byte=0
 
     local function vlist_val(l, val)
-        -- find position and move
-        -- to head of the list
-
---[ 2-3x faster than block below
-        local v,i=l[1],1
-        while v!=val do
-            i+=1
-            v,l[i]=l[i],v
-        end
-        l[1]=val
-        return i
---]]
-
---[[ 8 tokens smaller than above
-        for i,v in ipairs(l) do
-            if v==val then
-                add(l,deli(l,i),1)
+        -- find positon
+        for i=1,#l do
+            if l[i] == val then
+                -- jump to top
+                for j=i,2,-1 do
+                    l[j]=l[j-1]
+                end
+                l[1] = val
                 return i
             end
         end
---]]
     end
 
-    local bit=1
-    local byte=0
-    local function putbit(bval)
-        if (bval>0) byte+=bit
-        poke(dest, byte) bit<<=1
-        if (bit==256) then
-            bit=1 byte=0
-            dest += 1
+    local putbit,str
+    if dest then
+        putbit=function(bval)
+            if (bval) byte+=bit
+            bit<<=1
+            if (bit==256) then
+                poke(dest, byte)
+                bit=1 byte=0
+                dest += 1
+            end
+        end
+    else
+        str=""
+        putbit=function(bval)
+            if (bval) byte+=bit
+            bit<<=1
+            if (bit==128) then
+                str..=chr(byte+128)
+                bit=1 byte=0
+            end
         end
     end
 
     local function putval(val, bits)
         for i=0,bits-1 do
-            putbit(val>>i&1)
+            putbit(val&1<<i > 0)
         end
     end
 
@@ -400,11 +713,18 @@ function
         for x=x0,x0+w-1 do
             local v=vget(x,y)
 
-            local a=y>y0 and vget(x,y-1) or 0
+            local a=0
+            if (y>y0) a+=vget(x,y-1)
 
             -- create vlist if needed
-            local l=pr[a] or {unpack(el)}
-            pr[a]=l
+            local l=pr[a]
+            if not l then
+                l={}
+                for i=1,#el do
+                    l[i]=el[i]
+                end
+                pr[a]=l
+            end
 
             -- add to vlist
             add(dat,vlist_val(l,v))
@@ -449,152 +769,20 @@ function
         nopredict=not nopredict
     end
 
-    if(bit>0) dest+=1 -- flush
+    -- flush
+    while bit!=1 do
+        putbit()
+    end
 
-    return dest-dest0
+    return str and str or dest-dest0
 end
 
--->8
--- tests
--- uncomment run_tests() at
--- bottom of this tab. each
--- test compresses video and
--- checks crc matches.
-
---[[
-expected sizes
-blank:    21 (0.0026)
-circ:    254 (0.0310)
-lines:  2109 (0.2574)
-dots:   2075 (0.2533)
-lunch:  1275 (0.1556)
-noise: 12819 (1.5648)
-noise1: 3277 (0.4000)
-]]
-
-function vid_crc()
-    local res=109
-    for i=0x6000,0x7fff,4 do
-        res ^^= 0x9e13.48b1
-        res += $i
-        res <<>= 5
-        res *= 103.11
-    end
-    return res
-end
-
--- compress whatever is on the
--- screen and check crc matches
-function vid_test(name)
-
-crc0=vid_crc()
-len=px9_comp(0,0,128,128,
-    0x8000,pget)
-printh(name..": "..len..
- " ("..(len/8192)..")")
-cls()
-px9_decomp(0,0,0x8000,pget,pset)
-
-crc1=vid_crc()
-assert(crc0==crc1)
-end
-
-
-function run_tests()
-
-    printh("--- px9 tests ---")
-
-    cls(2)
-    vid_test("blank")
-
-    -- circles
-    cls()circfill(64,64,32,12)
-    vid_test("circ")
-
-    --lines
-    cls()
-    for i=0,128,4 do
-    line(i,0,0,128-i,8+i/8)
-    line(i,128,128,128-i,8+i/8)
-    end
-    vid_test("lines")
-
-    --dots
-    cls()srand()
-    for i=0,2000 do
-        circfill(rnd(128),rnd(128),rnd(16),rnd(16))
-    end
-    vid_test("dots")
-
-    cls()spr(0,0,0,16,16)
-    vid_test("lunch")
-
-    -- noise
-    cls()
-    for i=0x6000,0x7fff do
-        poke(i, rnd(256))
-    end
-    vid_test("noise")
-
-    -- 1-bit noise
-    cls()
-    for i=0x6000,0x7fff do
-        poke(i, rnd(2)+(rnd(2)\1)*16)
-    end
-    vid_test("noise1")
-
-    -- fuzz
-    -- (would be more meaningful
-    -- with more variation in
-    -- data characteristics)
-    srand()
-
-    --for j=0,500 do
-    for j=0,4 do
-    cls(rnd(16))
-    for i=0,rnd(4000) do
-        circfill(rnd(128),rnd(128),rnd(16),rnd(16))
-    end
-    for i=0,rnd(4000) do
-        pset(rnd(128),rnd(128),rnd(16),rnd(16))
-    end
-    vid_test("fuzz"..j)
-    end
-
-    color(7)
-    cls()
-    stop("ok")
-
-end
-
-
---run_tests()
-
-
--- reload(0x0, 0x0, 0x2000, "px9_2.p8")
--- clen = px9_comp(0, 0, 128, 128, 0x2000, sget)
--- cstore(0x0, 0x2000, clen, "px9_2_compressed.p8")
--- stop()
-
-cls()
-
-reload(0x8000,0x0000,0x2000, "px9_2_compressed.p8")
-
--- print(peek(0x8000))
--- stop()
-
-px9_decomp(0,0,0x8000,pget,pset)
-repeat until false
-
--- cls()
--- x,y=0,0
--- for s=0,255 do
---     spr(s,x*8,y*8)
---     x+=1
---     if x==16 then x=0 y+=1 end
--- end
-
-
+snapshot_str = px9_comp(
+                0,0,
+                128,128,
+                nil,
+                pget)
+printh(snapshot_str, '@clip')
 
 __gfx__
 ddddddddddddddddddddddddddddddddddddddddd666666d15dddddddddddddddddddddddd666666666666666666666666666666666666666666666666666660
