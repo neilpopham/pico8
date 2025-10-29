@@ -2,16 +2,18 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 
+-- reload()
+
 poke(0x5f54,0x00)
 for y=0,7 do
-    for x=0,15 do
+    for x=8,15 do
         sset(x,y,2)
     end
 end
 
 poke(0x5f54,0x80)
 for y=0,7 do
-    for x=0,15 do
+    for x=8,15 do
         sset(x,y,3)
     end
 end

@@ -572,9 +572,9 @@ end
 
 
 -- reload(0x0, 0x0, 0x2000, "px9_2.p8")
--- clen = px9_comp(0, 0, 128, 128, 0x2000, sget)
--- cstore(0x0, 0x2000, clen, "px9_2_compressed.p8")
--- stop()
+clen = px9_comp(0, 0, 128, 128, 0x2000, sget)
+cstore(0x0, 0x2000, clen, "px9_1_compressed.p8")
+stop()
 
 cls()
 
