@@ -29,6 +29,7 @@ machine={
     code='',
     p=1,
     i=1,
+    b={},
     cells={},
     stdin={},
     stdout={},
@@ -36,10 +37,12 @@ machine={
         [62]=function(self)
             printh('parsing >')
             self.p+=1
+            return 1
         end,
         [60]=function(self)
             printh('parsing <')
             self.p-=1
+            return 1
         end,
         [43]=function(self)
             printh('parsing +')
@@ -48,7 +51,9 @@ machine={
                 self.cells[self.p]=1
             else
                 self.cells[self.p]+=1
+                self.cells[self.p]=self.cells[self.p]&0xff
             end
+            return 1
         end,
         [45]=function(self)
             printh('parsing -')
@@ -56,27 +61,38 @@ machine={
                 self.cells[self.p]=255
             else
                 self.cells[self.p]-=1
+                self.cells[self.p]=self.cells[self.p]&0xff
             end
+            return 1
         end,
         [46]=function(self)
             add(self.stdout, self.cells[self.p])
+            return 1
         end,
         [44]=function(self)
             self.cells[self.p]=deli(self.stdin,1)
+            return 1
         end,
         [91]=function(self)
+            add(self.b,self.i)
             if self.cells[self.p]==0 then
-                local i,s=self.i
+                local s
                 repeat
-                    s=sub(self.code,i,i)
+                    s=sub(self.code,self.i,self.i)
                     printh('s='..s)
                     self.i+=1
                 until s==']' or s==''
-                self.i+=1
             end
+            return 1
         end,
         [93]=function(self)
-            printh('not done yet')
+            printh('b='..tostr(#self.b))
+            printh('cell='..self.cells[self.p])
+            if self.cells[self.p]==0 then return 1 end
+            assert(#self.b>0)
+            self.i=deli(self.b)
+            printh('i='..self.i)
+            return 0
         end,
     },
     exec=function(self,code)
@@ -86,12 +102,15 @@ machine={
         local o
         repeat
             o=sub(code,self.i,self.i)
-            printh(o)
+            printh('operation='..o)
             local c=ord(o)
-            if self.command[c] then
-                self.command[c](self)
-            end
-            self.i+=1
+            if self.command[c]==nil then break end
+            assert(self.command[c]!=nil)
+            printh('i was '..self.i)
+            local step=self.command[c](self)
+            printh('step='..step)
+            self.i+=step
+            printh('i is now '..self.i)
         until o==''
     end,
     dump=function(self)
@@ -106,6 +125,8 @@ machine={
 
 printh('-------------------')
 
+-- machine:exec('[++]---->++++>[-]+')
+-- machine:exec('[++]')
 machine:exec('---->++++>[-]+')
 
 machine:dump()
