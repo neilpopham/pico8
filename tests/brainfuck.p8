@@ -35,38 +35,23 @@ machine={
     stdout={},
     command={
         [62]=function(self)
-            printh('parsing >')
             self.p+=1
             return 1
         end,
         [60]=function(self)
-            printh('parsing <')
             self.p-=1
             return 1
         end,
         [43]=function(self)
-            printh('parsing +')
-            printh(self.cells[self.p])
-            if self.cells[self.p]==nil then
-                self.cells[self.p]=1
-            else
-                self.cells[self.p]+=1
-                self.cells[self.p]=self.cells[self.p]&0xff
-            end
+            self.cells[self.p]=(self:current()+1)&0xff
             return 1
         end,
         [45]=function(self)
-            printh('parsing -')
-            if self.cells[self.p]==nil then
-                self.cells[self.p]=255
-            else
-                self.cells[self.p]-=1
-                self.cells[self.p]=self.cells[self.p]&0xff
-            end
+            self.cells[self.p]=(self:current()-1)&0xff
             return 1
         end,
         [46]=function(self)
-            add(self.stdout, self.cells[self.p])
+            add(self.stdout, self:current())
             return 1
         end,
         [44]=function(self)
@@ -75,27 +60,31 @@ machine={
         end,
         [91]=function(self)
             add(self.b,self.i)
-            if self.cells[self.p]==0 then
-                local s
+            local inc,char=1
+            if self:current()==0 then
                 repeat
-                    s=sub(self.code,self.i,self.i)
-                    printh('s='..s)
                     self.i+=1
-                until s==']' or s==''
+                    char=sub(self.code,self.i,self.i)
+                until char==']' or char==''
+                inc=char==']' and 1 or 0
             end
-            return 1
+            return inc
         end,
         [93]=function(self)
-            printh('b='..tostr(#self.b))
-            printh('cell='..self.cells[self.p])
-            if self.cells[self.p]==0 then return 1 end
-            assert(#self.b>0)
-            self.i=deli(self.b)
-            printh('i='..self.i)
+            local i=deli(self.b)
+            if  self:current()==0 then return 1 end
+            self.i=i
             return 0
         end,
     },
+    current=function(self)
+        return self.cells[self.p] and self.cells[self.p] or 0
+    end,
+    reset=function(self)
+        self.code,self.p,self.i,self.b,self.cells,self.stdin,self.stdout='',1,1,{},{},{},{}
+    end,
     exec=function(self,code)
+        self:reset()
         code=tostr(code)
         self.code=code
         if #code==0 then return end
@@ -103,22 +92,24 @@ machine={
         repeat
             o=sub(code,self.i,self.i)
             printh('operation='..o)
-            local c=ord(o)
-            if self.command[c]==nil then break end
-            assert(self.command[c]!=nil)
-            printh('i was '..self.i)
-            local step=self.command[c](self)
-            printh('step='..step)
+            local c,step=ord(o),1
+            if self.command[c] then
+                step=self.command[c](self)
+            end
             self.i+=step
-            printh('i is now '..self.i)
         until o==''
     end,
     dump=function(self)
+        printh('== dump ==')
         printh('p='..self.p)
         printh('i='..self.i)
         printh(#self.cells)
         for k,v in pairs(self.cells) do
             printh(k..'='..v)
+        end
+        printh(#self.stdout)
+        for k,v in pairs(self.stdout) do
+            printh(k..'='..v.. ' or '..chr(v))
         end
     end
 }
@@ -127,6 +118,14 @@ printh('-------------------')
 
 -- machine:exec('[++]---->++++>[-]+')
 -- machine:exec('[++]')
-machine:exec('---->++++>[-]+')
+-- machine:exec('+++[+[--]]++')
+-- machine:exec('++++[--]+>-.<.')
+-- machine:exec('++[--[+]]')
+-- machine:exec('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.')
+-- machine:exec('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]')
+-- machine:exec('+++[+[--]>]++')
+-- machine:exec('+[+++++++++++++++++++++++++++++++++.<]')
+-- machine:exec('+ (hello) +'
+machine:exec('+>>+++++++++++++++++++++++++++++<<[>>>[>>]<[[>>+<<-]>>-[<<]]>+<<[-<<]<]>+>>[-<<]<+++++++++[>++++++++>+<<-]>-.----.>.')
 
 machine:dump()
