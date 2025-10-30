@@ -60,15 +60,15 @@ machine={
         end,
         [91]=function(self)
             add(self.b,self.i)
-            local inc,char=1
-            if self:current()==0 then
-                repeat
-                    self.i+=1
-                    char=sub(self.code,self.i,self.i)
-                until char==']' or char==''
-                inc=char==']' and 1 or 0
-            end
-            return inc
+            if self:current()>0 then return 1 end
+            local open,char=0
+            repeat
+                self.i+=1
+                char=sub(self.code,self.i,self.i)
+                if char=='[' then open+=1 end
+                if char==']' and open>0 then open-=1 char='|' end
+            until char==']' or char==''
+            return char==']' and 1 or 0
         end,
         [93]=function(self)
             local i=deli(self.b)
@@ -121,11 +121,12 @@ printh('-------------------')
 -- machine:exec('+++[+[--]]++')
 -- machine:exec('++++[--]+>-.<.')
 -- machine:exec('++[--[+]]')
--- machine:exec('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.')
+machine:exec('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.')
 -- machine:exec('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]')
 -- machine:exec('+++[+[--]>]++')
 -- machine:exec('+[+++++++++++++++++++++++++++++++++.<]')
 -- machine:exec('+ (hello) +'
-machine:exec('+>>+++++++++++++++++++++++++++++<<[>>>[>>]<[[>>+<<-]>>-[<<]]>+<<[-<<]<]>+>>[-<<]<+++++++++[>++++++++>+<<-]>-.----.>.')
-
+-- machine:exec('+>>+++++++++++++++++++++++++++++<<[>>>[>>]<[[>>+<<-]>>-[<<]]>+<<[-<<]<]>+>>[-<<]<+++++++++[>++++++++>+<<-]>-.----.>.')
+-- machine:exec('+>[++[++[-]][>]>>]-')
+-- machine:exec('>+>+>+>+>+>+>+[->[>]+[->[>]+>+>+[<]+<]+<]+++++++[>+++++++++++>+<<-]>+.----.>++.')
 machine:dump()
