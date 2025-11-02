@@ -30,10 +30,10 @@ machine={
     p,
     i,
     t,
-    b,
     cells,
     stdin,
     stdout,
+    brackets,
     command={
         [62]=function(self)
             if self.p==32767 then
@@ -60,7 +60,7 @@ machine={
             return 1
         end,
         [46]=function(self)
-            add(self.stdout, self:current())
+            add(self.stdout,self:current())
             return 1
         end,
         [44]=function(self)
@@ -68,29 +68,14 @@ machine={
             return 1
         end,
         [91]=function(self)
-            if self:current()>0 then
-                add(self.b,self.i+1)
-                return 1
+            if self:current()==0 then
+                self.i=self.brackets[self.i]
             end
-            local open,char=0
-            repeat
-                self.i+=1
-                char=sub(self.code,self.i,self.i)
-                if char=='[' then
-                    open+=1
-                elseif char==']' and open>0 then
-                    open-=1
-                    char=' '
-                end
-            until char==']' or char==''
-            return char==']' and 1 or 0
+            return 1
         end,
         [93]=function(self)
-            if self:current()==0 then
-                deli(self.b)
-                return 1
-            end
-            self.i=self.b[#self.b]
+            if self:current()==0 then return 1 end
+            self.i=self.brackets[self.i]+1
             return 0
         end,
     },
@@ -102,8 +87,7 @@ machine={
     end,
     run=function(self, code)
         self:reset()
-        code=tostr(code)
-        self.code=code
+        self:parse(code)
         if #code==0 then return end
         local o
         repeat
@@ -120,6 +104,18 @@ machine={
         end
         self.i+=step
         return o
+    end,
+    parse=function(self,code)
+        code=tostr(code)
+        self.code=code
+        self.brackets={}
+        local open={}
+        for i=1,#code do
+            local o=sub(self.code,i,i)
+            if o=='[' then add(open,i) end
+            if o==']' then self.brackets[i]=deli(open) end
+        end
+        for k,v in pairs(self.brackets) do self.brackets[v]=k end
     end,
     dump=function(self)
         printh('== dump ==')
