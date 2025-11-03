@@ -40,19 +40,11 @@ machine={
     errors,
     command={
         [62]=function(self)
-            if self.p==32767 then
-                self.p=1
-            else
-                self.p+=1
-            end
+            if self.p==32767 then self.p=1 else self.p+=1 end
             return 1
         end,
         [60]=function(self)
-            if self.p==1 then
-                self.p=32767
-            else
-                self.p-=1
-            end
+            if self.p==1 then self.p=32767 else self.p-=1 end
             return 1
         end,
         [43]=function(self)
@@ -72,9 +64,7 @@ machine={
             return 1
         end,
         [91]=function(self)
-            if self:current()==0 then
-                self.i=self.brackets[self.i]
-            end
+            if self:current()==0 then self.i=self.brackets[self.i] end
             return 1
         end,
         [93]=function(self)
@@ -88,13 +78,13 @@ machine={
     end,
     run=function(self, code)
         self:parse(code)
-        if #code==0 then return end
+        if self.count==0 then return end
         local o
         repeat
             o=self:exec()
         until o==false
     end,
-    start=function(self, code)
+    load=function(self, code)
         self:parse(code)
     end,
     step=function(self)
@@ -122,8 +112,8 @@ machine={
         end
         local open,closed={},{}
         for i,ins in pairs(self.instructions) do
-            if ins.c==91 then add(open,i) end
-            if ins.c==93 then
+            if ins.opcode==91 then add(open,i) end
+            if ins.opcode==93 then
                 if #open>0 then
                     closed[i]=deli(open)
                 else
@@ -176,15 +166,75 @@ printh('-------------------')
 -- machine:run('+ (hello) +')
 -- machine:run('+>>+++++++++++++++++++++++++++++<<[>>>[>>]<[[>>+<<-]>>-[<<]]>+<<[-<<]<]>+>>[-<<]<+++++++++[>++++++++>+<<-]>-.----.>.')
 -- machine:run('+>[++[++[-]][>]>>]-')
-machine:run('>+>+>+>+>+>+>+[->[>]+[->[>]+>+>+[<]+<]+<]+++++++[>+++++++++++>+<<-]>+.----.>++.')
+-- machine:run('>+>+>+>+>+>+>+[->[>]+[->[>]+>+>+[<]+<]+<]+++++++[>+++++++++++>+<<-]>+.----.>++.')
 -- machine:run('>++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<.')
+
+machine:run('Brainfuck test program written by Robert de Bath \
+Length is 140 instructions \
+It needs 7 cells \
+It checks for a number of mistakes commonly made in simple interpreters \
+ \
+>++++++++[-<+++++++++>]<.>>+>-[+]++ \
+>++>+++[>[->+++<<+++>]<<]>-----.>-> \
++++..+++.>-.<<+[>[+>+]>>]<--------- \
+-----.>>.+++.------.--------.>+.>+.')
 machine:dump()
 
+machine:run('Brainfuck test program written by Robert de Bath in 2017 \
+Length is 105 instructions \
+It needs 14 cells \
+It checks for many mistakes commonly made in simple interpreters \
+ \
++[>[<->+[>+++>[+++++++++++>][]-[<]> \
+-]]++++++++++<]>>>>>>----.<<+++.<-. \
+.+++.<-.>>>.<<.+++.------.>-.<<+.<.')
+machine:dump()
 
 -- stop()
 
--- machine:start('+(hello)>[++]')
+-- machine:load('+(hello)>[++]')
 -- machine:step()
 -- machine:dump()
 -- machine:step()
 -- machine:dump()
+
+function _init()
+
+end
+
+function _update60()
+
+end
+
+function _draw()
+    cls()
+    local o=split('><+-.,[]','')
+    for k,c in ipairs(o) do
+        rect(7+(k*10),38,15+(k*10),46,1)
+        print(c,10+(k*10),40,7)
+    end
+    rect(7+(9*10),38,15+(9*10),46,9)
+    spr(1,9+(9*10),40)
+    -- rect(7,38,15,46,1)
+    -- print('>',10,40,7)
+    -- rect(17,38,25,46,1)
+    -- print('<',20,40,7)
+    print('\f50000\f60',20,63)
+    print('  \f100\fc9',20,70)
+    print('\f50000\f61',44,63)
+    print('  \f10\fc25',44,70)
+
+
+    -- You can set your own button delay by poking memory 0X5F5C like this:
+    -- POKE(0X5F5C, DELAY)
+    -- You can set it to 255 to stop the btnp from resetting automatically at all, so that the player must release the button and press again for it to trigger again.
+    -- You can set your own repeating delay by poking memory 0X5F5D like this:
+    -- POKE(0X5F5D, DELAY)
+end
+
+__gfx__
+0000000000eee0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000ee0e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000ee0ee0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000ee0e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000eee0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
