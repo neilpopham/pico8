@@ -30,7 +30,10 @@ machine={
     p,
     i,
     t,
+    instructions,
+    count,
     cells,
+    errors,
     stdin,
     stdout,
     brackets,
@@ -82,38 +85,62 @@ machine={
     current=function(self)
         return self.cells[self.p] and self.cells[self.p] or 0
     end,
-    reset=function(self)
-        self.code,self.p,self.i,self.t,self.b,self.cells,self.stdin,self.stdout='',1,1,0,{},{},{},{}
-    end,
     run=function(self, code)
-        self:reset()
         self:parse(code)
         if #code==0 then return end
         local o
         repeat
             o=self:exec()
-        until o==''
+        until o==false
+    end,
+    start=function(self, code)
+        self:parse(code)
+    end,
+    step=function(self)
+        local t=self.t
+        while t==self.t do
+            o=self:exec()
+        end
     end,
     exec=function(self)
-        local o=sub(self.code,self.i,self.i)
-        if o=='' then return o end
-        local c,step=ord(o),1
-        if self.command[c] then
-            step=self.command[c](self)
-            self.t+=1
-        end
+        local c=self.instructions[self.i].c
+        local step=self.command[c](self)
+        self.t+=1
         self.i+=step
-        return o
+        if self.i>self.count then
+            return false
+        else
+            return true
+        end
     end,
     parse=function(self,code)
         code=tostr(code)
         self.code=code
-        self.brackets={}
+        self.p,self.i,self.t,self.count=1,1,0,0
+        self.brackets,self.instructions,self.cells,self.stdin,self.stdout={},{},{},{},{}
+        for s=1,#code do
+            local o=sub(self.code,s,s)
+            local c=ord(o)
+            if self.command[c] then
+                self.count+=1
+                self.instructions[self.count]={c=c,s=s}
+            end
+        end
         local open={}
-        for i=1,#code do
-            local o=sub(self.code,i,i)
-            if o=='[' then add(open,i) end
-            if o==']' then self.brackets[i]=deli(open) end
+        for i,ins in pairs(self.instructions) do
+            if ins.c==91 then add(open,i) end
+            if ins.c==93 then
+                if #open>0 then
+                    self.brackets[i]=deli(open)
+                else
+                    add(self.errors,{i=i,code=2})
+                end
+            end
+        end
+        if #open>0 then
+            for i in all(open) do
+                add(self.errors,{i=i,code=1})
+            end
         end
         for k,v in pairs(self.brackets) do self.brackets[v]=k end
     end,
@@ -123,11 +150,14 @@ machine={
         printh('i='..self.i)
         printh('t='..self.t)
         printh('cells='..#self.cells)
+        for k,v in ipairs(self.errors) do
+            printh('error at '..v.i..' code '..v.code)
+        end
         for k,v in pairs(self.cells) do
             printh(k..'='..v)
         end
         printh(#self.stdout)
-        for k,v in pairs(self.stdout) do
+        for k,v in ipairs(self.stdout) do
             printh(k..'='..v.. ' or '..chr(v))
         end
     end
@@ -144,9 +174,19 @@ printh('-------------------')
 -- machine:run('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]')
 -- machine:run('+++[+[--]>]++')
 -- machine:run('+[+++++++++++++++++++++++++++++++++.<]')
--- machine:run('+ (hello) +'
+-- machine:run('+ (hello) +')
 -- machine:run('+>>+++++++++++++++++++++++++++++<<[>>>[>>]<[[>>+<<-]>>-[<<]]>+<<[-<<]<]>+>>[-<<]<+++++++++[>++++++++>+<<-]>-.----.>.')
 -- machine:run('+>[++[++[-]][>]>>]-')
 -- machine:run('>+>+>+>+>+>+>+[->[>]+[->[>]+>+>+[<]+<]+<]+++++++[>+++++++++++>+<<-]>+.----.>++.')
 machine:run('>++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<.')
 machine:dump()
+
+
+-- stop()
+
+machine:start('+(hello)>[++]')
+machine:step()
+machine:dump()
+machine:step()
+machine:dump()
+
