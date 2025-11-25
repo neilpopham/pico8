@@ -11,14 +11,7 @@ memset(0x8000, 0, 0x2000)
 poke(0x5f2e, 1)
 pal({ [0] = 0, 0, 2, 3, 4, 5, -16, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, 1)
 
-enemies = {}
-bullets = {}
-particles = {}
-numbers = {}
-bombs = {}
-dt = 0
-cells = {}
-stage = 1
+function round(n) return flr(n + .5) end
 
 function storedigits()
     cls()
@@ -135,6 +128,11 @@ player = class:new({
     ns = "",
     os = "",
     reset = function(_ENV)
+        score = 0
+        ns = spad(score)
+        health = 100
+        x = 60
+        y = 60
     end,
     update = function(_ENV)
         if btn(0) then x -= 1 end
@@ -150,7 +148,7 @@ player = class:new({
                 for e in all(cells:get(cx, cy)) do
                     if aabb(x, y, x + 7, y + 7, e.x, e.y, e.x + 7, e.y + 7) then
                         e:hit(10)
-                        health -= 1
+                        health -= 2
                         if health < 1 then
                             _G.stage = 2
                         end
@@ -171,14 +169,14 @@ player = class:new({
                 add(bullets, b)
             end
         end
-        if dt % 2 == 0 then
+        if dt % 4 == 0 then
             os = ns ns = spad(score)
         end
     end,
     draw = function(_ENV)
         rectfill(x, y, x + 7, y + 7, 7)
-        print(health, 80, 120, 3)
-        print(score, 100, 120, 3)
+        -- print(health, 80, 120, 3)
+        -- print(score, 100, 120, 3)
         -- print(cell.x .. ' ' .. cell.y, 80, 10, 3)
 
         for i = 1, #ns do
@@ -190,9 +188,8 @@ player = class:new({
             local nx = 40 + i * 4
             if ns[i] != os[i] then
                 local n = number:new()
-                n:reset(nx, 0, ns[i])
+                n:reset(nx, 0, ns[i], (6 - i) * 3)
                 add(numbers, n)
-                printh('number ' .. ns[i])
             end
             print(ns[i], nx, 0, 7)
         end
@@ -213,16 +210,16 @@ enemy = class:new({
         y = sin(a) * 80 + 64
     end,
     hit = function(_ENV, amount)
-        player.score += 10
-        local pc = 5
+        player.score += 25
+        local pc = 10
         health -= amount
         if health < 1 then
             dead = true
-            pc = 10
+            pc = 20
             landmark(x, y)
         end
         for i = 1, pc do
-            local p = particle:new()
+            local p = rnd() < .6 and pixel:new() or block:new()
             p:reset(x + 4, y + 4, 9)
             add(particles, p)
         end
@@ -318,50 +315,80 @@ particle = class:new({
     end
 })
 
+block = particle:new({
+    draw = function(_ENV)
+        rectfill(x, y, x + 1, y + 1, c)
+    end
+})
+
+pixel = particle:new({
+    draw = function(_ENV)
+        pset(x, y, c)
+    end
+})
+
+-- number = class:new({
+--     x = player.x + 4,
+--     y = player.y + 4,
+--     a = 0,
+--     n = 0,
+--     ttl = 0,
+--     dead = false,
+--     reset = function(_ENV, sx, sy, sn)
+--         x = sx
+--         y = sy
+--         n = sn
+--         a = rnd()
+--         ttl = rnd(10) + 20
+--     end,
+--     update = function(_ENV)
+--         dx = cos(a)
+--         dy = -sin(a)
+--         x += dx
+--         y += dy
+--         if x < -4 or x > 127 or y < -4 or y > 127 then
+--             dead = true
+--             return
+--         end
+--         ttl -= 1
+--         if ttl < 1 then dead = true end
+--     end,
+--     draw = function(_ENV)
+--         print("\^w\^t" .. n, x, y, 7)
+--         -- pset(x, y, 9)
+--     end
+-- })
+
 number = class:new({
-    x = player.x + 4,
-    y = player.y + 4,
-    a = 0,
+    x = 0,
+    y = 0,
+    s = 0,
     n = 0,
     ttl = 0,
     dead = false,
-    reset = function(_ENV, sx, sy, sn)
+    reset = function(_ENV, sx, sy, sn, ss)
         x = sx
         y = sy
         n = sn
-        a = rnd()
-        ttl = rnd(10) + 20
+        s = ss
     end,
     update = function(_ENV)
-        dx = cos(a)
-        dy = -sin(a)
-        x += dx
-        y += dy
-        if x < -4 or x > 127 or y < -4 or y > 127 then
-            dead = true
-            return
-        end
-        ttl -= 1
-        if ttl < 1 then dead = true end
+        s -= 1
+        if s < 1 then dead = true end
     end,
     draw = function(_ENV)
-        print("\^w\^t" .. n, x, y, 7)
-        -- pset(x, y, 9)
+        drawstorednumber(n, x, y, 7, s, s)
     end
 })
 
 bomb = class:new({
     x = player.x + 4,
     y = player.y + 4,
-    a = 0,
-    n = 0,
     ttl = 0,
     dead = false,
     reset = function(_ENV)
         x = rnd(107) + 10
         y = rnd(107) + 10
-        -- n = sn
-        -- a = rnd()
         ttl = rnd(120) + 120
     end,
     update = function(_ENV)
@@ -374,8 +401,8 @@ bomb = class:new({
                     enemy:hit(10)
                 end
             end
-            for i = 1, 40 do
-                local p = particle:new()
+            for i = 1, 80 do
+                local p = rnd() < .6 and pixel:new() or block:new()
                 p:reset(x + 4, y + 4, 14)
                 add(particles, p)
             end
@@ -401,24 +428,50 @@ grid = function()
     }
 end
 
-for i = 0, 20 do
-    local e = enemy:new()
-    e:reset()
-    add(enemies, e)
+function reset()
+    enemies = {}
+    bullets = {}
+    particles = {}
+    numbers = {}
+    bombs = {}
+    dt = 0
+    cells = {}
+    stage = 1
+    start = t()
+    countdown = { n = 20, size = 0 }
+    for i = 0, 20 do
+        local e = enemy:new()
+        e:reset()
+        add(enemies, e)
+    end
+    player:reset()
 end
+
+reset()
 
 function _update60()
     cells = grid()
-    if t() > 20 then
-        -- extcmd("reset")
+    counter = t() - start
+
+    if counter > 20 then
+        player.score += player.health * 100
         stage = 2
     end
 
     if stage == 1 then
-        if #enemies < 40 then
+        if #enemies < counter * 3 then
             local e = enemy:new()
             e:reset()
             add(enemies, e)
+        end
+
+        if counter >= 15 then
+            local n = 20 - flr(counter)
+            if countdown.n == n then
+                countdown.size = max(0, countdown.size - 1)
+            else
+                countdown = { n = n, size = n == 0 and 0 or 32 }
+            end
         end
 
         for enemy in all(enemies) do
@@ -466,10 +519,11 @@ function _update60()
             end
         end
     else
+        if t() > 20.7 then
+            extcmd('video') stop()
+        end
         if btn(4) then
-            player:reset()
-
-            stage = 1
+            reset()
         end
     end
     dt += 1
@@ -479,36 +533,45 @@ function _draw()
     --cls()
     memcpy(0x6000, 0x8000, 0x2000)
     -- memcpy(0x6000, 0x0000, 0x2000)
+    for number in all(numbers) do
+        number:draw()
+    end
 
     for bullet in all(bullets) do
         bullet:draw()
     end
+
     player:draw()
+
     for enemy in all(enemies) do
         enemy:draw()
     end
+
     for particle in all(particles) do
         particle:draw()
     end
-    for number in all(numbers) do
-        number:draw()
-    end
+
     for bomb in all(bombs) do
         bomb:draw()
     end
 
-    if stage == 2 then
-        drawstorednumber(player.ns, 13, 49, 6, 5, 5)
-        drawstorednumber(player.ns, 12, 48, 12, 5, 5)
+    -- print(counter, 0, 0)
+    -- print(stage, 0, 10)
+
+    if countdown and countdown.size > 0 then
+        drawstorednumber(countdown.n, -8 + countdown.size / 2, -8 + countdown.size / 2, 8, countdown.size, countdown.size)
     end
 
-    print(t(), 0, 0)
-    print(stage, 0, 10)
-
-    -- rectfill(124, 27, 127, 127, 2)
-    -- rectfill(124, 127 - player.health, 127, 127, 3)
     rectfill(126, 27, 127, 127, 2)
-    rectfill(126, 127 - player.health, 127, 127, 3)
+    if player.health > 0 then
+        rectfill(126, 127 - player.health, 127, 127, 3)
+    end
+
+    if stage == 2 then
+        drawstorednumber(player.ns, 11, 47, 1, 5, 5)
+        drawstorednumber(player.ns, 13, 49, 1, 5, 5)
+        drawstorednumber(player.ns, 12, 48, 12, 5, 5)
+    end
 end
 
 __gfx__
