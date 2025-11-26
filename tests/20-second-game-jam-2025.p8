@@ -377,7 +377,7 @@ number = class:new({
         if s < 1 then dead = true end
     end,
     draw = function(_ENV)
-        drawstorednumber(n, x, y, 7, s, s)
+        drawstorednumber(n, x, y, 5, s, s)
     end
 })
 
@@ -499,13 +499,6 @@ function _update60()
             end
         end
 
-        for number in all(numbers) do
-            number:update()
-            if number.dead then
-                del(numbers, number)
-            end
-        end
-
         if rnd() > .995 then
             local b = bomb:new()
             b:reset()
@@ -519,13 +512,21 @@ function _update60()
             end
         end
     else
-        if t() > 20.7 then
-            extcmd('video') stop()
-        end
+        -- if t() > 20.7 then
+        --     extcmd('video') stop()
+        -- end
         if btn(4) then
             reset()
         end
     end
+
+    for number in all(numbers) do
+        number:update()
+        if number.dead then
+            del(numbers, number)
+        end
+    end
+
     dt += 1
 end
 
@@ -535,6 +536,10 @@ function _draw()
     -- memcpy(0x6000, 0x0000, 0x2000)
     for number in all(numbers) do
         number:draw()
+    end
+
+    for bomb in all(bombs) do
+        bomb:draw()
     end
 
     for bullet in all(bullets) do
@@ -551,15 +556,12 @@ function _draw()
         particle:draw()
     end
 
-    for bomb in all(bombs) do
-        bomb:draw()
-    end
-
     -- print(counter, 0, 0)
     -- print(stage, 0, 10)
 
     if countdown and countdown.size > 0 then
-        drawstorednumber(countdown.n, -8 + countdown.size / 2, -8 + countdown.size / 2, 8, countdown.size, countdown.size)
+        -- drawstorednumber(countdown.n, -8 + countdown.size / 2, -8 + countdown.size / 2, 8, countdown.size, countdown.size)
+        drawstorednumber(countdown.n, 0, 0, 8, countdown.size, countdown.size)
     end
 
     rectfill(126, 27, 127, 127, 2)
@@ -568,8 +570,8 @@ function _draw()
     end
 
     if stage == 2 then
-        drawstorednumber(player.ns, 11, 47, 1, 5, 5)
-        drawstorednumber(player.ns, 13, 49, 1, 5, 5)
+        -- drawstorednumber(player.ns, 11, 47, 1, 5, 5)
+        -- drawstorednumber(player.ns, 13, 49, 1, 5, 5)
         drawstorednumber(player.ns, 12, 48, 12, 5, 5)
     end
 end
