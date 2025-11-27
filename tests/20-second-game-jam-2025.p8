@@ -1,17 +1,14 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
-printh('=============')
-extcmd('rec')
-
 _G = _ENV
 
 memset(0x8000, 0, 0x2000)
 
 poke(0x5f2e, 1)
-pal({ [0] = 0, 0, 2, 3, 4, 5, -16, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, 1)
+pal({ [0] = 0, 0, -14, -5, 4, 5, -16, 7, -7, -8, 10, 11, 12, 13, -6, 15 }, 1)
 
-function round(n) return flr(n + .5) end
+extcmd("rec")
 
 function storedigits()
     cls()
@@ -104,32 +101,21 @@ class = setmetatable(
     {
         new = function(_ENV, tbl)
             return setmetatable(tbl or {}, { __index = _ENV })
-        end,
-        foo = function(_ENV)
-            return x .. ',' .. y
         end
     },
     { __index = _ENV }
 )
-
-entity = class:new({
-    x = 1,
-    y = 2,
-    f1 = function(_ENV, z)
-        return tostring(x) .. "," .. tostring(y) .. "," .. tostring(z)
-    end
-})
 
 player = class:new({
     x = 60,
     y = 60,
     health = 100,
     score = 0,
-    ns = "",
-    os = "",
+    -- ns = "",
+    -- os = "",
     reset = function(_ENV)
         score = 0
-        ns = spad(score)
+        -- ns = spad(score)
         health = 100
         x = 60
         y = 60
@@ -159,8 +145,9 @@ player = class:new({
         if dt % 4 == 0 then
             local e, m = nil, 9999
             for enemy in all(enemies) do
-                if enemy.d < m then
-                    e, m = enemy, enemy.d
+                local d = abs(x - enemy.x) + abs(y - enemy.y)
+                if d < m then
+                    e, m = enemy, d
                 end
             end
             if m < 9999 then
@@ -169,30 +156,9 @@ player = class:new({
                 add(bullets, b)
             end
         end
-        if dt % 4 == 0 then
-            os = ns ns = spad(score)
-        end
     end,
     draw = function(_ENV)
         rectfill(x, y, x + 7, y + 7, 7)
-        -- print(health, 80, 120, 3)
-        -- print(score, 100, 120, 3)
-        -- print(cell.x .. ' ' .. cell.y, 80, 10, 3)
-
-        for i = 1, #ns do
-            -- if ns[i] != os[i] then
-            --     print('\^w\^t' .. ns[i], 40 + i * 4, 0, 7)
-            -- else
-            --     print(ns[i], 40 + i * 4, 0, 7)
-            -- end
-            local nx = 40 + i * 4
-            if ns[i] != os[i] then
-                local n = number:new()
-                n:reset(nx, 0, ns[i], (6 - i) * 3)
-                add(numbers, n)
-            end
-            print(ns[i], nx, 0, 7)
-        end
     end
 })
 
@@ -200,7 +166,6 @@ enemy = class:new({
     x = 60,
     y = 60,
     a = 0,
-    d = 0,
     cell = nil,
     health = 2,
     dead = false,
@@ -232,12 +197,10 @@ enemy = class:new({
         dy = -sin(a) * .5
         x += dx
         y += dy
-        d = abs(player.x - x) + abs(player.y - y)
         cell = scell(x, y)
     end,
     draw = function(_ENV)
         rectfill(x, y, x + 7, y + 7, 9)
-        -- rect(cell.x * 16, cell.y * 16, cell.x * 16 + 15, cell.y * 16 + 15, 1)
     end
 })
 
@@ -279,7 +242,6 @@ bullet = class:new({
     end,
     draw = function(_ENV)
         rectfill(x, y, x + 3, y + 3, 12)
-        -- rect(cell.x * 16, cell.y * 16, cell.x * 16 + 15, cell.y * 16 + 15, 2)
     end
 })
 
@@ -294,24 +256,19 @@ particle = class:new({
         y = sy
         c = sc
         a = rnd()
-        -- ttl = 10
-        ttl = rnd(20) + 20
+        ttl = rnd(20) + 10
     end,
     update = function(_ENV)
         dx = cos(a) * 2
         dy = -sin(a) * 2
         x += dx
         y += dy
-        if x < -4 or x > 127 or y < -4 or y > 127 then
+        if x < -3 or x > 127 or y < -3 or y > 127 then
             dead = true
             return
         end
         ttl -= 1
         if ttl < 1 then dead = true end
-    end,
-    draw = function(_ENV)
-        rectfill(x, y, x + 1, y + 1, c)
-        -- pset(x, y, 9)
     end
 })
 
@@ -326,38 +283,6 @@ pixel = particle:new({
         pset(x, y, c)
     end
 })
-
--- number = class:new({
---     x = player.x + 4,
---     y = player.y + 4,
---     a = 0,
---     n = 0,
---     ttl = 0,
---     dead = false,
---     reset = function(_ENV, sx, sy, sn)
---         x = sx
---         y = sy
---         n = sn
---         a = rnd()
---         ttl = rnd(10) + 20
---     end,
---     update = function(_ENV)
---         dx = cos(a)
---         dy = -sin(a)
---         x += dx
---         y += dy
---         if x < -4 or x > 127 or y < -4 or y > 127 then
---             dead = true
---             return
---         end
---         ttl -= 1
---         if ttl < 1 then dead = true end
---     end,
---     draw = function(_ENV)
---         print("\^w\^t" .. n, x, y, 7)
---         -- pset(x, y, 9)
---     end
--- })
 
 number = class:new({
     x = 0,
@@ -377,7 +302,7 @@ number = class:new({
         if s < 1 then dead = true end
     end,
     draw = function(_ENV)
-        drawstorednumber(n, x, y, 5, s, s)
+        drawstorednumber(n, x, y, 7, s, s)
     end
 })
 
@@ -397,7 +322,8 @@ bomb = class:new({
         if aabb(x, y, x + 7, y + 7, player.x, player.y, player.x + 7, player.y + 7) then
             dead = true
             for enemy in all(enemies) do
-                if enemy.d < 100 then
+                local d = abs(x - enemy.x) + abs(y - enemy.y)
+                if d < 100 then
                     enemy:hit(10)
                 end
             end
@@ -444,6 +370,8 @@ function reset()
         e:reset()
         add(enemies, e)
     end
+    ns = spad(0)
+    os = ns
     player:reset()
 end
 
@@ -453,9 +381,9 @@ function _update60()
     cells = grid()
     counter = t() - start
 
-    if counter > 20 then
-        player.score += player.health * 100
+    if counter > 20 and stage == 1 then
         stage = 2
+        dt = 0
     end
 
     if stage == 1 then
@@ -512,12 +440,18 @@ function _update60()
             end
         end
     else
-        -- if t() > 20.7 then
-        --     extcmd('video') stop()
+        -- if time() > 20.8 then
+        --     extcmd("video") stop()
         -- end
-        if btn(4) then
+        printh(dt)
+        if btn(🅾️) then
             reset()
         end
+        if player.health > 0 then
+            player.score += 100
+            player.health -= 1
+        end
+        player.ns = spad(player.score)
     end
 
     for number in all(numbers) do
@@ -531,9 +465,8 @@ function _update60()
 end
 
 function _draw()
-    --cls()
     memcpy(0x6000, 0x8000, 0x2000)
-    -- memcpy(0x6000, 0x0000, 0x2000)
+
     for number in all(numbers) do
         number:draw()
     end
@@ -556,11 +489,7 @@ function _draw()
         particle:draw()
     end
 
-    -- print(counter, 0, 0)
-    -- print(stage, 0, 10)
-
     if countdown and countdown.size > 0 then
-        -- drawstorednumber(countdown.n, -8 + countdown.size / 2, -8 + countdown.size / 2, 8, countdown.size, countdown.size)
         drawstorednumber(countdown.n, 0, 0, 8, countdown.size, countdown.size)
     end
 
@@ -569,10 +498,26 @@ function _draw()
         rectfill(126, 127 - player.health, 127, 127, 3)
     end
 
+    ns = spad(player.score)
+    for i = 1, #ns do
+        local nx = 48 + i * 4
+        if ns[i] != os[i] then
+            local n = number:new()
+            n:reset(nx, 0, ns[i], (6 - i) * 3)
+            add(numbers, n)
+        end
+        print("\^o1ff" .. ns[i], nx, 0, 7)
+    end
+    os = ns
+
     if stage == 2 then
-        -- drawstorednumber(player.ns, 11, 47, 1, 5, 5)
-        -- drawstorednumber(player.ns, 13, 49, 1, 5, 5)
-        drawstorednumber(player.ns, 12, 48, 12, 5, 5)
+        for oy in all({ 47, 49 }) do
+            for ox in all({ 13, 15 }) do
+                drawstorednumber(player.ns, ox, oy, 1, 5, 5)
+            end
+        end
+        drawstorednumber(player.ns, 14, 48, 12, 5, 5)
+        if dt > 300 then print("\^o1ffpress 🅾️ to restart", 27, 80, 7) end
     end
 end
 
@@ -592,3 +537,133 @@ __gfx__
 00000000066666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000066666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000600006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__label__
+ppppppppppppppppppppppppppppppppppppppppppppppppppp07770777077707770777077700000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppp07070707070707070007070000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppp07070707077707770007077700000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppp07070707070700070007000700000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppp07770777077700070007077700000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppp0000000000000g000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000ggg000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000o00000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp0000000000000000000oo00000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000ppppppppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000ppppppppppppppppppp000000000000oo000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000ggppppppppppppppppppp00000oo00000oo000000gggggg000000000000000000000000000000000000000000000
+000000000000000000000000000000000000ggppppppppppppppppppp00000oo0000000000000gg0g0g000000000000000000000000000000000000000000000
+000000000000000000000000000000000000ggppppppppppppppppppp0000000qqqqqqqq00000gg0g0g000000000000000000000000000000000000000000000
+000000000000000000000000000000000000ggppppppppppppppppppp0000000qqqqqqqq00000ggggoo000000000000000000000000000000000000000000000
+0000000000000000000000000000gggggg0000ppppppppppppppppppp0000000qqqqqqqq0000000ggoo0o0000000000000000000000000000gggggg000000000
+0000000000000000000000000000gg0g0g0000ppppppppppppppppppp0000000qqqqqqqq00000000000000000000000000000000000000000gg0g0g000000000
+0000000000000000000000000000gg0g0g0000ppppppppppppppppppp0000000qqqqqqqq0000000000000000000000gggggg0000000000000gg0g0g0000000ii
+0000000000000000000000000000gggggg0000ppppppppppppppppppp000000ooqqqqqqq0000000000000000000000gg0g0g0000000000000gggggg0000000ii
+000000000000000000000000000000ggg00000ppppppppppppppppppp000000ooqqqqqqq0000000000000000000000gg0g0g000000000000000ggg00000000ii
+00000000000000000000000000000000000000ppppppppppppppppppp0000000qqqqqqqq000000000000000000oo00gggggg00000000000000000000000000ii
+00000000000000000000000000000000000000ppppppppppppppppppp0000000gggggg00000000000000000000oo0000ggg000000000000000000000000000ii
+00000000000000000000000000000000000000ppppppppppppppppppp00gggg0gg0g0g000000000000000000000o0000000000000000000000000000000000ii
+000000000000000oo000000000000000000000ppppppppppppppppppp00gg0g0gg0g0g00000000000000000000000000000000000000000000000000000000ii
+000000000000000oo000000000000000000000ppppppppppppppppppp00gg0g0gggggg00000000000000000000000000000000000000000000000000000000ii
+00000000000000000000000000000000000000ppppppppppppppppppp00ggggg00ggg00000000000000oo000000000000000000gggggg00000000000000000ii
+00000000000000000000000000000000000000ppppppppppppppppppp0000ggg000000gggggg0000000oo000000000000000000gg0g0g00000000000000000ii
+00000000000000000000000000000000000000ppppppppppppppppppp0000000000000ggoooooooo00000000gggggg000000000gg0g0g00000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppgggg0g0000000ggoooooooo00000000gg0g0g000000000gggggg00000000000000000ii
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp0g0g0g0000000ggoooooooo00000000gg0g0g00000000000ggg000000000000000000ii
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp0g0g0g00ggggg00oooooooo00000000gggggg00000000000000000000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppgggg0000gg0g0g0oooooooooooo000000ggg000000000000000000000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppggg00000gg0g0g0oooooooooooo0000000000000000000oooooooo000000000000000ii
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp0000000oooooooooooooooooooo0000000000000000000oooooooo000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooo0oooooooooooooooooooo00000000000000gggggoooooooo000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooo0oooooooooooooooooooo00000000000000gg0g0oooooooo000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooo0oooooooooooooooooooo00000000000000og0g0oooooooo000000000000000ii
+ppppppppppppp00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccc00000ccccc00ccccc00000ccccc00ccccc00000ccccc00ccccc00000ccccc000000000000ccccc00ccccc0000000000000000000000ii
+ppppppppppppp0ccccc0ppp0ccccc00ccccc0ppp0ccccc00ccccc0ppp0ccccc00ccccc0oo00ccccc0g0g0g000000ccccc00ccccc0000000000000000000000ii
+ppppppppppppp0ccccc0ppp0ccccc00ccccc0ppp0ccccc00ccccc0ppp0ccccc00ccccc0oo00ccccc0ggggg0gg000ccccc00ccccc0ggggg0000000000000000ii
+ppppppppppppp0ccccc0ppp0ccccc00ccccc0ppp0ccccc00ccccc0ppp0ccccc00ccccc00000ccccc00ggg0g0g000ccccc00ccccc0g0g0g0000000000000000ii
+ppppppppppppp0ccccc0ggg0ccccc00ccccc0ggg0ccccc00ccccc00000ccccc00ccccc00000ccccc0oooooooo000ccccc00ccccc0000000000000000000000ii
+ppppppppppppp0ccccc0ggg0ccccc00ccccc000g0ccccc00ccccccccccccccc00ccccccccccccccc0oooooooooo0ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccc00000ccccc00ccccc00g00ccccc00ccccccccccccccc00ccccccccccccccc0oooooooooo0ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccc00g00ccccc00ccccc00go0ccccc00ccccccccccccccc00ccccccccccccccc0oooooooooo0ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccc00000ccccc00ccccc00go0ccccc00ccccccccccccccc00ccccccccccccccc0oooooooooo0ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccc0ggg0ccccc00ccccc000o0ccccc00ccccccccccccccc00ccccccccccccccc0oooooooooo0ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccc0g0g0ccccc00ccccc000o0ccccc00ccccc00000ccccc000000000000ccccc0oooooooooo0ccccc000000000000ccccc0000000000ggii
+ppppppppppppp0ccccc0g0g0ccccc00ccccc000o0ccccc00ccccc00g00ccccc07770oooooo0ccccc0oooooooooo0ccccc0ggg00000000ccccc0000000000ggii
+ppppppppppppp0ccccc0ggg0ccccc00ccccc000o0ccccc00ccccc00g00ccccc07770oooooo0ccccc0oooo0000oo0ccccc000000000000ccccc0000000000ggii
+ppppppppppppp0ccccc0gg00ccccc00ccccc000o0ccccc00ccccc0gg00ccccc077oooooooo0ccccc0ooooooo00g0ccccc000000000000ccccc0000000000ggii
+ppppppppppppp0ccccc00000ccccc00ccccc00000ccccc00ccccc00000ccccc077oooooooo0ccccc0ooooooo0000ccccc000000000000ccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc07ooooooooo0ccccc0ooooooo0000ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc0777ooooooo0ccccc0ooooooo0000ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00o0goooooo0ccccc0ooooooo0000ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00o0o0ooooo0ccccc0ooooooo0000ccccc00ccccccccccccccc000000000000ii
+ppppppppppppp0ccccccccccccccc00ccccccccccccccc00ccccccccccccccc00g0o00oooo0ccccc0ooooooo0000ccccc00ccccccccccccccc000gggggg000ii
+ppppppppppppp0000000000000000000000000000000000000000000000000000ggooo0ooo0000000ooooooo00000000000000000000000000000gg0g0g000ii
+ppppppppppppppppppp0000000000000000ooooooooooooooooooooooooooooo00goooooooooooo0g000ggg000000000000000000000000000000gg0g0g000ii
+ppppppppppppppppppp0000000gggggg000ooooooooooooooooooooooooooooo0g0o0oooooooooo0g0oooooooo0000000000gggggg0gg00000000gggggg000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooooooogoooooooooooooogooooooooooooooooo000gg0g0g00g0000000000ggg0000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooooo00ggoo00oooooooo00ooooooooooooooooo000gg0g0g00g00000000000000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooggg0g00o000ooooooooogooooooooooooooooo000gggggg0gg00000000000000000ii
+pppppppppppppppppppppppppp000000000000000000000pppp0000000og0g000000000ooo00000000000000000000000000000000gg000000000000000000ii
+pppppppppppppppppppppppppp077707770777007700770ppp007777700g0g077700770ooo07770777007707770777077707770ggg00000000000000000000ii
+pppppppppppppppppppppppppp070707070700070007000ppp077000770ggg007007070ooo07070700070000700707070700700g0g00000000000000000000ii
+pppppppppppppppppppppppppp077707700770077707770ppp077070770oooo07007070ooo07700770077700700777077000700g0g00000000000000000000ii
+pppppppppppppppppppppppppp070007070700000700070ppp077000770oooo07007070ooo0707070000070070070707070070gggg00000000000000000000ii
+pppppppppppppppppppppppppp070p07070777077007700ppp007777700000g07007700ooo0707077707700070070707070070ggg000000000000000000000ii
+pppppppppppppppppppppppppp000p0000000000000000ppppp0000000ggg0g0000000oooo000000000000o000000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooooooooooo0000gggggg0oooooooo000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooooooooooo000000ggg0goooooooo000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooooooooooo00000000000oooooooo000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppoooooooooooooo000000g00ggoooooooo000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooooooogg000gggggg0000g00oooooooo000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooooooog0000gg0gog0000000oooooooo000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooooooo00000gg0g0g000000000000000000000000000000000000oooooooo0000000ii
+pppppppppppppppppppppppppppppppppppppppppppppppppppppppppooooooo00000gogggg00000000gggggg0000000000000000000000000000000000000ii
+ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp00000000000000000000000000gg0g0g0000000000000000000000000000000000000ii
+0gg0g0g000000000000000000ggg00000000000000000000000000000000000000000gggggg000000000g0g0g0000000000000000000000000000000000000ii
+0gg0g0000000000000000000000000000gggggg000000000000000000000000000000gg0g0g000gggggg0gggg0000000000000000000000000000000000000ii
+0ggg000000gg000000000000000000000gg0g0g0gggg00000000oooooooo000000000gg0g0g000gg0g0g0ggg000gggggg0gg00000000g0000gggggg0000000ii
+0000gggggg0g000000000000000000000gg0g0g00g0g00000000oooooooo000000000gggggg000gg0g0g0000000gg0g0g00g00gggggg00000gg0g0g0000000ii
+0000gg0g0g0g000000000000000000000gggggg00g0g00000000oooooooo00000gggg00ggg0000gggggg0000000gg0g0g00g00gg0g0g00000gg0g0g0000000ii
+0000gg0g0g0g00000000000000000000000ggg0ggggg00000000oooooooo00000gg0g0g000000000ggg00000000gggggg0gg00gg0g0g00000gggggg0000000ii
+0000gggggg000000000000000000000000000000ggg000000000oooooooo00000gg0g0g0000000000000000000000gggooooooooggg00000000ggg00000000ii
+000000ggg00000000000000oooooooo000000000000000000000oooooooo00000gggggg0000000000000000000000000oooooooogg0gggggg0000000000000ii
+0000000000000oo0ooooooooooooooo00gggggg0000000000000oooooooo0000000ggg0000000000000000000000ggggoooooooo000gg0g0g0000000000000ii
+0000000000000oo0ooooooooooooooo00gg0g0g0000000000000oooooooo00000000000000000000000000000000gg0goooooooo000gg0g0g0000000000000ii
+0000000000000000ooooooooooooooo00gg0g0g00000000000000000000000000000000000000000000000000000gg0goooooooo000gggggg0000000000000ii
+0000000000000000ooooooooooooooo00gggggg00000000000000000000000000000000000000000000000000000ggggoooooooo00000ggg00000000000000ii
+0000000000000000ooooooooooooooo0000ggg00000000000000000000000000000000000000000000000000000000ggoooooooo0000000000000000000000ii
+0000000000000000ooooooooooooooo0000000000000000000000000000000000000gggggg0000000000000000000000oooooooo0000000000000000000000ii
+0000000000000000ooooooooooooooo000000000000000000000000000gggggg0000gg0g0g0000000000000000000000000000000gggggg000000000000000ii
+0000000000000000oooooooogggg000000000000000000000000000000gg0g0g0000gg0g0g0000000000000000000000000000000gg0g0g000000000000000ii
+0000000000000000000000gg0g0g000000000000000000000000000000gg0g0g0000gggggg0000000000000000000000000000000gg0g0g000000000000000ii
+0000000000000000000000gg0g0g0000000000000000000000gggggg00gggggg000000ggg00000000000000000000000000000000gggggg000000000000000ii
+0000000000000000000000gggggg0000000000000000000000gg0g0g0000ggg00000000000000000000000000000000000000000000ggg00000000gggggg00ii
+000000000000000000000000ggg00000000000000000gggggg0g0g0g00000000000000000000000000000000000000000000000000000000000000gg0g0g00ii
+00000000000000000000000000000000000000000o00gg0g0g0ggggg00000000000000000000000000000000000000000000000000000000000000gg0g0g00ii
+00000000000000000000000000000000000000000000gg0g0g00ggg000000000000000000000000000000000000000000000000000000000000000gggggg00ii
+00000000000000000000000000000000000000000000gggggg0000000000000000000000000000gggggg000000000000000000000000000000000000ggg000ii
+0000000000000000000000000000000000000000000000ggg00000000000000000000000000000gg0g0g000000000000000000000000000000000000000000ii
+000000000000000000000000000000000000000000000000000000000000000000000000000000gg0g0g000000000000000000000000000000000000000000ii
+000000000000000000000000000000000000000000000000000000000000000000000000000000gggggg000000000000000000000000000000000000000000ii
+00000000000000000000000000000000000000000000000000000000000000000000000000000g00ggg0000000000000000000000000000000000000000000ii
+00000000000000000000000000000000000000000000000000000000000000000000000000000ggg0000000000000000000000000000000000000000000000ii
+0000000000000000000000000000000000000000000000000000000000000000000000000000000ggg00000000000000000000000000000000000000000000ii
+0000000000000000000000000000000000oooooooo000000000000000000000000000000000000000000000000000000000000000000000000000000000000ii
+0000000000000000000000000000000000oooooooo000000000000000000000000000000000000000000000000000000000000000000000000000000000000ii
+0000000000000000000000000000000000oooooooo000000000000000000000000000000000000000000000000000000000000000000000000000000000000ii
+0000000000000000000000000000000000oooooooo000000000000000000000000000000000000000000000000000000000000000000000000000000000000ii
+
