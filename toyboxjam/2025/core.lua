@@ -10,11 +10,16 @@ stages = {
             stages[stage]:init()
         end,
         init = function(self)
+            cartdata("5ou1_tbj2005_1")
+            data = { exists = 0, player_x = 1, player_y = 2 }
             dt = 0
             player:reset()
             for entity in all(entities) do
                 entity:reset()
             end
+            local cdata = dget(data.exists) == 1
+            player.x = cdata and dget(data.player_x) or 16
+            player.y = cdata and dget(data.player_y) or 240
         end,
         update = function(self)
             if btnp(🅾️) or btnp(❎) then
@@ -74,13 +79,6 @@ stages = {
 
 function _init()
     stages[stage]:init()
-
-    cartdata("5ou1_tbj2005_1")
-    data = { exists = 0, player_x = 1, player_y = 2 }
-    local cdata = dget(data.exists) == 1
-    player.x = cdata and dget(data.player_x) or 16
-    player.y = cdata and dget(data.player_y) or 240
-
     menuitem(
         1,
         "reset checkpoint",
