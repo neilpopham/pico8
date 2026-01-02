@@ -1,0 +1,26 @@
+{
+    "activeFile": "entry.p8",
+    "expandedProjectPaths": [
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "entry.p8": {
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 190.33333333333334,
+                "y": 126.66666666666666
+            }
+        },
+        "entry.p8#PICO-8 Sprites": {
+            "scaleInDock": 3
+        }
+    },
+    "openFiles": [
+        "entry.p8"
+    ],
+    "project": "entry.tiled-project",
+    "recentFiles": [
+        "entry.p8"
+    ]
+}

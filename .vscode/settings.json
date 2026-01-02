@@ -6,5 +6,5 @@
         ]
     },
     "triggerTaskOnSave.on": true,
-    "triggerTaskOnSave.resultIndicatorResetTimeout": 5
+    "triggerTaskOnSave.resultIndicatorResetTimeout": 3
 }
