@@ -1,0 +1,10 @@
+{
+    "triggerTaskOnSave.showNotifications": true,
+    "triggerTaskOnSave.tasks": {
+        "Shrink PICO-8 Cart": [
+            "*.p8"
+        ]
+    },
+    "triggerTaskOnSave.on": true,
+    "triggerTaskOnSave.resultIndicatorResetTimeout": 5
+}

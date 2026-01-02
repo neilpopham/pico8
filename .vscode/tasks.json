@@ -1,0 +1,58 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Shrink PICO-8 Cart",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "C:\\Users\\neilp\\Documents\\Projects\\pico8\\shrinko8\\shrinko8.py",
+                "${file}",
+                "${fileDirname}/${fileBasenameNoExtension}.shrinko8.p8",
+                "--minify-safe-only"
+                // "--unminify"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Shrink and Run Cart In PICO-8",
+            "type": "process",
+            "command": "C:\\Program Files (x86)\\PICO-8\\pico8.exe",
+            "args": [
+                "-run",
+                "${fileDirname}/${fileBasenameNoExtension}.shrinko8.p8"
+            ],
+            "dependsOn": "Shrink PICO-8 Cart",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Cart In PICO-8",
+            "type": "process",
+            "command": "C:\\Program Files (x86)\\PICO-8\\pico8.exe",
+            "args": [
+                "-run",
+                "${file}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared"
+            }
+        }
+    ]
+}
