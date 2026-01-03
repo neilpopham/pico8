@@ -1,3 +1,5 @@
+cartdata("5ou1_tbj2005_1")
+data = { exists = 0, player_x = 1, player_y = 2 }
 dt = 0
 stage = 1
 stages = {
@@ -10,8 +12,6 @@ stages = {
             stages[stage]:init()
         end,
         init = function(self)
-            cartdata("5ou1_tbj2005_1")
-            data = { exists = 0, player_x = 1, player_y = 2 }
             dt = 0
             player:reset()
             for entity in all(entities) do
@@ -143,7 +143,7 @@ function _draw()
     print(player.frame, 60, 0, 4)
     print(dt, 80, 0, 4)
     print(player.wall, 100, 0, 8)
-    print(#particles, 0, 10, 10)
+    print(dget(data.player_x), 0, 10, 10)
 
     if player.keys > 0 then
         rectfill(0, 118, 6 * player.keys - 1, 127, 0)
