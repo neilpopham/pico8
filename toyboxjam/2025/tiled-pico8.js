@@ -11,43 +11,43 @@
 //
 
 const PALETTE =
-[
-    '#000000', // black
-    '#1d2b53', // dark_blue
-    '#7e2553', // dark_purple
-    '#008751', // dark_green
-    '#ab5236', // brown
-    '#5f574f', // dark_gray
-    '#c2c3c7', // light_gray
-    '#fff1e8', // white
-    '#ff004d', // red
-    '#ffa300', // orange
-    '#ffec27', // yellow
-    '#00e436', // green
-    '#29adff', // blue
-    '#83769c', // indigo
-    '#ff77a8', // pink
-    '#ffccaa', // peach
+    [
+        '#000000', // black
+        '#1d2b53', // dark_blue
+        '#7e2553', // dark_purple
+        '#008751', // dark_green
+        '#ab5236', // brown
+        '#5f574f', // dark_gray
+        '#c2c3c7', // light_gray
+        '#fff1e8', // white
+        '#ff004d', // red
+        '#ffa300', // orange
+        '#ffec27', // yellow
+        '#00e436', // green
+        '#29adff', // blue
+        '#83769c', // indigo
+        '#ff77a8', // pink
+        '#ffccaa', // peach
 
-    '#291814',
-    '#111d35',
-    '#422136',
-    '#125359',
-    '#742f29',
-    '#49333b',
-    '#a28879',
-    '#f3ef7d',
-    '#be1250',
-    '#ff6c24',
-    '#a8e72e',
-    '#00b543',
-    '#065ab5',
-    '#754665',
-    '#ff6e59',
-    '#ff9d81',
-];
+        '#291814',
+        '#111d35',
+        '#422136',
+        '#125359',
+        '#742f29',
+        '#49333b',
+        '#a28879',
+        '#f3ef7d',
+        '#be1250',
+        '#ff6c24',
+        '#a8e72e',
+        '#00b543',
+        '#065ab5',
+        '#754665',
+        '#ff6e59',
+        '#ff9d81',
+    ];
 
-const TILED_VERSION = tiled.version.split('.').map((e,i) => e*100**(2-i)).reduce((a,b) => a+b);
+const TILED_VERSION = tiled.version.split('.').map((e, i) => e * 100 ** (2 - i)).reduce((a, b) => a + b);
 const HEADER = 'pico-8 cartridge';
 const PROPNAME = 'Private Data';
 
@@ -56,18 +56,15 @@ const MAP_HEIGHT = 64;
 
 const FLAGS = 8;
 
-function tohex(x, ndigits)
-{
+function tohex(x, ndigits) {
     return (x + (1 << (ndigits * 4))).toString(16).slice(-ndigits);
 }
 
-function fromhex(s)
-{
-    return Number('0x'+s);
+function fromhex(s) {
+    return Number('0x' + s);
 }
 
-function toRgb(hexColor)
-{
+function toRgb(hexColor) {
     return [
         fromhex(hexColor.substring(1, 3)),
         fromhex(hexColor.substring(3, 5)),
@@ -75,8 +72,7 @@ function toRgb(hexColor)
     ];
 }
 
-function getPaletteIndex(pixelColor)
-{
+function getPaletteIndex(pixelColor) {
     const rgb = toRgb(pixelColor);
     let best = 9999;
     let idx = -1;
@@ -97,29 +93,26 @@ function getPaletteIndex(pixelColor)
  * @param {Array} rgb1 First RGB color in array
  * @param {Array} rgb2 Second RGB color in array
  */
-function deltaRgb (rgb1, rgb2) {
-  const [ r1, g1, b1 ] = rgb1,
-        [ r2, g2, b2 ] = rgb2,
+function deltaRgb(rgb1, rgb2) {
+    const [r1, g1, b1] = rgb1,
+        [r2, g2, b2] = rgb2,
         drp2 = Math.pow(r1 - r2, 2),
         dgp2 = Math.pow(g1 - g2, 2),
         dbp2 = Math.pow(b1 - b2, 2),
         t = (r1 + r2) / 2
 
-  return Math.sqrt(2 * drp2 + 4 * dgp2 + 3 * dbp2 + t * (drp2 - dbp2) / 256)
+    return Math.sqrt(2 * drp2 + 4 * dgp2 + 3 * dbp2 + t * (drp2 - dbp2) / 256)
 }
 
 // Extract a hexadecimal section from a p8 cart data, e.g. ‘__gfx__’
-function p8_extract(buf, header)
-{
+function p8_extract(buf, header) {
     return p8_split(buf, header)[1];
 }
 
 // Split a p8 cart in order to replace a hex section
-function p8_split(buf, header)
-{
+function p8_split(buf, header) {
     let gpos = buf.indexOf(header);
-    if (gpos < 0)
-    {
+    if (gpos < 0) {
         return [buf, '', '']
     }
 
@@ -128,13 +121,12 @@ function p8_split(buf, header)
     let gend = buf.indexOf('__', gpos);
     if (gend < 0)
         gend = buf.length;
-    return [ prefix,
-             buf.slice(gpos, gend).replace(/[^0-9a-fA-F]+/g, ''),
-             buf.slice(gend, buf.length) ];
+    return [prefix,
+        buf.slice(gpos, gend).replace(/[^0-9a-fA-F]+/g, ''),
+        buf.slice(gend, buf.length)];
 }
 
-function pico8_read(filename)
-{
+function pico8_read(filename) {
     let f = new BinaryFile(filename);
     let cart = f.readAll().toString();
     f.close();
@@ -164,7 +156,7 @@ function pico8_read(filename)
     t.loadFromImage(img);
     // Set Flag 0 to Flag 7 custom properties on each tile
     let properties = {};
-    for (let i = 0; i<FLAGS; i++) {
+    for (let i = 0; i < FLAGS; i++) {
         properties[`Flag ${i}`] = false;
     }
     t.tiles.forEach(ti => { ti.setProperties(properties); });
@@ -176,22 +168,21 @@ function pico8_read(filename)
     tl.width = MAP_WIDTH;
     tl.height = MAP_HEIGHT;
     let tle = tl.edit();
-    function set_tile(x, y, s)
-    {
+    function set_tile(x, y, s) {
         let id = fromhex(s);
         if (id > 0)
             tle.setTile(x, y, t.tile(id));
     }
     for (let i = 0; i < Math.min(MAP_HEIGHT * MAP_WIDTH, Math.floor(map.length / 2)); ++i)
         set_tile(i % MAP_WIDTH,
-                 Math.floor(i / MAP_WIDTH),
-                 map.substring(i * 2, i * 2 + 2));
+            Math.floor(i / MAP_WIDTH),
+            map.substring(i * 2, i * 2 + 2));
     // The second part of the sprite data also contains map data
     let gfx2 = gfx.slice(128 * 64).replace(/(.)(.)/g, '$2$1');;
     for (let i = 0; i < Math.min(128 * 64, gfx2.length); i += 2)
         set_tile(Math.floor(i / 2) % MAP_WIDTH,
-                 MAP_HEIGHT / 2 + Math.floor(i / 2 / MAP_WIDTH),
-                 gfx2.substring(i, i + 2));
+            MAP_HEIGHT / 2 + Math.floor(i / 2 / MAP_WIDTH),
+            gfx2.substring(i, i + 2));
     tle.apply();
     tm.addLayer(tl);
 
@@ -208,7 +199,7 @@ function pico8_read(filename)
                 mo.pos = Qt.point(Number(d[0]) * 8, Number(d[1]) * 8);
                 mo.size = Qt.size(8, 8);
                 for (i = 0; i < FLAGS; i++) {
-                    mo.setProperty(`Flag ${i}`, !!(d[3] & (1<<i)));
+                    mo.setProperty(`Flag ${i}`, !!(d[3] & (1 << i)));
                 }
                 og.addObject(mo);
             });
@@ -219,8 +210,7 @@ function pico8_read(filename)
     return tm;
 }
 
-function pico8_write(tm, filename)
-{
+function pico8_write(tm, filename) {
     let cart = Qt.atob(tm.property(PROPNAME));
     if (cart.slice(0, HEADER.length) != HEADER)
         throw new TypeError('This map was not loaded from a PICO-8 cart');
@@ -230,14 +220,13 @@ function pico8_write(tm, filename)
 
     // Convert map data to hex
     let data = '';
-    for (let i = 0; i < MAP_WIDTH * MAP_HEIGHT; ++i)
-    {
+    for (let i = 0; i < MAP_WIDTH * MAP_HEIGHT; ++i) {
         let t = layer.cellAt(i % MAP_WIDTH, Math.floor(i / MAP_WIDTH)).tileId;
         data += tohex(Math.max(t, 0), 2);
     }
 
     // Retrieve gfx data from the original cart.
-    let [ prefix, gfx, suffix ] = p8_split(cart, '__gfx__');
+    let [prefix, gfx, suffix] = p8_split(cart, '__gfx__');
 
     // Load the tileset used
     let tileset = tm.tilesets[0];
@@ -246,14 +235,12 @@ function pico8_write(tm, filename)
     // If there's an image set, the user has loaded an external tileset which we
     // now need to store in the cart (on next load, it'll be pulled back out of
     // the cart)
-    if (tileset.image)
-    {
+    if (tileset.image) {
         // The first 64 lines are generated from the tileset image
         let tilesetImage = new Image(tileset.image);
 
         // Only take the first 128x64 pixels worth
-        for (let i = 0; i < 128 * 64; ++i)
-        {
+        for (let i = 0; i < 128 * 64; ++i) {
             // But allow the image itself to be any shape
             let p = tilesetImage.pixelColor(i % tilesetImage.width, Math.floor(i / tilesetImage.width));
             // Assume the image is already formatted in the PICO-8 palette
@@ -266,8 +253,7 @@ function pico8_write(tm, filename)
             gfxOut += tohex(Math.max(c, 0), 1);
         }
     }
-    else
-    {
+    else {
         // The first 64 lines are preserved from the .p8 file
         gfxOut = gfx.slice(0, 128 * 64).padEnd(128 * 64, '0');
     }
@@ -281,14 +267,14 @@ function pico8_write(tm, filename)
     cart = [prefix].concat('__gfx__').concat(gfxOut.match(/.{128}/g)).concat(suffix).join(eol);
 
     // Store map data. Contrary to gfx data, nothing is preserved.
-    [ prefix, map, suffix ] = p8_split(cart, '__map__');
+    [prefix, map, suffix] = p8_split(cart, '__map__');
     map = data.slice(0, 256 * 32).replace(/(0{256})+$/, '');
     cart = [prefix].concat('__map__').concat(map.match(/.{256}/g)).concat(suffix).join(eol);
 
     // Store __tif__ data
     layer = tm.layerAt(1);
     if (layer.isObjectLayer) {
-        const tiles=[];
+        const tiles = [];
         layer.objects.forEach(o => {
             if (o.tile) {
                 const custom = o.properties();
@@ -308,11 +294,11 @@ function pico8_write(tm, filename)
             const _tif = cart.match(/__tif__ ?= ?["'](.*)["']/)
             cart = cart.replace(_tif[1], meta);
         } else if (meta.length) {
-            const lua= `__lua__${eol}${eol}local __tif__="${meta}"`;
+            const lua = `__lua__${eol}${eol}local __tif__="${meta}"`;
             if (cart.indexOf('__lua__') > 0) {
                 cart = cart.replace('__lua__', lua);
             } else {
-                const spacer = cart.indexOf(eol+eol);
+                const spacer = cart.indexOf(eol + eol);
                 cart = cart.substring(0, spacer)
                     .concat(eol)
                     .concat(lua)
@@ -327,8 +313,7 @@ function pico8_write(tm, filename)
     f.commit();
 }
 
-if (TILED_VERSION >= 10500)
-{
+if (TILED_VERSION >= 10500) {
     const pico8_format =
     {
         name: 'PICO-8 Cart',
@@ -339,7 +324,6 @@ if (TILED_VERSION >= 10500)
 
     tiled.registerMapFormat('PICO-8', pico8_format);
 }
-else
-{
+else {
     console.warn(`Tiled version ${tiled.version} is too old for the PICO-8 plugin (1.5.0 required)`);
 }
