@@ -5,6 +5,6 @@
             "*.p8"
         ]
     },
-    "triggerTaskOnSave.on": true,
+    "triggerTaskOnSave.on": false,
     "triggerTaskOnSave.resultIndicatorResetTimeout": 3
 }
