@@ -1,138 +1,573 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
-function _init()
-    lights = {
-        { x = 20, y = 20, r = 10 },
-        { x = 40, y = 40, r = 20 },
-        { x = 60, y = 60, r = 30 }
-    }
-    l = 3
-    a = 0
+-- px9 data compression v10
+-- by zep & co.
+--
+-- changelog:
+--
+-- v11:
+--  @felice: removed unneeded
+--  brackets -> 214 tokens
+--
+-- v10:
+--  @pancelor
+--  ★ remove cruft
+--  ★ clever getval() tricks
+--  ★ fix low-entropy bug
+--  215 tokens
+--  @zep: added tests tab 3
+--
+-- v9:
+--  @pancelor
+--  ★ redo bitstream order
+--  234 tokens (but ~4% slower)
+--
+-- v8:
+--  @pancelor
+--  ★ smaller vlist initialization
+--  241 tokens
+--
+-- v7:
+--  smaller vlist_val by @felice
+--  7b -> 254 tokens (fastest)
+--  7a -> 247 tokens (smallest)
+--
+-- v6:
+--  smaller vlist_val by @p01
+--  -> 258 tokens
+--
+-- v5:
+--  fixed bug found by @icegoat
+--  262 tokens (the bug was caused by otherwise redundant code!)
+--
+-- v4:
+--  @catatafish
+--  ★ smaller decomp
+--
+--  @felice
+--  ★ fix bit flush at end
+--  ★ use 0.2.0 functionality
+--  ★ even smaller decomp
+--  ★ some code simpler/cleaner
+--  ★ hey look, a changelog!
+--
+-- v3:
+--  @felice
+--  ★ smaller decomp
+--
+-- v2:
+--  @zep
+--  ★ original release
+--
+--[[
+
+    features:
+    ★ 273 token decompress
+    ★ handles any bit size data
+    ★ no manual tuning required
+    ★ decent compression ratios
+
+
+    ██▒ how to use ▒██
+
+    1. compress your data
+
+        px9_comp(source_x, source_y,
+            width, height,
+            destination_memory_addr,
+            read_function)
+
+        e.g. to compress the whole
+        spritesheet to the map:
+
+        px9_comp(0,0,128,128,
+            0x2000, sget)
+
+    …………………………………
+    2. decompress
+
+        px9_decomp(dest_x, dest_y,
+            source_memory_addr,
+            read_function,
+            write_function)
+
+        e.g. to decompress from map
+        memory space back to the
+        screen:
+
+        px9_decomp(0,0,0x2000,
+            pget,pset)
+
+        …………………………………
+
+        (see example below)
+
+        note: only the decompress
+        code (tab 1) is needed in
+        your release cart after
+        storing compressed data.
+
+]]
+
+function old_init()
+    -- test: compress from
+    -- spritesheet to map, and
+    -- then decomp back to screen
+
+    cls()
+    print("compressing..", 5)
+    flip()
+
+    w = 128
+    h = 128
+    raw_size = (w * h + 1) \ 2
+    -- bytes
+
+    ctime = stat(1)
+
+    -- compress spritesheet to map
+    -- area (0x2000) and save cart
+
+    clen = px9_comp(
+        0, 0,
+        w, h,
+        0x2000,
+        sget
+    )
+
+    ctime = stat(1) - ctime
+
+    --cstore() -- save to cart
+
+    -- show compression stats
+    print("                 " .. (ctime / 30) .. " seconds", 0, 0)
+    print("")
+    print("compressed spritesheet to map", 6)
+    ratio = tostr(clen / raw_size * 100)
+    print(
+        "bytes: "
+                .. clen .. " / " .. raw_size
+                .. " (" .. sub(ratio, 1, 4) .. "%)",
+        12
+    )
+    print("")
+    print("press ❎ to decompress", 14)
+
+    memcpy(0x7000, 0x2000, 0x1000)
+
+    -- wait for user
+    repeat
+    until btn(❎)
+
+    print("")
+    print("decompressing..", 5)
+    flip()
+
+    -- save stats screen
+    local cx, cy = cursor()
+    local sdata = {}
+    for a = 0x6000, 0x7ffc do
+        sdata[a] = peek4(a)
+    end
+
+    dtime = stat(1)
+
+    -- decompress data from map
+    -- (0x2000) to screen
+
+    px9_decomp(0, 0, 0x2000, pget, pset)
+
+    dtime = stat(1) - dtime
+
+    -- wait for user
+    repeat
+    until btn(❎)
+
+    -- restore stats screen
+    for a, v in pairs(sdata) do
+        poke4(a, v)
+    end
+
+    -- add decompression stats
+    print("                 " .. (dtime / 30) .. " seconds", cx, cy - 6, 5)
+    print("")
 end
 
-function _update()
-    -- if btn() > 0 then
-    --     cstore(0x0, 0xc000, 0x2000, "toybox_sprites_simple_sprites.p8")
-    -- end
-    if btn(1) then
-        lights[l].x = lights[l].x + 1
-    end
-    if btn(0) then
-        lights[l].x = lights[l].x - 1
-    end
-    if btn(3) then
-        lights[l].y = lights[l].y + 1
-    end
-    if btn(2) then
-        lights[l].y = lights[l].y - 1
-    end
-    if btnp(4) or btnp(5) then
-        l += 1
-        if l > #lights then l = 1 end
-    end
-    a += 0.1
-end
+-->8
+-- px9 decompress
 
-function _draw()
-    -- step 1
-    -- our light mask
-    -- pink sheet with black circles
-    -- pink is used as our mask color in this process
-    cls(15)
-    -- set black to transparent
-    palt(0, false)
-    -- draw light circles
-    for light in all(lights) do
-        circfill(light.x, light.y, light.r + (cos(a) * 2), 0)
-    end
-    -- copy screen to memory at 0xc000
-    memcpy(0xc000, 0x6000, 0x2000)
-    -- cstore(0x0, 0x6000, 0x2000, "toybox_sprites_simple_step_1.p8")
+-- x0,y0 where to draw to
+-- src   compressed data address
+-- vget  read function (x,y)
+-- vset  write function (x,y,v)
 
-    -- step 2
-    -- our bright sprites
-    -- black screen with sprites
-    -- on which we then overlay our light mask from step 1
-    -- to cover everywhere outside the lights in pink
-    cls(0)
-    -- use standard sprite sheet
-    poke(0x5f54, 0x00)
-    -- restore palette
-    pal()
-    -- render sprites
-    for y = 0, 15 do
-        for x = 0, 15 do
-            spr((y * 16 + x) % 96, x * 8, y * 8)
+function px9_decomp(x0, y0, src, vget, vset)
+    local function vlist_val(l, val)
+        -- find position and move
+        -- to head of the list
+
+        --[ 2-3x faster than block below
+        local v, i = l[1], 1
+        while v != val do
+            i += 1
+            v, l[i] = l[i], v
+        end
+        l[1] = val
+        --]]
+
+        --[[ 7 tokens smaller than above
+        for i,v in ipairs(l) do
+            if v==val then
+                add(l,deli(l,i),1)
+                return
+            end
+        end
+--]]
+    end
+
+    -- read an m-bit num from src
+    local function getval(m)
+        -- $src: 4 bytes at flr(src)
+        -- >>src%1*8: sub-byte pos
+        -- <<32-m: zero high bits
+        -- >>>16-m: shift to int
+        local res = $src >> src % 1 * 8 << 32 - m >>> 16 - m
+        src += m >> 3
+        --m/8
+        return res
+    end
+
+    -- get number plus n
+    local function gnp(n)
+        local bits = 0
+        repeat
+            bits += 1
+            local vv = getval(bits)
+            n += vv
+        until vv < (1 << bits) - 1
+        return n
+    end
+
+    -- header
+
+    local w_1, h_1, eb, el, pr, splen, predict =
+        -- w-1,h-1
+        gnp "0", gnp "0", gnp "1", {}, {}, 0
+    --,nil
+
+    for i = 1, gnp "1" do
+        add(el, getval(eb))
+    end
+    for y = y0, y0 + h_1 do
+        for x = x0, x0 + w_1 do
+            splen -= 1
+
+            if splen < 1 then
+                splen, predict = gnp "1", not predict
+            end
+
+            local a = y > y0 and vget(x, y - 1) or 0
+
+            -- create vlist if needed
+            local l = pr[a] or { unpack(el) }
+            pr[a] = l
+
+            -- grab index from stream
+            -- iff predicted, always 1
+
+            local v = l[predict and 1 or gnp "2"]
+
+            -- update predictions
+            vlist_val(l, v)
+            vlist_val(el, v)
+
+            -- set
+            vset(x, y, v)
         end
     end
-    -- cstore(0x0, 0x6000, 0x2000, "toybox_sprites_simple_step_2a.p8")
-    -- use sprite sheet from step 1
-    poke(0x5f54, 0xc0)
-    sspr(0, 0, 128, 128, 0, 0)
-    -- copy screen to memory at 0xc000
-    memcpy(0xc000, 0x6000, 0x2000)
-    -- cstore(0x0, 0x6000, 0x2000, "toybox_sprites_simple_step_2b.p8")
-
-    -- step 3
-    -- our dark sprites
-    -- black screen with sprites
-    -- on which we then overlay our draw from step 2
-    cls(0)
-    -- use standard sprite sheet
-    poke(0x5f54, 0x00)
-    -- darken palette
-    pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
-    -- render sprites
-    for y = 0, 15 do
-        for x = 0, 15 do
-            spr(17 + (y * 3 + x % 16), x * 8, y * 8)
-        end
-    end
-    -- cstore(0x0, 0x6000, 0x2000, "toybox_sprites_simple_step_3a.p8")
-    -- restore palette
-    pal()
-    -- set pink to transparent
-    palt(15, true)
-    -- set black to opaque
-    palt(0, false)
-    -- use spritesheet from step 2
-    poke(0x5f54, 0xc0)
-    -- render spritesheet from step 2
-    sspr(0, 0, 128, 128, 0, 0)
-    -- cstore(0x0, 0x6000, 0x2000, "toybox_sprites_simple_step_3b.p8")
-    -- stop()
-    -- restore palette
-    pal()
-    -- print cpu usage
-    print(flr(stat(1) * 100) / 100, 0, 0, 7)
 end
 
--- They can now also be mapped to one of the
--- four high 2k sections at
--- 0x8000, 0xa000, 0xc000, and 0xe000
---
--- 0x5f00	0x5f3f	Draw state
--- 0x5f40	0x5f7f	Hardware state
--- 0x5f80	0x5fff	GPIO pins (128 bytes)
--- 0x6000	0x7fff	Screen data (8k)*
---
--- you can use memcpy() as an alternative way to
--- display the entire sprite sheet onto the screen
--- without using spr().
+-->8
+-- px9 compress
 
--- The mapped address for the spritesheet is stored at 0x5f54,
--- and the mapped address for the screen is stored at 0x5f55.
--- There are only 2 legal values that should be poked to
--- each address: 0x00 (which means map to 0x0000),
--- and 0x60 (map to 0x6000). This gives 4 combinations:
--- 0x00, 0x60: default settings
--- 0x60, 0x60: gfx functions (spr, circ..) use the screen as sprite data
--- 0x00, 0x00: gfx functions all draw directly into the spritesheet
--- 0x60, 0x00: swap spritesheet and screen
+-- x0,y0 where to read from
+-- w,h   image width,height
+-- dest  address to store
+-- vget  read function (x,y)
 
--- https://www.lexaloffle.com/bbs/?tid=140421
--- https://www.lexaloffle.com/bbs/?tid=45538
+function px9_comp(x0, y0, w, h, dest, vget)
+    local dest0 = dest
+
+    local function vlist_val(l, val)
+        -- find position and move
+        -- to head of the list
+
+        --[ 2-3x faster than block below
+        local v, i = l[1], 1
+        while v != val do
+            i += 1
+            v, l[i] = l[i], v
+        end
+        l[1] = val
+        return i
+        --]]
+
+        --[[ 8 tokens smaller than above
+        for i,v in ipairs(l) do
+            if v==val then
+                add(l,deli(l,i),1)
+                return i
+            end
+        end
+--]]
+    end
+
+    local bit = 1
+    local byte = 0
+    local function putbit(bval)
+        if (bval > 0) byte += bit
+        poke(dest, byte)
+        bit <<= 1
+        if (bit == 256) then
+            bit = 1 byte = 0
+            dest += 1
+        end
+    end
+
+    local function putval(val, bits)
+        for i = 0, bits - 1 do
+            putbit(val >> i & 1)
+        end
+    end
+
+    local function putnum(val)
+        local bits = 0
+        repeat
+            bits += 1
+            local mx = (1 << bits) - 1
+            local vv = min(val, mx)
+            putval(vv, bits)
+            val -= vv
+        until vv < mx
+    end
+
+    -- first_used
+
+    local el = {}
+    local found = {}
+    local highest = 0
+    for y = y0, y0 + h - 1 do
+        for x = x0, x0 + w - 1 do
+            c = vget(x, y)
+            if not found[c] then
+                found[c] = true
+                add(el, c)
+                highest = max(highest, c)
+            end
+        end
+    end
+
+    -- header
+
+    local bits = 1
+    while highest >= 1 << bits do
+        bits += 1
+    end
+
+    putnum(w - 1)
+    putnum(h - 1)
+    putnum(bits - 1)
+    putnum(#el - 1)
+    for i = 1, #el do
+        putval(el[i], bits)
+    end
+
+    -- data
+
+    local pr = {}
+    -- predictions
+
+    local dat = {}
+
+    for y = y0, y0 + h - 1 do
+        for x = x0, x0 + w - 1 do
+            local v = vget(x, y)
+
+            local a = y > y0 and vget(x, y - 1) or 0
+
+            -- create vlist if needed
+            local l = pr[a] or { unpack(el) }
+            pr[a] = l
+
+            -- add to vlist
+            add(dat, vlist_val(l, v))
+
+            -- and to running list
+            vlist_val(el, v)
+        end
+    end
+
+    -- write
+    -- store bit-0 as runtime len
+    -- start of each run
+
+    local nopredict
+    local pos = 1
+
+    while pos <= #dat do
+        -- count length
+        local pos0 = pos
+
+        if nopredict then
+            while dat[pos] != 1 and pos <= #dat do
+                pos += 1
+            end
+        else
+            while dat[pos] == 1 and pos <= #dat do
+                pos += 1
+            end
+        end
+
+        local splen = pos - pos0
+        putnum(splen - 1)
+
+        if nopredict then
+            -- values will all be >= 2
+            while pos0 < pos do
+                putnum(dat[pos0] - 2)
+                pos0 += 1
+            end
+        end
+
+        nopredict = not nopredict
+    end
+
+    if (bit > 0) dest += 1
+    -- flush
+    return dest - dest0
+end
+
+-->8
+-- tests
+-- uncomment run_tests() at
+-- bottom of this tab. each
+-- test compresses video and
+-- checks crc matches.
+
+--[[
+expected sizes
+blank:    21 (0.0026)
+circ:    254 (0.0310)
+lines:  2109 (0.2574)
+dots:   2075 (0.2533)
+lunch:  1275 (0.1556)
+noise: 12819 (1.5648)
+noise1: 3277 (0.4000)
+]]
+
+function vid_crc()
+    local res = 109
+    for i = 0x6000, 0x7fff, 4 do
+        res ^^= 0x9e13.48b1
+        res += $i
+        res <<>= 5
+        res *= 103.11
+    end
+    return res
+end
+
+-- compress whatever is on the
+-- screen and check crc matches
+function vid_test(name)
+    crc0 = vid_crc()
+    len = px9_comp(
+        0, 0, 128, 128,
+        0x8000, pget
+    )
+    printh(name .. ": " .. len
+            .. " (" .. (len / 8192) .. ")")
+    cls()
+    px9_decomp(0, 0, 0x8000, pget, pset)
+
+    crc1 = vid_crc()
+    assert(crc0 == crc1)
+end
+
+function run_tests()
+    printh("--- px9 tests ---")
+
+    cls(2)
+    vid_test("blank")
+
+    -- circles
+    cls()
+    circfill(64, 64, 32, 12)
+    vid_test("circ")
+
+    --lines
+    cls()
+    for i = 0, 128, 4 do
+        line(i, 0, 0, 128 - i, 8 + i / 8)
+        line(i, 128, 128, 128 - i, 8 + i / 8)
+    end
+    vid_test("lines")
+
+    --dots
+    cls()
+    srand()
+    for i = 0, 2000 do
+        circfill(rnd(128), rnd(128), rnd(16), rnd(16))
+    end
+    vid_test("dots")
+
+    cls()
+    spr(0, 0, 0, 16, 16)
+    vid_test("lunch")
+
+    -- noise
+    cls()
+    for i = 0x6000, 0x7fff do
+        poke(i, rnd(256))
+    end
+    vid_test("noise")
+
+    -- 1-bit noise
+    cls()
+    for i = 0x6000, 0x7fff do
+        poke(i, rnd(2) + (rnd(2) \ 1) * 16)
+    end
+    vid_test("noise1")
+
+    -- fuzz
+    -- (would be more meaningful
+    -- with more variation in
+    -- data characteristics)
+    srand()
+
+    --for j=0,500 do
+    for j = 0, 4 do
+        cls(rnd(16))
+        for i = 0, rnd(4000) do
+            circfill(rnd(128), rnd(128), rnd(16), rnd(16))
+        end
+        for i = 0, rnd(4000) do
+            pset(rnd(128), rnd(128), rnd(16), rnd(16))
+        end
+        vid_test("fuzz" .. j)
+    end
+
+    color(7)
+    cls()
+    stop("ok")
+end
+
+--run_tests()
+
+-- reload(0x0, 0x0, 0x2000, "px9_2.p8")
+clen = px9_comp(0, 0, 128, 128, 0x2000, sget)
+cstore(0x0, 0x2000, clen, "toybox_sprites_compressed.p8")
+stop()
 
 __gfx__
 00012000606660666066606660666066606660666066606616666661feeeeee87bbbbbb30000004000000030000300000b0dd030777777674f9f4fff7999a999
