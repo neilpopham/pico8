@@ -10,7 +10,6 @@
                 "${file}",
                 "${fileDirname}/${fileBasenameNoExtension}.shrinko8.p8",
                 "--minify-safe-only"
-                // "--unminify"
             ],
             "group": "build",
             "presentation": {

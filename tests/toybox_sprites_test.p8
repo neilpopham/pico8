@@ -89,7 +89,7 @@ function _draw()
     for light in all(lights) do
         circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
     end
-    -- copy screen to memory at 0xa000
+    -- copy screen to ram at 0xa0
     memcpy(0xa000, 0x6000, 0x2000)
     -- clear screen
     cls(0)
@@ -102,12 +102,13 @@ function _draw()
             spr((y * 16 + x) % 96, x * 8, y * 8)
         end
     end
-    -- set spritesheet to 0xa0
+    -- set spritesheet to 0xa0, the mask we created above
     poke(0x5f54, 0xa0)
     -- set pink to transparent
     palt(15, true)
     -- set black to opaque
     palt(0, false)
+    -- render spritesheet to screen
     sspr(0, 0, 128, 128, 0, 0)
     -- reset palette
     pal()
