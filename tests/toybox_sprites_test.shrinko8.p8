@@ -1,145 +1,15 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
-function px9_decomp(a,n,o,f,u)local function r(o,c)local n,l=o[1],1while(n~=c)l+=1n,o[l]=o[l],n
-o[1]=c end local function d(n)local l=$o>>o%1*8<<32-n>>>16-n o+=n>>3return l end local function o(n)local o=0repeat o+=1local l=d(o)n+=l until l<(1<<o)-1return n end local i,h,w,l,t,c,e=o"0",o"0",o"1",{},{},0for o=1,o"1"do add(l,d(w))end for d=n,n+h do for a=a,a+i do c-=1if(c<1)c,e=o"1",not e
-local c=d>n and f(a,d-1)or 0local n=t[c]or{unpack(l)}t[c]=n local o=n[e and 1or o"2"]r(n,o)r(l,o)u(a,d,o)end end end
-
--- They can now also be mapped to one of the
--- four high 2k sections at
--- 0x8000, 0xa000, 0xc000, and 0xe000
---
--- 0x5f00	0x5f3f	Draw state
--- 0x5f40	0x5f7f	Hardware state
--- 0x5f80	0x5fff	GPIO pins (128 bytes)
--- 0x6000	0x7fff	Screen data (8k)*
---
--- you can use memcpy() as an alternative way to
--- display the entire sprite sheet onto the screen
--- without using spr().
-
--- The mapped address for the spritesheet is stored at 0x5f54,
--- and the mapped address for the screen is stored at 0x5f55.
--- There are only 2 legal values that should be poked to
--- each address: 0x00 (which means map to 0x0000),
--- and 0x60 (map to 0x6000). This gives 4 combinations:
--- 0x00, 0x60: default settings
--- 0x60, 0x60: gfx functions (spr, circ..) use the screen as sprite data
--- 0x00, 0x00: gfx functions all draw directly into the spritesheet
--- 0x60, 0x00: swap spritesheet and screen
-
--- https://www.lexaloffle.com/bbs/?tid=140421
--- https://www.lexaloffle.com/bbs/?tid=45538
-
-function _init()
-    -- decompress spritesheets to 0x00 and 0x80
-    reload()
-    memcpy(0xa000, 0x00, 0x2000)
-    poke(0x5f54, 0x00)
-    px9_decomp(0, 0, 0xa000, sget, sset)
-    poke(0x5f54, 0x80)
-    px9_decomp(0, 0, 0xae00, sget, sset)
-    -- set demo variables
-    lights = {
-        { x = 20, y = 20, r = 10 },
-        { x = 40, y = 40, r = 20 },
-        { x = 60, y = 60, r = 30 }
-    }
-    l = 3
-    a = 0
-end
-
-function _update()
-    if btn(1) then
-        lights[l].x = lights[l].x + 1
-    end
-    if btn(0) then
-        lights[l].x = lights[l].x - 1
-    end
-    if btn(3) then
-        lights[l].y = lights[l].y + 1
-    end
-    if btn(2) then
-        lights[l].y = lights[l].y - 1
-    end
-    if btnp(4) or btnp(5) then
-        l += 1
-        if l > #lights then l = 1 end
-    end
-    a += 0.1
-end
-
-function _draw()
-    if stat(1) > .9 then cls(0) return end
-    -- clear screen
-    cls(0)
-    -- set spritesheet to 0x00 (spritesheet 1)
-    poke(0x5f54, 0x00)
-    -- set palette to dark colours
-    pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
-    -- draw unlit objects
-    for y = 0, 15 do
-        for x = 0, 15 do
-            spr(17 + (y * 3 + x % 16), x * 8, y * 8)
-        end
-    end
-    -- reset palette
-    pal()
-    -- draw circles in pink, our transparent colour
-    for light in all(lights) do
-        circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
-    end
-    -- copy screen to memory at 0xa000
-    memcpy(0xa000, 0x6000, 0x2000)
-    -- clear screen
-    cls(0)
-    -- set spritesheet to 0x80 (spritesheet 2)
-    poke(0x5f54, 0x80)
-    -- draw lit sprites
-    for y = 0, 15 do
-        for x = 0, 15 do
-            -- spr(17 + (y * 3 + x % 16), x * 8, y * 8)
-            spr((y * 16 + x) % 96, x * 8, y * 8)
-        end
-    end
-    -- set spritesheet to 0xa0
-    poke(0x5f54, 0xa0)
-    -- set pink to transparent
-    palt(15, true)
-    -- set black to opaque
-    palt(0, false)
-    sspr(0, 0, 128, 128, 0, 0)
-    -- reset palette
-    pal()
-end
-
--- They can now also be mapped to one of the
--- four high 2k sections at
--- 0x8000, 0xa000, 0xc000, and 0xe000
---
--- 0x5f00	0x5f3f	Draw state
--- 0x5f40	0x5f7f	Hardware state
--- 0x5f80	0x5fff	GPIO pins (128 bytes)
--- 0x6000	0x7fff	Screen data (8k)*
---
--- you can use memcpy() as an alternative way to
--- display the entire sprite sheet onto the screen
--- without using spr().
-
--- The mapped address for the spritesheet is stored at 0x5f54,
--- and the mapped address for the screen is stored at 0x5f55.
--- There are only 2 legal values that should be poked to
--- each address: 0x00 (which means map to 0x0000),
--- and 0x60 (map to 0x6000). This gives 4 combinations:
--- 0x00, 0x60: default settings
--- 0x60, 0x60: gfx functions (spr, circ..) use the screen as sprite data
--- 0x00, 0x00: gfx functions all draw directly into the spritesheet
--- 0x60, 0x00: swap spritesheet and screen
-
--- https://www.lexaloffle.com/bbs/?tid=140421
--- https://www.lexaloffle.com/bbs/?tid=45538
-
-
+function e(t,o,n,c,i)local function a(n,d)local o,e=n[1],1while(o~=d)e+=1o,n[e]=n[e],o
+n[1]=d end local function l(o)local e=$n>>n%1*8<<32-o>>>16-o n+=o>>3return e end local function n(o)local n=0repeat n+=1local e=l(n)o+=e until e<(1<<n)-1return o end local x,u,h,e,r,d,f=n"0",n"0",n"1",{},{},0for n=1,n"1"do add(e,l(h))end for l=o,o+u do for t=t,t+x do d-=1if(d<1)d,f=n"1",not f
+local d=l>o and c(t,l-1)or 0local o=r[d]or{unpack(e)}r[d]=o local n=o[f and 1or n"2"]a(o,n)a(e,n)i(t,l,n)end end end function _init()reload()memcpy(40960,0,8192)poke(24404,0)e(0,0,40960,sget,sset)poke(24404,128)e(0,0,44544,sget,sset)o={{x=20,y=20,r=10},{x=40,y=40,r=20},{x=60,y=60,r=30}}n=3d=0end function _update()if(btn(1))o[n].x=o[n].x+1
+if(btn(0))o[n].x=o[n].x-1
+if(btn(3))o[n].y=o[n].y+1
+if(btn(2))o[n].y=o[n].y-1
+if(btnp(4)or btnp(5))n+=1if(n>#o)n=1
+d+=.1end function _draw()if(stat(1)>.9)cls(0)return
+cls(0)poke(24404,0)pal{0,1,1,2,0,5,5,2,5,13,3,1,1,2,13}for n=0,15do for o=0,15do spr(17+(n*3+o%16),o*8,n*8)end end pal()for n in all(o)do circfill(n.x,n.y,n.r+cos(d)*2,15)end memcpy(40960,24576,8192)cls(0)poke(24404,128)for n=0,15do for o=0,15do spr((n*16+o)%96,o*8,n*8)end end poke(24404,160)palt(15,true)palt(0,false)sspr(0,0,128,128,0,0)pal()end
 __gfx__
 ffffff0ffffff0df9024ced1f678a35b873946321212121212121212146e89e17ce9beb327e774e5f4261ab9b5dc17c7fa7ecf1442b52f78c7fcebf1ef8f52bf
 ff0906fd1fe09f5e79367df2fbc1d7d5e9c96eb48d8301fa6ea3cc4e79777c9ee7ff8db1fb4ec73fb4e3ed4848cc51d07c222ee5427ea9439bede0c7032c9028
