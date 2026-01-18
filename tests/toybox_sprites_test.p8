@@ -85,7 +85,7 @@ function _draw()
     end
     -- reset palette
     pal()
-    -- draw circles in pink, our transparent colour
+    -- draw circles in peach, our transparent colour
     for light in all(lights) do
         circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
     end
@@ -104,9 +104,9 @@ function _draw()
     end
     -- set spritesheet to 0xa0, the mask we created above
     poke(0x5f54, 0xa0)
-    -- set pink to transparent
+    -- set peach to transparent, so circles let lit sprites show through
     palt(15, true)
-    -- set black to opaque
+    -- set black to opaque so we don't see the lit sprites
     palt(0, false)
     -- render spritesheet to screen
     sspr(0, 0, 128, 128, 0, 0)
