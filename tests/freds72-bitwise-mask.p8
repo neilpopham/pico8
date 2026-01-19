@@ -90,12 +90,12 @@ function _draw()
 		poke4(m, $(0x8000 + m) & $(0x6000 + m))
 	end
 
-	if btn() > 0 then
-		cstore(0x0000, 0x0000, 0x2000, 'freds72-bitwise-mask-dump.p8')
-	end
+	-- if btn() > 0 then
+	-- 	cstore(0x0000, 0x0000, 0x2000, 'freds72-bitwise-mask-dump.p8')
+	-- end
 
 	-- change to dark palette
-	pal({ 0, 1, 1, 2, 0, 5, 5, 2, 8, 13, 3, 1, 1, 1, 14 })
+	pal({0,1,1,2,0,5,5,2,5,13,3,1,1,2,13})
 	-- pal({ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 })
 	-- draw shadows
 	for shadow in all(shadows) do
