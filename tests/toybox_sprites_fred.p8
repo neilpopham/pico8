@@ -55,8 +55,8 @@ function _draw()
     cls(0)
     -- draw circles using 0xf for bitwise & later
     for light in all(lights) do
-        local r =
         circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
+        -- circfill(light.x + rnd(4) - 2, light.y + rnd(4) - 2, light.r + rnd(2), 15)
     end
     -- copy screen to ram at 0xc0
     memcpy(0xc000, 0x6000, 0x2000)
