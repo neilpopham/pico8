@@ -48,12 +48,8 @@ function _draw()
     cls(0)
     -- set spritesheet to 0x00 (spritesheet 1)
     poke(0x5f54, 0x00)
-    -- set palette to dark colours
-    pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
     -- draw kitten spritesheet
     sspr(0, 0, 128, 128, 0, 0)
-    -- reset palette
-    pal()
     -- draw circles in peach, our transparent colour
     for light in all(lights) do
         circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
