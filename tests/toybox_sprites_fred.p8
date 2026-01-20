@@ -12,7 +12,6 @@ function _init()
     l = 3
     --angle for pulsing effect
     a = 0
-    memset(0x8000, 0, 0x8000)
 end
 
 function _update()
@@ -51,6 +50,8 @@ function _draw()
     set spritesheet to 0xa0
     draw spritesheet
     ]]
+    -- set screen memory to 0xc0
+    poke(0x5f55, 0xc0)
     -- clear the screen
     cls(0)
     -- draw circles using 0xf for bitwise & later
@@ -59,31 +60,32 @@ function _draw()
         -- circfill(light.x + rnd(4) - 2, light.y + rnd(4) - 2, light.r + rnd(2), 15)
     end
     -- copy screen to ram at 0xc0
-    memcpy(0xc000, 0x6000, 0x2000)
+    -- memcpy(0xc000, 0x6000, 0x2000)
+    poke(0x5f55, 0x60)
     -- clear the screen
     cls(0)
     -- draw lit sprites
     sspr(0, 0, 128, 128, 0, 0)
+    -- clear mask memory
+    -- memset(0xa000, 0, 0x2000)
     -- for light in all(lights) do
     --     local r = light.r + (cos(a) * 2)
-    --     local x0 = (light.x - r) \ 1
-    --     local x1 = (light.x + r + 1) \ 1
-    --     -- x1 += (x1 - x0) % 4
+    --     local x0 = ((light.x - r) \ 1) & ~3
+    --     local x1 = ((light.x + r + 1) \ 1) & ~3
     --     local y0 = (light.y - r) \ 1
     --     local y1 = (light.y + r) \ 1
-    --     -- y1 += (y1 - y0) % 4
-    --     printh(x0.. ' '..x1..'='..(x1-x0)..' '..y0..' '..y1..'='..(y1-y0))
+    --     -- printh(x0.. ' '..x1..'='..(x1-x0)..' '..y0..' '..y1..'='..(y1-y0))
     --     -- visible?
     --     if y0 < 127 and y1 >= 0 and x0 < 127 and x1 >= 0 then
     --         -- clip
-    --         if (x0 < 0) x0 = 0
-    --         if (x1 > 127) x1 = 127
-    --         if (y0 < 0) y0 = 0
-    --         if (y1 > 127) y1 = 127
-    --         -- x0=(x0\8)*4 x0 = (x0 & 0xfff8) >> 1 x1 = (x1 & 0xfff8) >> 1
+    --         if x0 < 0 then x0 = 0 end
+    --         if y0 < 0 then y0 = 0 end
+    --         if x1 > 127 then x1 = 127 end
+    --         if y1 > 127 then y1 = 127 end
     --         for y = y0 << 6, y1 << 6, 64 do
     --             for x = y + x0, y + x1, 4 do
     --                 poke4(0xa000 + x, $(0xc000 + x) & $(0x6000 + x))
+    --                 -- poke4(0xa000 + x, 2 & $(0x6000 + x))
     --             end
     --         end
     --     end

@@ -1,49 +1,45 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
-_screen = 0x6000
+_screen  = 0x6000
 _sprites = 0x0000
 _general = 0x8000
 _memsize = 0x2000
 
 function _init()
 	shadows = {}
-
-	for i = 1, 3 do
-		add(
-			shadows, {
-				x = rnd(127) \ 1,
-				y = 2 + rnd(109) \ 1,
-				s = 3,
-				w = 2,
-				h = 2,
-				spd = 0.5 + rnd(1)
-			}
-		)
+	
+	for i=1,3 do
+		add(shadows,{
+			x = rnd(127)\1,
+			y = 2 + rnd(109)\1,
+			s = 3,
+			w = 2,
+			h = 2,
+			spd = 0.5 + rnd(1)
+		})
 	end
-
-	add(
-		shadows, {
-			x = -32,
-			y = 32,
-			s = 5,
-			w = 4,
-			h = 4,
-			spd = 0.5
-		}
-	)
-
-	memcpy(0xe000, 0x0, 0x2000)
+	
+	add(shadows,{
+		x = -32,
+		y = 32,
+		s = 5,
+		w = 4,
+		h = 4,
+		spd = 0.5
+	})
+	
+	memcpy(0xe000,0x0,0x2000)
 end
 
 function _update()
 	for shadow in all(shadows) do
 		shadow.x += shadow.spd
-
+		
 		if shadow.s == 3 then
-			shadow.y += sin(time() / 4)
+		 shadow.y += sin(time()/4)
 		end
-
+		
 		if shadow.x > 127 then
 			shadow.x = -32
 		end
@@ -51,71 +47,74 @@ function _update()
 end
 
 function _draw()
-	-- draw shadows
-	cls()
-	-- draw shadows
-	for shadow in all(shadows) do
-		spr(
-			shadow.s,
-			shadow.x,
-			shadow.y,
-			shadow.w,
-			shadow.h
-		)
-	end
-	memcpy(0x8000, 0x6000, 0x2000)
+ -- draw shadows
+ cls()
+ -- draw shadows
+ for shadow in all(shadows) do
+ 	spr(
+ 		shadow.s,
+ 		shadow.x,
+ 		shadow.y,
+ 		shadow.w,
+ 		shadow.h
+ 	)
+ end
+ memcpy(0x8000,0x6000,0x2000)
 
-	map()
+ map()
+ 
+ -- mix map & shadow "mask"
+ for s in all(shadows) do
+  -- compute rectangle (in poke4 units)
+  local x0,y0=s.x\1,s.y\1
+  local x1,y1=x0+((s.w+1)<<3),y0+(s.h<<3)
+  -- visible?
+  if y0<127 and y1>=0 and 
+     x0<127 and x1>=0 then
+   -- clip
+	  if(x0<0) x0=0
+	  if(x1>127) x1=127
+	  if(y0<0) y0=0
+	  if(y1>127) y1=127
+	  -- x0=(x0\8)*4
+	  x0=(x0&0xfff8)>>1	 
+	  x1=(x1&0xfff8)>>1	 
+			for y=y0<<6,y1<<6,64 do
+			 for x=y+x0,y+x1,4 do
+					poke4(x,$(0x8000+x)&($(0x6000+x)))
+				end
+			end
+		end
+ end 
 
-	-- mix map & shadow "mask"
-	-- for s in all(shadows) do
-	-- 	-- compute rectangle (in poke4 units)
-	-- 	local x0, y0 = s.x \ 1, s.y \ 1
-	-- 	local x1, y1 = x0 + ((s.w + 1) << 3), y0 + (s.h << 3)
-	-- 	-- visible?
-	-- 	if y0 < 127 and y1 >= 0
-	-- 			and x0 < 127 and x1 >= 0 then
-	-- 		-- clip
-	-- 		if (x0 < 0) x0 = 0 if (x1 > 127) x1 = 127 if (y0 < 0) y0 = 0 if (y1 > 127) y1 = 127
-	-- 		-- x0=(x0\8)*4 x0 = (x0 & 0xfff8) >> 1 x1 = (x1 & 0xfff8) >> 1
-	-- 		for y = y0 << 6, y1 << 6, 64 do
-	-- 			for x = y + x0, y + x1, 4 do
-	-- 				poke4(x, $(0x8000 + x) & $(0x6000 + x))
-	-- 			end
-	-- 		end
-	-- 	end
-	-- end
+ -- slower (+5%) but less tokens!
+ --[[
+	for m=0,0x1fff,4 do
+  poke4(m,$(0x8000+m)&($(0x6000+m)))
+ end
+ ]]
+	
+ -- change to dark palette
+ pal({0,1,1,2,0,5,5,2,5,13,3,1,1,2,13})
 
-	for m = 0, 0x1fff, 4 do
-		poke4(m, $(0x8000 + m) & $(0x6000 + m))
-	end
-
-	-- if btn() > 0 then
-	-- 	cstore(0x0000, 0x0000, 0x2000, 'freds72-bitwise-mask-dump.p8')
-	-- end
-
-	-- change to dark palette
-	pal({0,1,1,2,0,5,5,2,5,13,3,1,1,2,13})
-	-- pal({ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 })
-	-- draw shadows
-	for shadow in all(shadows) do
-		sspr(
-			shadow.x,
-			shadow.y,
-			shadow.w << 3,
-			shadow.h << 3,
-			shadow.x,
-			shadow.y
-		)
-	end
-
-	--reset everything
-	memcpy(0x0, 0xe000, 0x2000)
+	-- draw shadows 
+ for shadow in all(shadows) do
+ 	sspr(
+ 		shadow.x,
+ 		shadow.y,
+ 		shadow.w<<3,
+ 		shadow.h<<3,
+ 		shadow.x,
+ 		shadow.y
+ 	)
+ end 
+ 
+ --reset everything
+ memcpy(0x0,0xe000,0x2000)
 	pal()
-
+	
 	-- todo: draw game
 end
-
 __gfx__
 00000000ffffffff0000000000ffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000ffffffff000000000fffffff000000000000000000ffff00000000000000000000000000000000000000000000000000000000000000000000000000

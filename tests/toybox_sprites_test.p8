@@ -71,6 +71,8 @@ end
 
 function _draw()
     if stat(1) > .9 then cls(0) return end
+    -- set screen address to 0xa0
+    poke(0x5f55, 0xa0)
     -- clear screen
     cls(0)
     -- set spritesheet to 0x00 (spritesheet 1)
@@ -89,8 +91,8 @@ function _draw()
     for light in all(lights) do
         circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
     end
-    -- copy screen to ram at 0xa0
-    memcpy(0xa000, 0x6000, 0x2000)
+    -- set screen address to 0x60
+    poke(0x5f55, 0x60)
     -- clear screen
     cls(0)
     -- set spritesheet to 0x80 (spritesheet 2)
