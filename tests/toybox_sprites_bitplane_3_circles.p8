@@ -2,20 +2,17 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 function _init()
-    -- our lights
+    -- set demo variables
     lights = {
-        { x = 20, y = 20, r = 10 },
-        { x = 40, y = 40, r = 20 },
-        { x = 60, y = 60, r = 30 }
+        { x = 34, y = 67, r = 25 },
+        { x = 70, y = 59, r = 25 },
+        { x = 63, y = 89, r = 25 }
     }
-    -- current light
     l = 3
-    --angle for pulsing effect
     a = 0
 end
 
 function _update()
-    -- move selected light
     if btn(1) then
         lights[l].x = lights[l].x + 1
     end
@@ -28,52 +25,202 @@ function _update()
     if btn(2) then
         lights[l].y = lights[l].y - 1
     end
-    -- select next light
     if btnp(4) or btnp(5) then
         l += 1
         if l > #lights then l = 1 end
     end
-    -- update angle for pulsing effect
     a += 0.1
 end
 
 function _draw()
-    -- set screen address to 0xa0
-    poke(0x5f55, 0xa0)
-    -- clear screen
-    -- cls(0)
-    palt(0, false)
-    -- set palette to dark colours
-    pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
-    -- draw unlit objects
-    sspr(0, 0, 128, 128, 0, 0)
-    -- reset palette
-    pal()
-    -- draw circles in peach, our transparent colour
-    for light in all(lights) do
+    -- set screen address to 0x60
+    poke(0x5f55, 0x80)
+    cls(0)
+    for i, light in pairs(lights) do
+        poke(0x5f5e, 1 << 3 + i | (1 << (i - 1)))
         circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
     end
-    -- set screen address to 0x60
-    poke(0x5f55, 0x60)
-    -- clear screen
-    -- cls(0)
-    palt(0, false)
-    -- draw lit sprites
-    -- nb: you could draw different sprites here,
-    --     or even switch to a third spritesheet
-    sspr(0, 0, 128, 128, 0, 0)
-    -- set spritesheet to 0xa0, the mask we created above
-    poke(0x5f54, 0xa0)
-    -- set peach to transparent, so circles let lit sprites show through
-    palt(15, true)
-    -- set black to opaque so we don't see the lit sprites behind our mask
-    -- palt(0, false)
-    -- render spritesheet to screen
-    sspr(0, 0, 128, 128, 0, 0)
-    -- reset palette
+    -- pal(1, 15, 1)
+    -- pal(2, 15, 1)
+    -- pal(4, 15, 1)
+    -- pal(5, 14, 1)
+    -- pal(6, 14, 1)
+    -- pal(3, 14, 1)
+    -- pal(7, 13, 1)
+    -- memcpy(0x8000, 0x6000, 0x2000)
+    -- cstore(0x000, 0x6000, 0x2000, 'toybox_sprites_bitplane_mask.p8')
     -- pal()
+    poke(0x5f5e, 0b11111111)
+
+    -- set screen address to 0xa0
+    poke(0x5f55, 0xa0)
+
+    cls(0)
+
     -- reset spritesheet
     poke(0x5f54, 0x00)
+
+    -- set palette to dark colours
+    pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
+    sspr(0, 0, 128, 128, 0, 0)
+
+    -- set spritesheet to 0x80 (our mask)
+    poke(0x5f54, 0x80)
+
+    -- set the whole mask to peach
+    pal({ 15, 15, 15, 15, 15, 15, 15 })
+    sspr(0, 0, 128, 128, 0, 0)
+
+    -- cstore(0x000, 0xa000, 0x2000, 'toybox_sprites_bitplane_1.p8')
+
+    -- set screen address to 0xc0
+    poke(0x5f55, 0xc0)
+
+    cls(0)
+
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
+
+    -- set palette to default
+    pal()
+    sspr(0, 0, 128, 128, 0, 0)
+
+    -- set spritesheet to 0x80 (our mask)
+    poke(0x5f54, 0x80)
+
+    -- set the whole mask to peach
+    pal({ 1, 1, 15, 1, 15, 15, 15 })
+    palt(1, true)
+    palt(2, true)
+    palt(4, true)
+    sspr(0, 0, 128, 128, 0, 0)
+    -- cstore(0x000, 0xc000, 0x2000, 'toybox_sprites_bitplane_2.p8')
+
+    -- set screen address to 0xe0
+    poke(0x5f55, 0xe0)
+
+    cls(0)
+
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
+
+    -- set palette to light colours
+    pal({ 13, 8, 11, 15, 6, 7, 7, 14, 10, 7, 7, 7, 7, 7, 7 })
+    sspr(0, 0, 128, 128, 0, 0)
+
+    -- set spritesheet to 0x80 (our mask)
+    poke(0x5f54, 0x80)
+
+    -- set the whole mask to peach
+    pal({ 1, 1, 1, 1, 1, 1, 15 })
+    palt(1, true)
+    palt(2, true)
+    palt(3, true)
+    palt(4, true)
+    palt(5, true)
+    palt(6, true)
+    sspr(0, 0, 128, 128, 0, 0)
+    -- cstore(0x000, 0xe000, 0x2000, 'toybox_sprites_bitplane_3.p8')
+
+    -- stop()
+
+    -- set screen address to 0x60
+    poke(0x5f55, 0x60)
+
+    cls()
+    pal()
+    palt(0, false)
+
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
+
+    -- set palette to saturated colours
+    pal({ 6, 14, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 })
+    sspr(0, 0, 128, 128, 0, 0)
+
+    pal()
+    palt(15, true)
+    poke(0x5f54, 0xe0)
+    sspr(0, 0, 128, 128, 0, 0)
+    poke(0x5f54, 0xc0)
+    sspr(0, 0, 128, 128, 0, 0)
+    poke(0x5f54, 0xa0)
+    sspr(0, 0, 128, 128, 0, 0)
+
+    -- reset palette
+    pal()
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
+
+    -- -- set spritesheet to 0x00
+    -- poke(0x5f54, 0x00)
+
+    -- -- set screen address to 0x60
+    -- poke(0x5f55, 0x60)
+
+    -- cls(0)
+
+    -- -- set palette to light colours
+    -- pal({ 13, 8, 11, 15, 6, 7, 7, 14, 10, 7, 7, 7, 7, 7, 7 })
+
+    -- -- set palette to saturated colours
+    -- pal({ 6, 14, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 })
+
+    -- sspr(0, 0, 128, 128, 0, 0)
+
+    -- -- reset palette
+    -- pal()
+    -- -- reset spritesheet
+    -- poke(0x5f54, 0x00)
+
+    -- set screen address to 0xa0
+
+    -- poke(0x5f55, 0xa0)
+
+    -- clear screen
+
+    -- set spritesheet to 0x00 (spritesheet 1)
+
+    -- poke(0x5f54, 0x00)
+
+    -- set palette to dark colours
+    -- pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
+
+    -- -- draw unlit objects
+    -- for y = 0, 15 do
+    --     for x = 0, 15 do
+    --         spr(17 + (y * 3 + x % 16), x * 8, y * 8)
+    --     end
+    -- end
+    -- -- reset palette
+    -- pal()
+    -- -- draw circles in peach, our transparent colour
+    -- for light in all(lights) do
+    --     circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
+    -- end
+    -- -- set screen address to 0x60
+    -- poke(0x5f55, 0x60)
+    -- -- clear screen
+    -- cls(0)
+    -- -- set spritesheet to 0x80 (spritesheet 2)
+    -- poke(0x5f54, 0x80)
+    -- -- draw lit sprites
+    -- for y = 0, 15 do
+    --     for x = 0, 15 do
+    --         -- spr(17 + (y * 3 + x % 16), x * 8, y * 8)
+    --         spr((y * 16 + x) % 96, x * 8, y * 8)
+    --     end
+    -- end
+    -- -- set spritesheet to 0xa0, the mask we created above
+    -- poke(0x5f54, 0xa0)
+    -- -- set peach to transparent, so circles let lit sprites show through
+    -- palt(15, true)
+    -- -- set black to opaque so we don't see the lit sprites
+    -- palt(0, false)
+    -- -- render spritesheet to screen
+    -- sspr(0, 0, 128, 128, 0, 0)
+    -- -- reset palette
+    -- pal()
 end
 
 __gfx__

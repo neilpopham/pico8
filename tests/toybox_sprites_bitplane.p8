@@ -1,21 +1,19 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
+extcmd('rec')
+
 function _init()
-    -- our lights
+    -- set demo variables
     lights = {
-        { x = 20, y = 20, r = 10 },
-        { x = 40, y = 40, r = 20 },
-        { x = 60, y = 60, r = 30 }
+        { x = 43, y = 63, r = 35 },
+        { x = 83, y = 63, r = 35 }
     }
-    -- current light
-    l = 3
-    --angle for pulsing effect
+    l = 1
     a = 0
 end
 
 function _update()
-    -- move selected light
     if btn(1) then
         lights[l].x = lights[l].x + 1
     end
@@ -28,50 +26,88 @@ function _update()
     if btn(2) then
         lights[l].y = lights[l].y - 1
     end
-    -- select next light
     if btnp(4) or btnp(5) then
         l += 1
         if l > #lights then l = 1 end
     end
-    -- update angle for pulsing effect
     a += 0.1
 end
 
 function _draw()
+    -- set screen address to 0x80
+    poke(0x5f55, 0x80)
+    -- clear screen
+    cls(0)
+    -- draw lights
+    for i, light in pairs(lights) do
+        poke(0x5f5e, 240 | (1 << (i - 1)))
+        circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
+    end
+    -- reset bitplane to 0b11111111
+    poke(0x5f5e, 255)
     -- set screen address to 0xa0
     poke(0x5f55, 0xa0)
     -- clear screen
-    -- cls(0)
-    palt(0, false)
+    cls(0)
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
     -- set palette to dark colours
     pal({ 0, 1, 1, 2, 0, 5, 5, 2, 5, 13, 3, 1, 1, 2, 13 })
-    -- draw unlit objects
+    -- draw spritesheet
     sspr(0, 0, 128, 128, 0, 0)
-    -- reset palette
+    -- set spritesheet to 0x80 (our mask)
+    poke(0x5f54, 0x80)
+    -- set all colours to peach
+    pal({ 15, 15, 15 })
+    -- draw spritesheet
+    sspr(0, 0, 128, 128, 0, 0)
+    -- set screen address to 0xc0
+    poke(0x5f55, 0xc0)
+    -- clear screen
+    cls(0)
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
+    -- set palette to default
     pal()
-    -- draw circles in peach, our transparent colour
-    for light in all(lights) do
-        circfill(light.x, light.y, light.r + (cos(a) * 2), 15)
-    end
+    -- draw spritesheet
+    sspr(0, 0, 128, 128, 0, 0)
+    -- set spritesheet to 0x80 (our mask)
+    poke(0x5f54, 0x80)
+    -- set colour 3 peach
+    pal({ 1, 1, 15 })
+    -- make colours 1 and 2 transparent
+    palt(1, true)
+    palt(2, true)
+    -- draw spritesheet
+    sspr(0, 0, 128, 128, 0, 0)
     -- set screen address to 0x60
     poke(0x5f55, 0x60)
     -- clear screen
-    -- cls(0)
+    cls()
+    -- reset palette
+    pal()
+    -- set black to opaque
     palt(0, false)
-    -- draw lit sprites
-    -- nb: you could draw different sprites here,
-    --     or even switch to a third spritesheet
-    sspr(0, 0, 128, 128, 0, 0)
-    -- set spritesheet to 0xa0, the mask we created above
-    poke(0x5f54, 0xa0)
-    -- set peach to transparent, so circles let lit sprites show through
-    palt(15, true)
-    -- set black to opaque so we don't see the lit sprites behind our mask
-    -- palt(0, false)
-    -- render spritesheet to screen
+    -- reset spritesheet
+    poke(0x5f54, 0x00)
+    -- set palette to bright colours
+    pal({ 13, 8, 11, 15, 6, 7, 7, 14, 10, 7, 7, 7, 7, 7, 7 })
+    -- draw spritesheet
     sspr(0, 0, 128, 128, 0, 0)
     -- reset palette
-    -- pal()
+    pal()
+    -- set peach to transparent
+    palt(15, true)
+    -- set spritesheet to 0xc0
+    poke(0x5f54, 0xc0)
+    -- draw spritesheet
+    sspr(0, 0, 128, 128, 0, 0)
+    -- set spritesheet to 0xa0
+    poke(0x5f54, 0xa0)
+    -- draw spritesheet
+    sspr(0, 0, 128, 128, 0, 0)
+    -- reset palette
+    pal()
     -- reset spritesheet
     poke(0x5f54, 0x00)
 end
