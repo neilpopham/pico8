@@ -52,6 +52,10 @@ p1 = player:new({ x = 32, y = 60, p = 0, s = 2 })
 p2 = player:new({ x = 40, y = 60, p = 1, s = 3 })
 -- p1:reset()
 
+splits = {none=0,vertical=1,horizontal=2}
+split = splits.none
+
+
 function _update60()
     p1:update()
     p2:update()
@@ -59,6 +63,65 @@ end
 
 function _draw()
     cls()
+
+    local mn = { x = min(p1.x, p2.x), y = min(p1.y, p2.y) }
+    local mx = { x = max(p1.x, p2.x), y = max(p1.y, p2.y) }
+
+    local dx = mx.x - mn.x
+    local dy = mx.y - mn.y
+
+    local vertical = dx>64 and not (dy>64 and split==splits.horizontal)
+    local horizontal = dy>64 and not (dx>64 and split==splits.vertical)
+
+    if vertical then
+        split=splits.vertical
+        if p1.x<p2.x then e1 = p1 e2 = p2 else e1 = p2 e2 = p1 end
+        cy = e1.y
+        cy=mid(64,cy,320)
+        clip(0,0,64,128,false)
+        camera(e1.x-28,cy-64)
+        map(0,0)
+        e1:draw()
+        local a=atan2(e2.x-e1.x,e2.y-e1.y)
+        edx = cos(a)
+        edy = -sin(a)
+        circfill(edx*10,edy*10,5,9)
+        cy=e2.y
+        cy=mid(64,cy,320)
+        clip(64,0,64,128,false)
+        camera(e2.x-92,cy-64)
+        map(0,0)
+        e2:draw()
+        clip()
+        camera()
+        fillp(▒)
+        rectfill(63,0,64,127,1)
+    elseif horizontal then
+        split=splits.horizontal
+        if p1.y<p2.y then e1 = p1 e2 = p2 else e1 = p2 e2 = p1 end
+        clip(0,0,128,64,false)
+        camera(e1.x-60,e1.y-28)
+        map(0,0)
+        e1:draw()
+        clip(0,64,128,64,false)
+        camera(e2.x-60,e2.y-92)
+        map(0,0)
+        e2:draw()
+        clip()
+        camera()
+        fillp(▒)
+        rectfill(0, 63,127,64,1)
+    else
+        split=splits.none
+        cx = mn.x + dx\2
+        cy = mn.y + dy\2
+        cx=mid(64,cx,320)
+        cy=mid(64,cy,320)
+        camera(cx-64,cy-64)
+        map(0,0)
+        p1:draw()
+        p2:draw()
+    end
 
     -- vertical split
 
@@ -100,29 +163,16 @@ function _draw()
 
     -- no split
 
-    mn = { x = min(p1.x, p2.x), y = min(p1.y, p2.y) }
-    mx = { x = max(p1.x, p2.x), y = max(p1.y, p2.y) }
 
-    dx = mx.x - mn.x
-    dy = mx.y - mn.y
-
-    assert(dx<64,'dx too large')
-
-    cx = mn.x + dx\2
-    cy = mn.y + dy\2
-
-    camera(cx-60,cy-60)
-    map(0,0)
-
-    p1:draw()
-    p2:draw()
-
+    camera()
     print(p1.x,0,0,8)
     print(p2.x,20,0,8)
     print(p1.y,0,7,8)
     print(p2.y,20,7,8)
     print(dx, 40, 0, 8)
     print(dy, 40, 7, 8)
+    print(cx,60,0,10)
+    print(cy,60,7,10)
 end
 
 
