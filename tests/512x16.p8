@@ -4,7 +4,7 @@ __lua__
 _mget = mget
 
 function mget(x, y)
-	if x < 0 or y < 0 or x > 511 or y > 15 then
+	if x < 0 or y < 0 or x >= 512 or y >= 16 then
 		return _mget(-1, -1)
 	end
 	return _mget(x % 128, y + 16 * (x \ 128))
