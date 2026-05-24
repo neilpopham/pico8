@@ -26,7 +26,10 @@ stages.intro = {
 
 stages.game = {
     init = function(self)
-        plr = player:new()
+        -- door distance
+        poke2(0x4300, 32767)
+
+        -- plr = player:new()
         plr:init()
         dr = door:new({x = 0, y = 0, c = 14})
         dr:init()
@@ -64,7 +67,6 @@ stages.game = {
         print(plr.x\8, 20, 10, 5)
         print(plr.y\8 + 1, 50, 10, 5)
         print(#entities, 0, 20, 12)
-        print(door_distance, 0, 30, 5)
 
         stages.shared()
     end

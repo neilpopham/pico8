@@ -1,9 +1,11 @@
 door = entity:new({
     particles = {},
+    x = nil,
     y = 0,
     yb = 55,
     d = 999,
     init = function(_ENV)
+        x = ox
         for i = 1, 48 do
             local e = i % 2 == 0
             add(particles, maker(_ENV, e))
@@ -24,7 +26,10 @@ door = entity:new({
         if s == 1 then
             if btn(4) then s = 2 end
             d = manhattan(x, yb, plr.x, plr.y)
-            if d < _G.door_distance then _G.door_distance = d end
+            if d < %0x4300 then poke2(0x4300, d) end
+            if in_range(_ENV) then
+                plr:explode()
+            end
         elseif s == 2 then
             sfx(4, -2)
             sfx(5)
@@ -43,8 +48,8 @@ door = entity:new({
         for px in all(particles) do
             pset(px.x, px.y + 32, px.c)
         end
-        if _G.door_distance == d then
-            local max=240
+        if %0x4300 == d then
+            local max = 240
             if d > max then
                 sfx(4, -2)
             else
@@ -52,7 +57,7 @@ door = entity:new({
                 set_volumes(4,0,{v,v,v})
                 sfx(4)
             end
-            _G.door_distance = 999
+            poke2(0x4300, 32767)
         end
     end,
     maker = function(_ENV, e)

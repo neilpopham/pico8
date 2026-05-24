@@ -20,7 +20,7 @@ entity = class:new({
 })
 
 colours = {8, 9, 11, 12}
-door_distance = nil
+colour_names = {[8] = 'ember', [9] = 'orange', [11] = 'lime', [12] = 'sky'}
 
 function _init()
     stage = stages.game

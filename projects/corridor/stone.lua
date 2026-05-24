@@ -1,4 +1,4 @@
-card = entity:new({
+stone = entity:new({
     x = nil,
     y = nil,
     a = 0,
@@ -22,10 +22,10 @@ card = entity:new({
     draw = function(_ENV)
         if s == 1 then
             pal(15, c)
-            spr(126, x, y + 32)
+            spr(125, x, y + 32)
             pal()
             if in_range(_ENV) then
-                print('x', x, y, c)
+                print('🅾️ pick up ' .. colour_names[c] .. ' stone', 0, 100, 7)
             end
 
         end

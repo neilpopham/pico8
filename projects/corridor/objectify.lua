@@ -8,19 +8,23 @@ function getc(flags) return colours[flags & 7] end
 -- Flags 0-3 colour
 -- Flags 4-7 index
 make_door = function(x, y, flags)
-    return door:new({x = getx(x, y), c = getc(flags), idx = flags & 240})
+    return door:new({ox = getx(x, y), c = getc(flags), idx = flags & 240})
 end
 
 make_card = function(x, y, flags)
-    return card:new({x = getx(x, y), c = getc(flags)})
+    return card:new({ox = getx(x, y), c = getc(flags)})
 end
 
 make_stone = function(x, y, flags)
-    return stone:new({x = getx(x, y), c = getc(flags)})
+    return stone:new({ox = getx(x, y), c = getc(flags)})
+end
+
+make_player = function(x, y, flags)
+    plr = player:new({ox = getx(x, y)})
 end
 
 converters={
-    [48]=dummy,
+    [48]=make_player,
     [127]=make_door,
     [126]=make_card,
     [125]=make_stone,
@@ -37,7 +41,7 @@ for tile in all(split(__tif__)) do
     local entity = converters[s](x,y,f)
     if entity then
         entity:init()
-        entity.hide = f & 64 == 64
+        -- entity.hide = f & 64 == 64
         add(entities,entity)
     end
 end
