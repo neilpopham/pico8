@@ -6,6 +6,7 @@ door = entity:new({
     d = 999,
     init = function(_ENV)
         x = ox
+        s = cartval(idx, 1)
         for i = 1, 48 do
             local e = i % 2 == 0
             add(particles, maker(_ENV, e))
@@ -24,7 +25,7 @@ door = entity:new({
             end
         end
         if s == 1 then
-            if btn(4) then s = 2 end
+            -- if btn(4) then s = 2 end
             d = manhattan(x, yb, plr.x, plr.y)
             if d < %0x4300 then poke2(0x4300, d) end
             if in_range(_ENV) then
@@ -43,6 +44,7 @@ door = entity:new({
                 del(entities,_ENV)
             end
         end
+        dset(idx, s)
     end,
     draw = function(_ENV)
         for px in all(particles) do

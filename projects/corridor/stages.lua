@@ -31,20 +31,25 @@ stages.game = {
 
         -- plr = player:new()
         plr:init()
-        dr = door:new({x = 0, y = 0, c = 14})
-        dr:init()
+        inv = inventory:new()
+        inv:init()
     end,
     update = function(self)
-        door_distance = 999
+        msg = nil
         plr:update()
         for e in all(entities) do
             e:update()
         end
+        inv:update()
     end,
     draw = function(self)
         cls()
 
-        camera(plr.x - 60, 0)
+        if plr.x > 8124 then
+            camera(8064, 0)
+        elseif plr.x > 60 then
+            camera(plr.x - 60, 0)
+        end
 
         map(0, 0, 0, 32, 128, 8)
         map(0, 8, 128 * 8, 32, 128, 8)
@@ -61,12 +66,19 @@ stages.game = {
 
         plr:draw()
 
+
         camera()
-        print(plr.x, 0, 0, 7)
-        print(mget(plr.x\8, (plr.y)\8 + 1), 0, 10, 5)
-        print(plr.x\8, 20, 10, 5)
-        print(plr.y\8 + 1, 50, 10, 5)
-        print(#entities, 0, 20, 12)
+        inv:draw()
+
+        -- print(plr.x, 0, 0, 7)
+        -- print(mget(plr.x\8, (plr.y)\8 + 1), 0, 10, 5)
+        -- print(plr.x\8, 20, 10, 5)
+        -- print(plr.y\8 + 1, 50, 10, 5)
+        -- print(#entities, 0, 20, 12)
+        -- print(inv.items[1], 20, 20, 12)
+        -- print(plr.x-60, 0, 26, 15)
+
+        if msg then print(msg, 0, 106, 7) end
 
         stages.shared()
     end

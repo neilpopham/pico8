@@ -16,11 +16,25 @@ function manhattan(x1,y1,x2,y2)
     return abs(x1-x2)+abs(y1-y2)
 end
 
+function clone(o)
+    local c = {}
+    for k, v in pairs(o) do
+        c[k] = v
+    end
+    return c
+end
+
+function action_msg(action, c, type)
+    return '\f3🅾️\fd ' .. action .. ' \f' .. hex(c) .. colour_names[c] .. '\fd ' .. type
+end
+
+function cartval(i, d)
+	return dget(i) > 0 and dget(i) or d
+end
+
 function lerp(v0,v1,t)
     return v0+t*(v1-v0)
 end
-
-function right(flags) return flags&128>0 end
 
 function set_volumes(sfxid, start, values)
     local address=0x3200+68*sfxid+start*2
@@ -30,4 +44,16 @@ function set_volumes(sfxid, start, values)
         poke2(address,bytes)
         address+=2
     end
+end
+
+-- https://www.lexaloffle.com/bbs/?tid=30910
+function hex(v)
+    local s, l, r = tostr(v, true), 3, 11
+    while sub(s, l, l) == "0" do
+        l += 1
+    end
+    while sub(s, r, r) == "0" do
+        r -= 1
+    end
+    return sub(s, min(l, 6), flr(v) == v and 6 or max(r, 8))
 end
