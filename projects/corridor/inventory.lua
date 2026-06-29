@@ -7,9 +7,9 @@ inventory = class:new({
             items = {nil, nil}
         else
             idx = {[1] = dval & 63, [2] = (dval & 4032) >> 6}
-            printh('idx1 =' .. idx[1])
-            printh('idx2 =' .. idx[2])
-            printh('dval '..dval)
+            -- printh('idx1 =' .. idx[1])
+            -- printh('idx2 =' .. idx[2])
+            -- printh('dval '..dval)
             for i = 1, 2 do
                 if idx[i] == 0 then
                     items[i] = nil
@@ -44,7 +44,7 @@ inventory = class:new({
             items[3]:drop(item.x)
             deli(items, 3)
         end
-        for k,v in pairs(items) do printh(k.. '=' .. v.idx) end
+        -- for k,v in pairs(items) do printh(k.. '=' .. v.idx) end
         -- if items[2] then
         --     local e = get_entity(_ENV, items[2].idx)
         --     if e then e:drop(item.x) end
@@ -60,9 +60,10 @@ inventory = class:new({
         items[i]:use(nx)
         items[i] = nil
         if i == 1 then
-            items[i] = items[2]
+            items[1] = items[2]
         end
         items[2] = nil
+        cartset(_ENV)
     end,
     get_entity = function(_ENV, idx)
         for e in all(entities) do
@@ -70,22 +71,22 @@ inventory = class:new({
         end
         return nil
     end,
-    contains = function(_ENV, type, v)
-        for i = 1, 2 do
-            local item = inv.items[i]
-            if item and item.type == type and colour_values[item.c] == v then
-                return i, item
-            end
-        end
-    end,
+    -- contains = function(_ENV, type, v)
+    --     for i = 1, 2 do
+    --         local item = inv.items[i]
+    --         if item and item.type == type and colour_values[item.c] == v then
+    --             return i, item
+    --         end
+    --     end
+    -- end,
     cartset = function(_ENV)
         idx = {
             items[1] and (items[1].idx) or 0,
             items[2] and (items[2].idx << 6) or 0
         }
-        printh('setting... '..(idx[1] + idx[2]))
-        printh('idx1 ' ..idx[1])
-        printh('idx2 ' ..idx[2])
+        -- printh('setting... '..(idx[1] + idx[2]))
+        -- printh('idx1 ' ..idx[1])
+        -- printh('idx2 ' ..idx[2])
         dset(0, idx[1] + idx[2])
     end
 })

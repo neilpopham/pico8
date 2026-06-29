@@ -4,7 +4,8 @@ player = entity:new({
     init = function(_ENV)
         -- entity.init(_ENV)
         -- x, y = 256, 48
-        printh('player idx '..idx)
+        -- printh('player idx '..idx)
+        s = 1
         x, y = cartval(idx, ox), 48
         -- y = 48
         -- 8192  -- 0010 0000 0000 0000
@@ -40,7 +41,7 @@ player = entity:new({
             end
             if #particles == 0 then s = 3 end
         elseif s == 3 then
-            stop()
+            init(_ENV)
         end
     end,
     draw = function(_ENV)
@@ -69,5 +70,10 @@ player = entity:new({
             )
         end
         s = 2
+    end,
+    teleport = function(_ENV, px)
+        s = 1
+        x = px
+        dset(idx, x)
     end
 })

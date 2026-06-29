@@ -38,7 +38,7 @@ entity = class:new({
         dset(idx, x + (s << 13))
     end,
     in_range = function(_ENV)
-        return s == 1 and plr.x + 7 >= x and plr.x <= x + 7
+        return plr.x + 7 >= x and plr.x <= x + 7
     end
 })
 

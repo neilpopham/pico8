@@ -19,6 +19,7 @@ card = entity:new({
                     -- inv:add({idx = idx, x = x, sp = sp, c = c, type = type})
                     inv:add(_ENV)
                 end
+                action_msg('pick up', c, type_names[type])
             end
         end
     end,
@@ -27,10 +28,6 @@ card = entity:new({
             pal(15, c)
             spr(sp, x, y + 32)
             pal()
-            if in_range(_ENV) then
-                _G.msg = action_msg('pick up', c, type_names[type])
-            end
-
         end
     end
 })

@@ -35,7 +35,7 @@ stages.game = {
         inv:init()
     end,
     update = function(self)
-        msg = nil
+        msg = ''
         plr:update()
         for e in all(entities) do
             e:update()
@@ -78,7 +78,7 @@ stages.game = {
         -- print(inv.items[1], 20, 20, 12)
         -- print(plr.x-60, 0, 26, 15)
 
-        if msg then print(msg, 0, 106, 7) end
+        if #msg > 0 then print(msg, 0, 106, 7) end
 
         stages.shared()
     end

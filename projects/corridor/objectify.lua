@@ -18,14 +18,14 @@ make_stone = function(x, y, s, idx, flags)
 end
 
 make_portal = function(x, y, s, idx, flags)
-    return portal:new({ox = getx(x, y), sp = s, idx = idx})
+    return portal:new({tx = x, ty = y, ox = getx(x, y), sp = s, idx = idx, no = flags})
 end
 
 make_player = function(x, y, s, idx, flags)
-    printh(x)
-    printh(y)
-    printh(s)
-    printh(flags)
+    -- printh(x)
+    -- printh(y)
+    -- printh(s)
+    -- printh(flags)
     plr = player:new({ox = getx(x, y), sp = s, idx = idx})
 end
 
@@ -41,11 +41,16 @@ converters={
 -- Flags 4-7 index
 for idx, tile in ipairs(split(__tif__)) do
     local x, y, s, f = unpack(split(tile, ":"))
-    local entity = converters[s](x, y, s, idx, f)
-    if entity then
+    local e = converters[s](x, y, s, idx, f)
+    if e then
         -- entity.idx = idx
-        entity:init()
+        e:init()
         -- entity.hide = f & 64 == 64
-        add(entities, entity)
+        add(entities, e)
     end
+end
+
+portals = {}
+for e in all(entities) do
+    if e.no then add(portals, e) end
 end

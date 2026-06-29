@@ -24,8 +24,10 @@ function clone(o)
     return c
 end
 
-function action_msg(action, c, type)
-    return '\f3🅾️\fd ' .. action .. ' \f' .. hex(c) .. colour_names[c] .. '\fd ' .. type
+function action_msg(action, c, type, b)
+    -- printh('creating action_msg for '..type)
+    b = b or '🅾️'
+    _G.msg = _G.msg .. '\f3' .. b .. '\fd ' .. action .. ' \f' .. hex(c) .. colour_names[c] .. '\fd ' .. type .. '\n'
 end
 
 function cartval(i, d)
