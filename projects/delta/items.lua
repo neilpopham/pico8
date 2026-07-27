@@ -28,9 +28,9 @@ corner = item:new({
         super(_ENV)
     end,
     update = function(_ENV) end,
-    draw = function(_ENV)
-        spr(s, px, py)
-    end,
+    -- draw = function(_ENV)
+    --     spr(s, px, py)
+    -- end,
     collide = function(_ENV, ball)
         if count > 0 then
             count -= 1
@@ -42,6 +42,7 @@ corner = item:new({
                 if ball.px == px + 1 and ball.py == py + 1 then
                     ball:rotate(to)
                     count = 4
+                    if disolves then active = false end
                 end
                 return
             end
@@ -74,10 +75,12 @@ entrance = item:new({
         super(_ENV)
     end,
     update = function(_ENV) end,
-    draw = function(_ENV)
-        spr(s, px, py)
-    end,
-    collide = function(_ENV) end
+    -- draw = function(_ENV)
+    --     spr(s, px, py)
+    -- end,
+    collide = function(_ENV, ball)
+        ball:reset()
+    end
 })
 
 exit = item:new({
@@ -85,10 +88,21 @@ exit = item:new({
         super(_ENV)
     end,
     update = function(_ENV) end,
-    draw = function(_ENV)
-        spr(s, px, py)
-    end,
+    -- draw = function(_ENV)
+    --     spr(s, px, py)
+    -- end,
     collide = function(_ENV, ball)
+        local reset = false
+        for e in all(mode.entities) do
+            if e.s == 12 and e.active then
+                reset = true
+            end
+        end
+        if reset then
+            ball:reset()
+            return
+        end
+        stop()
     end
 })
 
@@ -97,10 +111,11 @@ bug = item:new({
         super(_ENV)
     end,
     update = function(_ENV) end,
-    draw = function(_ENV)
-        spr(s, px, py)
-    end,
+    -- draw = function(_ENV)
+    --     spr(s, px, py)
+    -- end,
     collide = function(_ENV, ball)
+        active = false
     end
 })
 
@@ -109,10 +124,10 @@ block = item:new({
         super(_ENV)
     end,
     update = function(_ENV) end,
-    draw = function(_ENV)
-        spr(s, px, py)
-    end,
+    -- draw = function(_ENV)
+    --     spr(s, px, py)
+    -- end,
     collide = function(_ENV, ball)
-        ball.active = false
+        ball:reset()
     end
 })

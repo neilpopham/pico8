@@ -39,15 +39,15 @@ makers = {
         return {block:new({ x = x, y = y, s = s, m = m })}
     end,
     [17] = function(x, y, s, m)
-        return {corner:new({ x = x, y = y, s = s, m = m, accepts = { [1] = 2, [8] = 4 }, disolves = true })}
+        return {corner:new({ x = x, y = y, s = s, m = m, dir = 1, disolves = true })}
     end,
     [18] = function(x, y, s, m)
-        return {corner:new({ x = x, y = y, s = s, m = m, accepts = { [1] = 8, [2] = 4 }, disolves = true })}
+        return {corner:new({ x = x, y = y, s = s, m = m, dir = 2, disolves = true })}
     end,
     [19] = function(x, y, s, m)
-        return {corner:new({ x = x, y = y, s = s, m = m, accepts = { [4] = 8, [2] = 1 }, disolves = true })}
+        return {corner:new({ x = x, y = y, s = s, m = m, dir = 3, disolves = true })}
     end,
     [20] = function(x, y, s, m)
-        return {corner:new({ x = x, y = y, s = s, m = m, accepts = { [4] = 2, [8] = 1 }, disolves = true })}
+        return {corner:new({ x = x, y = y, s = s, m = m, dir = 4, disolves = true })}
     end
 }

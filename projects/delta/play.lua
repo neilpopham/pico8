@@ -32,13 +32,17 @@ modes.play = class:new({
     update = function(_ENV)
         player:update()
         for e in all(entities) do
-            e:update()
+            if e.active then
+                e:update()
+            end
         end
     end,
     draw = function(_ENV)
         cls()
         for e in all(entities) do
-            e:draw()
+            if e.active then
+                e:draw()
+            end
         end
     end
 })
