@@ -1,7 +1,7 @@
 ball = item:new({
-    dir = 1,
-    dx = 0,
-    dy = 0,
+    -- dir = 1,
+    -- dx = 0,
+    -- dy = 0,
     state = 1,
     dt = 120,
     -- start = { dx = 0, dy = 0, x = 0, y = 0 },
@@ -48,7 +48,7 @@ ball = item:new({
         spr(s, px, py)
     end,
     rotate = function(_ENV, d)
-        local offsets = { {0, -1}, {1, 0}, {0, 1}, {-1, 0} }
+        local offsets = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } }
         if d == 5 then d = 1 end
         dir = d
         dx, dy = unpack(offsets[d])
