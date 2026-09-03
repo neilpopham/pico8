@@ -150,7 +150,7 @@ function check_grid()
 
         cursor = { chr = 31, col = 12, ox = -1, oy = -1 }
     elseif mouse.x < 0 or mouse.y < 0 or mouse.x > 127 or mouse.y > 127 then
-        cursor.chr = 0
+        cursor = { chr = 0, col = 0, ox = 0, oy = 0 }
     else
         cursor = { chr = 18, col = 7, ox = -1, oy = -2 }
     end
@@ -309,8 +309,8 @@ function _draw()
         end
     end
 
-    print('width adjustment', 0, 66, 6)
-    print('raise 1px', 7, 73, 6)
+    -- print('width adjustment', 0, 66, 6)
+    -- print('raise 1px', 7, 73, 6)
 
     print('\^w\^t' .. chr(current), 70, 0, 7)
     -- print(lpad(current, 3), 67, 12, 5)
