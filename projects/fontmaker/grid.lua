@@ -2,6 +2,7 @@ function make_grid()
     return {
         cells = {},
         empty = true,
+        bool = 0,
         init = function(self)
             for y = 1, 8 do
                 self.cells[y] = {}
@@ -45,10 +46,10 @@ function make_grid()
         update = function(self)
             if mouse.cx and mouse.cy then
                 if mouse.left:clicked() then
-                    bool = self:get(mouse.cx, mouse.cy) == 1 and 0 or 1
+                    self.bool = self:get(mouse.cx, mouse.cy) == 1 and 0 or 1
                 end
                 if mouse.left.down then
-                    self:set(mouse.cx, mouse.cy, bool)
+                    self:set(mouse.cx, mouse.cy, self.bool)
                 end
                 cursor = { chr = 31, col = 12, ox = -1, oy = -1 }
             end
