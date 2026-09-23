@@ -2,7 +2,6 @@ function make_grid()
     return {
         cells = {},
         empty = true,
-        raise = false,
         init = function(self)
             for y = 1, 8 do
                 self.cells[y] = {}
@@ -21,16 +20,38 @@ function make_grid()
         row = function(self, r)
             local tmp = {}
             for x = 1, 8 do
-                tmp[x] = self.get(self, x, r)
+                tmp[x] = self:get(x, r)
             end
             return tmp
         end,
         col = function(self, c)
             local tmp = {}
             for x = 1, 8 do
-                tmp[x] = self.get(self, c, x)
+                tmp[x] = self:get(c, x)
             end
             return tmp
+        end,
+        get_bytes = function(self)
+            local b = {}
+            for y = 1, 8 do
+                local v = 0
+                for x = 1, 8 do
+                    v += self:get(x, y) == 1 and 1 << x - 1 or 0
+                end
+                b[y] = v
+            end
+            return b
+        end,
+        update = function(self)
+            if mouse.cx and mouse.cy then
+                if mouse.left:clicked() then
+                    bool = self:get(mouse.cx, mouse.cy) == 1 and 0 or 1
+                end
+                if mouse.left.down then
+                    self:set(mouse.cx, mouse.cy, bool)
+                end
+                cursor = { chr = 31, col = 12, ox = -1, oy = -1 }
+            end
         end,
         draw = function(self, sx, sy, width, height)
             rectfill(sx, sy, sx + width * 8 - 2, sy + height * 8 - 2, 2)

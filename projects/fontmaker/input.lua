@@ -16,6 +16,19 @@ function check_keyboard()
     end
 end
 
+function make_button(bit, down)
+    return {
+        bit = bit,
+        down = down,
+        active = down,
+        dt = 0,
+        delay = repeat_initital,
+        clicked = function(self)
+            return self.active and self.delay == repeat_initital
+        end
+    }
+end
+
 function check_button(button)
     if stat(34) & button.bit > 0 then
         button.active = not button.down
@@ -40,12 +53,10 @@ end
 function check_mouse()
     mouse.x = stat(32)
     mouse.y = stat(33)
-
     check_button(mouse.left)
     check_button(mouse.right)
-    -- local width, height = get_dimensions()
-    -- mouse.cx = (mouse.x >= 0 and mouse.x < width * 8 - 1) and mouse.x \ 8 + 1 or nil
-    -- mouse.cy = (mouse.y >= 0 and mouse.y < height * 8 - 1) and mouse.y \ 8 + 1 or nil
+    mouse.cx = (mouse.x >= 0 and mouse.x < state.current.width * 8 - 1) and mouse.x \ 8 + 1 or nil
+    mouse.cy = (mouse.y >= 0 and mouse.y < state.height * 8 - 1) and mouse.y \ 8 + 1 or nil
 end
 
 function check_controller()
