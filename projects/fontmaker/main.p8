@@ -70,8 +70,8 @@ function _init()
         right = make_button(2, stat(34) & 2 > 0)
     }
     spinners = {
-        index = create_spinner(state.current, 'index', nil, 67, 12, 3, 16, 255),
-        width = create_spinner(state.current, 'width', 'width', 67, 30, 2, 1, 8),
+        index = create_spinner(state.current, 'index', nil, 67, 14, 3, 16, 255),
+        width = create_spinner(state.current, 'width', 'width', 67, 32, 2, 1, 8),
         width1 = create_spinner(state, 'width1', 'width1', 0, 84, 2, 1, 8),
         width2 = create_spinner(state, 'width2', 'width2', 48, 84, 2, 1, 8),
         height = create_spinner(state, 'height', 'height', 96, 84, 2, 1, 8),
@@ -80,7 +80,7 @@ function _init()
         tab = create_spinner(state, 'tab', 'tab', 0, 120, 2, 0, 8)
     }
     checkboxes = {
-        raise = create_checkbox(state.current, 'raise', 'raise 1px', 67, 48),
+        raise = create_checkbox(state.current, 'raise', 'raise 1px', 67, 50),
         relative = create_checkbox(state, 'relative', 'relative', 48, 120)
     }
     spinners.index.val = function(self, value)
@@ -156,6 +156,8 @@ function _draw()
         checkbox:draw()
     end
     state.current:draw(0, 0)
+    -- rectfill(70, 0, 85, 11, 3)
+    rectfill(70,0,state.current.index < 128 and 77 or 85,11,2)
     print('\^w\^t' .. chr(state.current.index), 70, 0, 7)
     print(chr(cursor.chr), mouse.x + cursor.ox, mouse.y + cursor.oy, cursor.col)
 
