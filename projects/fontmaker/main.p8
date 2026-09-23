@@ -72,8 +72,8 @@ function _init()
     spinners = {
         index = create_spinner(state.current, 'index', nil, 67, 12, 3, 16, 255),
         width = create_spinner(state.current, 'width', 'width', 67, 30, 2, 1, 8),
-        width1 = create_spinner(state, 'width1', 'width1', 0, 84, 2, 1, 8),
-        width2 = create_spinner(state, 'width2', 'width2', 48, 84, 2, 1, 8),
+        width1 = create_spinner(state, 'width1', 'width 1', 0, 84, 2, 1, 8),
+        width2 = create_spinner(state, 'width2', 'width 2', 48, 84, 2, 1, 8),
         height = create_spinner(state, 'height', 'height', 96, 84, 2, 1, 8),
         offsetx = create_spinner(state, 'offsetx', 'offset x', 0, 102, 2, 0, 8),
         offsety = create_spinner(state, 'offsety', 'offset y', 48, 102, 2, 0, 8),
@@ -90,11 +90,13 @@ function _init()
         checkboxes.raise.src = state.current
         if state.current.grid.empty then
             state.current.width = state.width1
+            -- USE FUNCTION HERE THAT ALSO CLEARS BITS THAT ARE OFF CANVAS
         end
     end
     function update_width(value)
         if state.current.grid.empty then
             state.current.width = value
+            -- USE FUNCTION HERE THAT ALSO CLEARS BITS THAT ARE OFF CANVAS
         end
     end
     spinners.width1.val = function(self, value)
@@ -123,28 +125,6 @@ function _update()
     if btn(4) then
         save_font()
     end
-
-    -- poke(0x5600, state.width1)
-    -- poke(0x5601, state.width2)
-    -- poke(0x5602, state.height)
-    -- poke(0x5603, state.offsetx)
-    -- poke(0x5604, state.offsety)
-    -- poke(0x5605, 1 + (state.relative and 2 or 0))
-    -- poke(0x5606, state.tab)
-    -- for c = 16, 255 do
-    --     local bytes = char[c].grid:get_bytes()
-
-    --     for i, v in ipairs(bytes) do
-    --         poke(0x5600 + c * 8 + i - 1, v)
-    --     end
-
-    --     local width = c < 128 and state.width1 or state.width2
-    --     local adjust = mid(-4, char[c].width - width, 3)
-    --     local bp = adjust < 0 and (8 + adjust) or adjust
-    --     local b = 1 << (bp - 1)
-    --     if char[c].raise then b += 128 end
-    --     poke(0x508 + (c - 16), b)
-    -- end
 end
 
 function _draw()
@@ -161,5 +141,5 @@ function _draw()
 
     -- print(mouse.cx, 0, 4, 7)
     -- print(mouse.cy, 0, 11, 7)
-    print("\14abcd", 100, 120, 7)
+    print("\14abcde", 84, 115, 7)
 end
