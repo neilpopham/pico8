@@ -5,7 +5,7 @@ printh('============')
 
 -- palette
 poke(0x5f2e, 1)
-pal({ [0] = 0, 1, -15, -16, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, 1)
+pal({ [0] = 0, 1, -15, -16, -11, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, 1)
 
 -- mouse and keyboard input
 poke(0x5f2d, 0x3)
@@ -33,6 +33,10 @@ for i = 16, 255 do
         raise = false,
         font_width = function(self)
             return self.index < 128 and state.width1 or state.width2
+        end,
+        set_width = function(self, width)
+            self.width = width
+            self.grid:set_width(width)
         end,
         draw = function(self, x, y)
             self.grid:draw(x, y, self.width, state.height)
@@ -89,15 +93,18 @@ function _init()
         spinners.width.src = state.current
         checkboxes.raise.src = state.current
         if state.current.grid.empty then
-            state.current.width = state.width1
-            -- USE FUNCTION HERE THAT ALSO CLEARS BITS THAT ARE OFF CANVAS
+            state.current:set_width(state.width1)
         end
     end
     function update_width(value)
         if state.current.grid.empty then
-            state.current.width = value
-            -- USE FUNCTION HERE THAT ALSO CLEARS BITS THAT ARE OFF CANVAS
+            state.current:set_width(value)
         end
+    end
+    spinners.width.val = function(self, value)
+        local font_width = state.current:font_width()
+        -- clamp according to font width for current char, and min/max size adjustnment values
+        state.current:set_width(mid(max(0, font_width - 4), value, min(8, font_width + 3)))
     end
     spinners.width1.val = function(self, value)
         state.width1 = self:clamp(value)

@@ -18,6 +18,13 @@ function make_grid()
             self.cells[y][x] = v
             self.empty = false
         end,
+        set_width = function(self, width)
+            for y = 1, 8 do
+                for x = width + 1, 8 do
+                    self.cells[y][x] = 0
+                end
+            end
+        end,
         row = function(self, r)
             local tmp = {}
             for x = 1, 8 do
@@ -55,14 +62,15 @@ function make_grid()
             end
         end,
         draw = function(self, sx, sy, width, height)
-            rectfill(sx, sy, sx + width * 8 - 2, sy + height * 8 - 2, 2)
+            rectfill(sx, sy, sx +62, sy + 62, 3)
+            rectfill(sx, sy, sx + width * 8 - 1, sy + height * 8 - 1, 2)
             for y = 0, 7 do
                 for x = 0, 7 do
                     local dx, dy, c = x + 1, y + 1, 1
                     if self:get(dx, dy) == 1 then
                         c = 7
                     elseif dy > height or dx > width then
-                        c = 3
+                        c = 4
                     end
                     rectfill(sx + x * 8, sy + y * 8, sx + x * 8 + 6, sy + y * 8 + 6, c)
                 end

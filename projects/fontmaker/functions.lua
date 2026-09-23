@@ -33,7 +33,6 @@ function save_font()
             offsets = 0
         end
     end
-    printh(adjustments)
     poke(0x5600, state.width1)
     poke(0x5601, state.width2)
     poke(0x5602, state.height)
