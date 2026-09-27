@@ -114,3 +114,32 @@ function create_checkbox(src, prop, label, x, y)
         end
     }
 end
+
+function create_button(label, x, y)
+    return {
+        x = x,
+        y = y,
+        label = label,
+        hover = false,
+        down = false,
+        click = function(self)
+        end,
+        update = function(self)
+            self.down = false
+            if aabb(mouse.x - 1, mouse.y - 1, mouse.x + 1, mouse.y + 1, self.x, self.y, self.x + #self.label * 4 + 4, self.y + 8) then
+                self.hover = true
+                cursor = { chr = 94, col = 10, ox = -1, oy = 0 }
+                if mouse.left:clicked() then
+                    self:click()
+                end
+                if mouse.left.down then self.down = true end
+            else
+                self.hover = false
+            end
+        end,
+        draw = function(self)
+            rectfill(self.x, self.y, self.x + #self.label * 4 + 4, self.y + 8, self.down and 8 or (self.hover and 9 or 4))
+            print('save', self.x + 2, self.y + 2, self.hover and 7 or 6)
+        end
+    }
+end
