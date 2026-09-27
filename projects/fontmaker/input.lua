@@ -55,8 +55,8 @@ function check_mouse()
     mouse.y = stat(33)
     check_button(mouse.left)
     check_button(mouse.right)
-    mouse.cx = (mouse.x >= 0 and mouse.x < state.current.width * 8 - 1) and mouse.x \ 8 + 1 or nil
-    mouse.cy = (mouse.y >= 0 and mouse.y < state.height * 8 - 1) and mouse.y \ 8 + 1 or nil
+    mouse.cx = (mouse.x >= 1 and mouse.x < state.current.width * 8) and mouse.x \ 8 + 1 or nil
+    mouse.cy = (mouse.y >= 1 and mouse.y < state.height * 8) and mouse.y \ 8 + 1 or nil
 end
 
 function check_controller()

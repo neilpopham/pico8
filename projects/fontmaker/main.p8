@@ -13,6 +13,15 @@ poke(0x5f2d, 0x3)
 --constants
 repeat_initital = 15
 repeat_delay = 4
+addresses = {
+    width1 = 0x5600,
+    width2 = 0x5601,
+    height = 0x5602,
+    offsetx = 0x5603,
+    offsety = 0x5604,
+    -- adjustments = 0x5605,
+    tab = 0x5606
+}
 
 -- globals
 cursor = { chr = 18, col = 7, ox = -1, oy = -2 }
@@ -37,6 +46,41 @@ for i = 16, 255 do
         set_width = function(self, width)
             self.width = width
             self.grid:set_width(width)
+            self:save_adjustment()
+        end,
+        get_width = function(self)
+            return self.grid.empty and self:font_width() or self.width
+        end,
+        get_nibble = function(self)
+            if self.grid.empty then return 0 end
+            local adjust = mid(-4, self:get_width() - self:font_width(), 3)
+            local nibble = adjust < 0 and (8 + adjust) or adjust
+            printh(nibble)
+            if nibble > 0 then
+                poke(0x5605, 1 + (state.relative and 2 or 0))
+            end
+            if self.raise then nibble += 8 end
+            return nibble
+        end,
+        save_adjustment = function(self)
+            local nibble = self:get_nibble()
+            local addr = 0x5600 + self.index \ 2
+            local shft = (self.index & 1) * 4
+            local mask = 0xf << shft
+            poke(addr, (peek(addr) & ~mask) | (nibble << shft))
+        end,
+        update = function(self)
+            self.grid:update()
+            if self.grid.changes and not mouse.left.down then
+                self.grid.changes = false
+                local bytes = self.grid:get_bytes()
+                local empty = true
+                for i, v in ipairs(bytes) do
+                    if v > 0 then empty = false end
+                    poke(0x5600 + self.index * 8 + i - 1, v)
+                end
+                self.grid.empty = empty
+            end
         end,
         draw = function(self, x, y)
             self.grid:draw(x, y, self.width, state.height)
@@ -93,8 +137,15 @@ function _init()
         spinners.width.src = state.current
         checkboxes.raise.src = state.current
         if state.current.grid.empty then
-            state.current:set_width(state.width1)
+            -- local width = self.index < 128 and state.width1 or state.width2
+            state.current:set_width(state.current:font_width())
         end
+    end
+    spinners.index.increase = function(self)
+        self:val(self.src[self.prop] + 1)
+    end
+    spinners.index.decrease = function(self)
+        self:val(self.src[self.prop] - 1)
     end
     function update_width(value)
         if state.current.grid.empty then
@@ -108,12 +159,36 @@ function _init()
     end
     spinners.width1.val = function(self, value)
         state.width1 = self:clamp(value)
-        update_width(state.width1)
+        if state.current.index < 128 then
+            update_width(state.width1)
+        end
+        save_adjustments()
     end
     spinners.width2.val = function(self, value)
         state.width2 = self:clamp(value)
-        update_width(state.width2)
+        if state.current.index >= 128 then
+            update_width(state.width2)
+        end
+        save_adjustments()
     end
+    checkboxes.raise.val = function(self, value)
+        self:toggle()
+        state.current:save_adjustment()
+    end
+    checkboxes.relative.val = function(self, value)
+        self:toggle()
+        local adjustments = 1
+        poke(0x5605, adjustments + (state.relative and 2 or 0))
+    end
+    -- init font data
+    memset(0x5600, 0, 0x800)
+    poke(0x5600, state.width1)
+    poke(0x5601, state.width2)
+    poke(0x5602, state.height)
+    poke(0x5603, state.offsetx)
+    poke(0x5604, state.offsety)
+    poke(0x5605, state.relative and 2 or 0)
+    poke(0x5606, state.tab)
 end
 
 function _update()
@@ -121,7 +196,8 @@ function _update()
     check_keyboard()
     check_mouse()
     check_controller()
-    state.current.grid:update()
+    check_shortcuts()
+    state.current:update()
     for _, spinner in pairs(spinners) do
         spinner:update()
     end
@@ -131,6 +207,13 @@ function _update()
 
     if btn(4) then
         save_font()
+    end
+    if btn(5) then
+        local s = ''
+        for i = 0, 0x800 do
+            s ..= peek(0x5600 + i) .. ','
+        end
+        printh(s, '@clip')
     end
 end
 
@@ -143,12 +226,9 @@ function _draw()
         checkbox:draw()
     end
     state.current:draw(0, 0)
-    -- rectfill(70, 0, 85, 11, 3)
-    rectfill(70,0,state.current.index < 128 and 77 or 85,11,2)
+    rectfill(70, 0, state.current.index < 128 and 77 or 85, 11, 2)
     print('\^w\^t' .. chr(state.current.index), 70, 0, 7)
     print(chr(cursor.chr), mouse.x + cursor.ox, mouse.y + cursor.oy, cursor.col)
 
-    -- print(mouse.cx, 0, 4, 7)
-    -- print(mouse.cy, 0, 11, 7)
     print("\14abcde", 84, 115, 7)
 end
