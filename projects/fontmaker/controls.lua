@@ -11,14 +11,6 @@ function create_spinner(src, prop, label, x, y, w, min, max)
         inc = false,
         dec = false,
         value = nil,
-        -- increase = function(self)
-        --     local v = self.src[self.prop] + 1
-        --     self:set(min(v, self.max))
-        -- end,
-        -- decrease = function(self)
-        --     local v = self.src[self.prop] - 1
-        --     self:set(max(v, self.min))
-        -- end,
         clamp = function(self, value)
             return mid(self.min, value, self.max)
         end,
@@ -26,10 +18,6 @@ function create_spinner(src, prop, label, x, y, w, min, max)
             self.src[self.prop] = self:clamp(value)
         end,
         update = function(self)
-            -- if key.key == "q" then self.decrease() end
-            -- if key.key == "q" then self.increase() end
-            -- self.set(value)
-
             self.inc = false
             self.dec = false
             local ix, v, hit = self.x + 6 + self.width * 4
@@ -58,7 +46,7 @@ function create_spinner(src, prop, label, x, y, w, min, max)
                 end
             end
             if hit then
-                cursor = { chr = 94, col = 10, ox = -1, oy = 0 }
+                cursor = cursors.pointer
             end
             self.value = self.src[self.prop]
         end,
@@ -90,16 +78,12 @@ function create_checkbox(src, prop, label, x, y)
         end,
         update = function(self)
             self.hover = false
-            local hit
             if aabb(mouse.x - 1, mouse.y - 1, mouse.x + 1, mouse.y + 1, self.x, self.y, self.x + 4, self.y + 4) then
-                hit = true
                 if mouse.left:clicked() then
                     self:toggle()
                 end
                 self.hover = true
-            end
-            if hit then
-                cursor = { chr = 94, col = 10, ox = -1, oy = 0 }
+                cursor = cursors.pointer
             end
             self.value = self.src[self.prop]
         end,
@@ -128,7 +112,7 @@ function create_button(label, x, y)
             self.down = false
             if aabb(mouse.x - 1, mouse.y - 1, mouse.x + 1, mouse.y + 1, self.x, self.y, self.x + #self.label * 4 + 4, self.y + 8) then
                 self.hover = true
-                cursor = { chr = 94, col = 10, ox = -1, oy = 0 }
+                cursor = cursors.pointer
                 if mouse.left:clicked() then
                     self:click()
                 end
@@ -138,7 +122,7 @@ function create_button(label, x, y)
             end
         end,
         draw = function(self)
-            rectfill(self.x, self.y, self.x + #self.label * 4 + 4, self.y + 8, self.down and 8 or (self.hover and 9 or 4))
+            rectfill(self.x, self.y, self.x + #self.label * 4 + 4, self.y + 8, self.down and 8 or (self.hover and 9 or 5))
             print('save', self.x + 2, self.y + 2, self.hover and 7 or 6)
         end
     }
